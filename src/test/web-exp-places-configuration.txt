@@ -1,0 +1,5 @@
+webexp.config   | de.akmiraketen.webexp.place_id    | de.akmiraketen.webexp.place_name  | de.akmiraketen.webexp.place_latitude  | de.akmiraketen.webexp.place_longitude | de.akmiraketen.webexp.trial_map_id
+place1          | 1                                 | Place A                           | 51.234123                             | 8.123123                              | #Map1
+place2          | 2                                 | Place B                           | 51.242123                             | 8.213123                              | #Map1
+place3          | 3                                 | Place C                           | 51.234123                             | 8.123123                              | #Map2
+place4          | 4                                 | Place D                           | 51.234123                             | 8.123123                              | #Map3

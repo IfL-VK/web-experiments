@@ -1,0 +1,171 @@
+
+/** 
+ * Web page style definition for our experiments application. 
+ * Given colors are #005ea8; as ifl-blue) and #F18230 as iwm-orange.
+ * 
+ * @authors: 
+ *
+ **/
+
+body {
+    padding: 0px;
+    margin: 0px;
+    font-family: 'sans-serif';
+}
+
+.window {
+    margin-top: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 1024px;
+    height: 600px;
+}
+
+.estimation .window {
+    width: 1180px;
+    height: 800px;
+}
+
+.estimation .window #map {
+    border: 1px solid #fff;
+}
+
+#options,
+#map {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #afafaf;
+    cursor: pointer;
+}
+
+#options {
+    text-align:center;
+    vertical-align: bottom;
+}
+
+.trials a {
+    display: block;
+    padding: 3px;
+    text-decoration: none;
+    color: #a9a9a9;
+    margin-left: 10px;
+}
+
+ul.menu {
+    padding-left: 0px;
+    margin: 25%;
+}
+
+ul.menu li {
+    list-style-type: none;
+    margin: 10px;
+}
+
+ul.menu li a.button {
+    width: 120px;
+}
+
+/** Button style defintion thanks to http://cssgradientbutton.com/ */
+.button {
+    border:1px solid #495267; -webkit-border-radius: 3px; -moz-border-radius: 3px;border-radius: 3px;font-size:12px;font-family:arial, helvetica, sans-serif; padding: 10px 10px 10px 10px; text-decoration:none; display:inline-block;text-shadow: -1px -1px 0 rgba(0,0,0,0.3);font-weight:bold; color: #FFFFFF;
+    background-color: #606c88; background-image: -webkit-gradient(linear, left top, left bottom, from(#606c88), to(#3f4c6b));
+    background-image: -webkit-linear-gradient(top, #606c88, #3f4c6b);
+    background-image: -moz-linear-gradient(top, #606c88, #3f4c6b);
+    background-image: -ms-linear-gradient(top, #606c88, #3f4c6b);
+    background-image: -o-linear-gradient(top, #606c88, #3f4c6b);
+    background-image: linear-gradient(to bottom, #606c88, #3f4c6b);filter:progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr=#606c88, endColorstr=#3f4c6b);
+}
+
+.button:hover{
+    border:1px solid #363d4c;
+    background-color: #4b546a; background-image: -webkit-gradient(linear, left top, left bottom, from(#4b546a), to(#2c354b));
+    background-image: -webkit-linear-gradient(top, #4b546a, #2c354b);
+    background-image: -moz-linear-gradient(top, #4b546a, #2c354b);
+    background-image: -ms-linear-gradient(top, #4b546a, #2c354b);
+    background-image: -o-linear-gradient(top, #4b546a, #2c354b);
+    background-image: linear-gradient(to bottom, #4b546a, #2c354b);filter:progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr=#4b546a, endColorstr=#2c354b);
+}
+
+p {
+    margin-left: 10px;
+}
+
+h3 {
+    color: #005ea8;
+    margin: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+h4 {
+    color: #898989;
+    margin: 10px;   
+}
+
+.statusbox {
+    color: #f18230;
+    z-index: 11;
+    background-color: #fff;
+    padding: 5px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.statusbox img {
+    position: relative;
+    left: 235px;
+    top: 10px;
+    cursor: pointer;
+    border: 0px solid transparent;
+    opacity: .3;
+}
+
+.statusbox img:hover {
+    opacity: 1;
+}
+
+.label {
+    font-size: 14px; font-weight: normal;
+    padding: 0px; color: #afafaf;
+}
+
+ul.marker-selection,
+ul.clicks {
+    padding-left: 10px;
+}
+
+ul.marker-selection li.symbol,
+ul.clicks li {
+    display: inline;
+    list-style-type: none;
+    padding-right: 10px;
+    line-height: 2.3em;
+    font-size: 12px;
+}
+
+li.btn img {
+    cursor:pointer;
+    padding: 5px;
+}
+
+li.btn img:hover {
+    background-color: #898989;
+}
+
+ul.clicks li span.seconds {
+    background-color: #F18230;
+    padding: 4px;
+    margin: 0px;
+}
+
+ul.clicks li span.coordinates {
+    border: 1px solid #898989;
+    padding: 3px;
+}
+
+span.button {
+    font-size: 12px;
+    background-color: #afafaf;
+    color: #fff; padding: 4px;
+    cursor: pointer;
+}

@@ -1,0 +1,117 @@
+{
+    "topic_types": [
+        {
+            "value": "Experiment: Trial Text Pinning",
+            "uri": "de.akmiraketen.webexp.exp_trial_text_pinning",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Experiment: Trial Text Estimation",
+            "uri": "de.akmiraketen.webexp.exp_trial_text_estimation",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Experiment: Memorization Time (seconds)",
+            "uri": "de.akmiraketen.webexp.exp_memo_time_sec",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Experiment: Active control size (meters)",
+            "uri": "de.akmiraketen.webexp.exp_active_size_meters",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Web Experiment Setup",
+            "uri": "de.akmiraketen.webexp.exp_setup",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.exp_trial_text_pinning",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.exp_trial_text_estimation",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.exp_memo_time_sec",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.exp_active_size_meters",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": true,
+                        "dm4.webclient.locked": false
+                    }
+                }
+            ]
+        }
+    ],
+    "topics": [
+        {
+            "type_uri": "de.akmiraketen.webexp.exp_setup",
+            "uri": "webexp.config.exp_setup_1",
+            "childs": {
+                "de.akmiraketen.webexp.exp_trial_text_pinning": "Bitte markieren Sie \"PinPlace\" auf der Karte.",
+                "de.akmiraketen.webexp.exp_trial_text_estimation": "Bitte sch\u00E4tzen Sie die Distanz und Richtung von \"FromPlace\" zu \"ToPlace\".",
+                "de.akmiraketen.webexp.exp_memo_time_sec": "6",
+                "de.akmiraketen.webexp.exp_active_size_meters": "500"
+            }
+        }
+    ]
+}
