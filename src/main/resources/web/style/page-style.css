@@ -17,8 +17,7 @@ body {
     margin-top: 40px;
     margin-left: auto;
     margin-right: auto;
-    width: 1024px;
-    height: 600px;
+    width: 800px;
 }
 
 .estimation .window {
@@ -30,8 +29,14 @@ body {
     border: 1px solid #fff;
 }
 
-#options,
 #map {
+    width: 800px;
+    height: 500px;
+    border: 1px solid #afafaf;
+    cursor: pointer;
+}
+
+#options {
     width: 100%;
     height: 100%;
     border: 1px solid #afafaf;

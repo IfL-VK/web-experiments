@@ -5,46 +5,68 @@ define(function (require) {
 
     var d3          = require('d3')
     var leaflet     = require('leaflet')
+    var common      = require('common')
 
-    var pinningCtrl = require('./controller/pinningCtrl')
+    var pinningCtrl     = require('./controller/pinningCtrl')
     var pinningModel    = require('./model/pinningModel')
 
-    var map
-    var place = {}
-    var memorize = {time: 15000}
-
+    var map                         // map leaflet reference
+    var places                      // array of all places configured for this trial
+    var place_to_pin = {}           // configured place to pin geo-coordinates
+    var memorize = { time: 15000 }  // configured time for memorization (trial)
+    
+    var trialId = -1
     var state = ""
 
 
     // ------ Initialization of client-side data
 
     function init_pinning_page () {
+        
+        // 0 get trial id out of url
+        trialId = common.parse_trial_id_from_resource_location()
 
         // 1 load user session
-        init_user_view()
+        init_user_view() // ### todo: load a users preferenced marker
 
         // 2 load trial config and then initialize pinning for this trial
-        pinningCtrl.fetchTrialConfig(5208, function (response) {
+        pinningCtrl.fetchTrialConfig(trialId, function (response) {
+            
+            // 2.1 initialize page view model
             
             pinningModel.setTrialConfig(response)
             pinningModel.setMapConfig(response.map_config)
             pinningModel.setPlaces(response.place_config.items)
             pinningModel.setPlaceToPinId(response['trial_config']['place_to_pin'])
             
+            // 2.2 initialize leaflet container according to map configuration
+            
             initialize_map()
+            init_task_description()
+            
+            // 2.3 init pinning according to configured trial condition
+            
+            // ... override default memo time with time for memo configured in trial
+            var memo_seconds = pinningModel.getTrialConfig()['trial_config']['memo_seconds']
+                memorize.time = (memo_seconds * 1000)
 
+            // ... switch per trial condition
             var pinning_condition = pinningModel.getTrialConfig()['trial_config']['trial_condition']
-            console.log(" trial condition:", pinning_condition)
-
-            if (pinning_condition === "webexp.config.no_pinning") {
-                runMemorizationTimer()
+            if (common.debug) console.log(" trial condition:", pinning_condition)
+            
+            if (pinning_condition === "") {
+                if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
+                run_timer()
             } else if (pinning_condition === "webexp.config.pinning") {
+                if(common.verbose) console.log(" ... pinning active - no timer (" + trialId + ")")
                 initialize_pinning_features()
-                runMemorizationTimer() // ### what if user has not pinned after timer ran out
+                // run_timer() // ### what if user has not pinned after timer ran out
                 // my suggestion would be: run timer just after pinning was done 
+            } else {
+                throw Error("Unknown trial condition for pinning (\""+pinning_condition+"\"), Trial: " + trialId)
             }
 
-        }, false)
+        }, common.debug)
 
     }
 
@@ -52,44 +74,49 @@ define(function (require) {
     // ---- Mapping Screen ----
     // --
 
-    function initialize_map(imageName) {
+    function initialize_map() {
 
         // ------- Map Setup -----
 
         var mapConfig = pinningModel.getMapConfig().childs
         var mapId = mapConfig['de.akmiraketen.webexp.trial_map_id'].value
-
-        console.log(" pinning: loaded map config", mapId)
-
-        // create a map in the "map" div, set the view to a given place and zoom
+        console.log("   init "+mapId+" config", mapConfig)
+        var centerLat, centerLng, zoomLevel, fileName;
+        try {
+            centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
+            centerLng = mapConfig['de.akmiraketen.webexp.trial_map_center_lng'].value
+            zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
+            fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
+        } catch (error) {
+            throw Error ("Map File config for " + mapId + " is missing a value.")
+        }
+        if (common.debug) console.log(" pinning: loaded map config for MapID:", mapId)
+        // .. create a map in the "map" div, set the view to a given place and zoom
         map = L.map('map',  {
-            dragging: false,
-            touchZooom: false,
-            scrollWheelZoom: false,
-            doubleClickZoom: false,
-            boxZoom: false,
-            zoomControl: false,
-            keyboard: false
+            dragging: false, touchZooom: false,
+            scrollWheelZoom: false, doubleClickZoom: false,
+            boxZoom: false, zoomControl: false, keyboard: false
         })
-        map.setView([52.955304, 8.326077], 12)
-
-        // add an OpenStreetMap tile layer
+        // .. set viewport by the corresponding map file configuration for this trial
+        map.setView([centerLat, centerLng], zoomLevel)
+        // ### fixme: find maptile layer 
+        // .. add an OpenStreetMap tile layer
         var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
-        // 
-        if (imageName) {
+        // uncomment the following linces to use bitmap map-files instead of tiles
+        /** if (fileName) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
                 northEast.lng += 0.001
                 southWest.lat -= 0.001
-            var imageUrl = 'images/' + imageName,
+            var imageUrl = '/filerepo/web-experiments/maps/' + fileName,
                 // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
-        }
+        } **/
 
     }
 
@@ -100,56 +127,90 @@ define(function (require) {
             d3.select('.username').text(username)
             // OK
             pinningModel.setUsername(username)
-        }, false)
+        }, common.debug)
+    }
+    
+    function init_task_description () {
+        d3.select('i.place-to-pin').text(pinningModel.getNameOfPlaceToPin())
     }
 
     function initialize_pinning_features () {
-
-        var places = pinningModel.getPlaces()
-        console.log(" pinning: loaded places", pinningModel.getPlaces())
-        console.log(" pinning: initializing place to pin", pinningModel.getPlaceToPinId())
-        var coordinates_to_pin = pinningModel.getCoordinatesOfPlaceToPin()
-        console.log("   init geo coordinates: ", coordinates_to_pin)
-
-        // ### fix configuration.. 
-
-        place.lat = coordinates_to_pin['latitude']
-        place.lng = coordinates_to_pin['longitude']
-
-        var featureGroup = L.featureGroup()
-
-        var marker = L.marker([place.lat, place.lng])
-            marker.addTo(featureGroup)
         
+        places = pinningModel.getPlaces()
+        
+        if(common.debug) console.log(" pinning: loaded places", pinningModel.getPlaces())
+        if(common.debug) console.log(" pinning: initializing place to pin", pinningModel.getPlaceToPinId())
+        
+        check_place_to_pin_configuration()
+        
+        var featureGroup = L.featureGroup()
+        var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
+
+        if (common.debug) marker.addTo(featureGroup)
+
         map.on('click', function (e) {
-            if (isClickNearby(place, e)) {
-                // console.log("Active control pressed")
-                var marker = L.marker([place.lat, place.lng])
+            if (common.verbose) console.log("  map clicked: " + e.latlng + " (vs.) " + place_to_pin.lat + ", " + place_to_pin.lng)
+            if (is_click_nearby(e)) {
+                if (common.verbose) console.log("  active control clicked - pinned")
+                // ### fixme: do not at marker (if already present) again
+                var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
                     marker.addTo(featureGroup)
-                runMemorizationTimer()
+                run_timer()
             }
         })
+        
         featureGroup.addTo(map)
-
+    }
+    
+    function check_place_to_pin_configuration () {
+        
+        // 1 load place config by id from all places configured for this map id 
+        var coordinates_to_pin = pinningModel.getCoordinatesOfPlaceToPin() // assume that placeToPin Id is set in model
+        
+        // 2 store coordinate for place to pin globally
+        place_to_pin.lat = coordinates_to_pin['latitude']
+        place_to_pin.lng = coordinates_to_pin['longitude']
+        
+        // 3 logged potential configuration errors to the browser console
+        if (typeof coordinates_to_pin === "undefined") {
+            throw Error ("Place with ID \"" + pinningModel.getPlaceToPinId() + "\" is not configured for this Map "
+                + " (check the MapId in your places config file)!")
+        } else { // Configuration - OK
+            if (common.verbose) console.log("Place to pin configuration - OK")
+        }
+        if (!map.getBounds().contains(L.latLng(place_to_pin.lat, place_to_pin.lng))) {
+            throw Error ("The configured coordinates for our \"place_to_pin\" "
+                + " (Place "+pinningModel.getPlaceToPinId()+") are not within the viewport of "
+                + " this map configuration (" +pinningModel.getMapConfigId()+ "). Please check Map Center Coordinates "
+                + " and/or all coordinates in the place configs for this map.")
+        }
     }
 
-    function isClickNearby(place, event) {
-        var southWest = L.latLng(place.lat - 0.005, place.lng - 0.005)
-            northEast = L.latLng(place.lat + 0.005, place.lng + 0.005)
+    // ------ Helper Methods
+    
+    function is_click_nearby(event) {
+        var southWest = L.latLng(place_to_pin.lat - 0.005, place_to_pin.lng - 0.005)
+        var northEast = L.latLng(place_to_pin.lat + 0.005, place_to_pin.lng + 0.005)
         var activeControl = L.latLngBounds(southWest, northEast)
         return activeControl.contains(event.latlng)
     }
 
-    function runMemorizationTimer() {
-        // set_task_title("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
+    function run_timer(seconds) {
+        if (typeof seconds === "undefined") 
+        set_task_description("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
         setTimeout(function (e) {
-            window.document.location.href = "/pages/distance.html"
+            window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
         }, memorize.time)
-
-        console.log(" pinning: started memorization timer")
+    
+        if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
     }
+    
+    function set_task_description (message) {
+        document.getElementById("title").innerHTML = message 
+    }
+    
 
-    // ------------ Some rendering methods
+    // --- Run this script when it is called/loaded
 
     init_pinning_page()
 

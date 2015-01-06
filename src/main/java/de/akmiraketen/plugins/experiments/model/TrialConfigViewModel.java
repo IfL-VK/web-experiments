@@ -3,11 +3,8 @@ package de.akmiraketen.plugins.experiments.model;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.ChildTopicsModel;
-import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.codehaus.jettison.json.JSONException;
@@ -58,7 +55,7 @@ public class TrialConfigViewModel implements JSONEnabled {
 
     public JSONObject getRelatedPlaceConfigs() throws JSONException {
         Topic mapFileTopicId = getTrialMapIdTopic();
-        log.info("Should load Places for Map Id " + mapFileTopicId.getSimpleValue());
+        log.info("Loading Places Configuration for Map Id " + mapFileTopicId.getSimpleValue());
         ResultList<RelatedTopic> places = mapFileTopicId.getRelatedTopics("dm4.core.aggregation", 
                 "dm4.core.child", "dm4.core.parent", PLACE_CONFIG, 0); // load list all places related to this map-id
         // ArrayList<TopicModel> places = new ArrayList<TopicModel>();
@@ -68,7 +65,7 @@ public class TrialConfigViewModel implements JSONEnabled {
     
     public JSONObject getRelatedMapFileConfig() throws JSONException {
         Topic mapFileTopicId = getTrialMapIdTopic();
-        log.info("Should load Map File Config Id " + mapFileTopicId.getSimpleValue() + " "
+        log.info("Loading Map File Config Id " + mapFileTopicId.getSimpleValue() + " "
                 + "for Trial Config " + trialConfig.getSimpleValue().toString());
         Topic mapFileConfig = mapFileTopicId.getRelatedTopic("dm4.core.aggregation", 
                 "dm4.core.child", "dm4.core.parent", TRIAL_MAP_CONFIG_ID); // load map config for this map-id

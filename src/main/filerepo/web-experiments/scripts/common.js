@@ -11,3 +11,20 @@ require.config({
     waitSeconds: 15
 });
 
+define(function () {
+    
+    return {
+        debug: false,
+        verbose: true,
+        parse_trial_id_from_resource_location: function () {
+            var url = window.document.location.href
+            var start = url.indexOf("trial/")
+            var end = url.indexOf("/pinning")
+            var id = url.substring(start + 6, end)
+            if (this.debug) console.log("Trial ID is ", id)
+            return parseInt(id)
+        }
+    }
+    
+})
+

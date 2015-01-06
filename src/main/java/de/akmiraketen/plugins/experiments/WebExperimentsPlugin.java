@@ -39,7 +39,7 @@ import javax.ws.rs.core.MediaType;
  *
  * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014
  * @website https://github.com/ifl-vk/web-exp
- * @version 0.0.1-SNAPSHOT
+ * @version 0.2-SNAPSHOT
  */
 
 @Path("/web-exp")
@@ -269,18 +269,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/{trialId}")
     public TrialConfigViewModel getFullTrialConfigTopic(@PathParam("trialId") long id) {
         return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
-    }
-    
-    @GET
-    @Path("/map/{mapId}")
-    public Topic getFullMapConfigTopic(@PathParam("mapId") long id) {
-        return dms.getTopic(id).loadChildTopics();
-    }
-    
-    @GET
-    @Path("/place/{placeId}")
-    public Topic getFullPlaceConfigTopic(@PathParam("placeId") long id) {
-        return dms.getTopic(id).loadChildTopics();
     }
     
     // --- Private Helpers
