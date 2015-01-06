@@ -7,19 +7,16 @@ define(function (require) {
     var leaflet     = require('leaflet')
     var common      = require('common')
 
-    var pinningCtrl     = require('./controller/pinningCtrl')
-    var pinningModel    = require('./model/pinningModel')
+    var control     = require('./controller/pinningCtrl')
+    var model    = require('./model/pinningModel')
 
     var map                         // map leaflet reference
-    var places                      // array of all places configured for this trial
     var place_to_pin = {}           // configured place to pin geo-coordinates
     var memorize = { time: 15000 }  // configured time for memorization (trial)
-    
     var trialId = -1
-    var state = ""
 
 
-    // ------ Initialization of client-side data
+    // ------ Initialization of client-side data for pinning
 
     function init_pinning_page () {
         
@@ -30,28 +27,25 @@ define(function (require) {
         init_user_view() // ### todo: load a users preferenced marker
 
         // 2 load trial config and then initialize pinning for this trial
-        pinningCtrl.fetchTrialConfig(trialId, function (response) {
+        control.fetchTrialConfig(trialId, function (response) {
             
-            // 2.1 initialize page view model
-            
-            pinningModel.setTrialConfig(response)
-            pinningModel.setMapConfig(response.map_config)
-            pinningModel.setPlaces(response.place_config.items)
-            pinningModel.setPlaceToPinId(response['trial_config']['place_to_pin'])
+            // 2.1 initialize pinning page view model
+            model.setTrialConfig(response)
+            model.setMapConfig(response.map_config)
+            model.setPlaces(response.place_config.items)
+            model.setPlaceToPinId(response['trial_config']['place_to_pin'])
             
             // 2.2 initialize leaflet container according to map configuration
-            
             initialize_map()
             init_task_description()
             
             // 2.3 init pinning according to configured trial condition
-            
             // ... override default memo time with time for memo configured in trial
-            var memo_seconds = pinningModel.getTrialConfig()['trial_config']['memo_seconds']
+            var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
                 memorize.time = (memo_seconds * 1000)
 
             // ... switch per trial condition
-            var pinning_condition = pinningModel.getTrialConfig()['trial_config']['trial_condition']
+            var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
             if (common.debug) console.log(" trial condition:", pinning_condition)
             
             if (pinning_condition === "") {
@@ -71,16 +65,16 @@ define(function (require) {
     }
 
     // --
-    // ---- Mapping Screen ----
+    // ---- Pinning Map View ----
     // --
 
     function initialize_map() {
 
-        // ------- Map Setup -----
+        // ------- Leaflet Map Setup -----
 
-        var mapConfig = pinningModel.getMapConfig().childs
+        var mapConfig = model.getMapConfig().childs
         var mapId = mapConfig['de.akmiraketen.webexp.trial_map_id'].value
-        console.log("   init "+mapId+" config", mapConfig)
+        if (common.debug) console.log("   init "+mapId+" config", mapConfig)
         var centerLat, centerLng, zoomLevel, fileName;
         try {
             centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
@@ -117,29 +111,26 @@ define(function (require) {
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
         } **/
-
     }
 
     function init_user_view () {
-        pinningCtrl.fetchUser(function (data) {
+        control.fetchUser(function (data) {
             var username = data
             // GUI
             d3.select('.username').text(username)
             // OK
-            pinningModel.setUsername(username)
+            model.setUsername(username)
         }, common.debug)
     }
     
     function init_task_description () {
-        d3.select('i.place-to-pin').text(pinningModel.getNameOfPlaceToPin())
+        d3.select('i.place-to-pin').text(model.getNameOfPlaceToPin())
     }
 
     function initialize_pinning_features () {
         
-        places = pinningModel.getPlaces()
-        
-        if(common.debug) console.log(" pinning: loaded places", pinningModel.getPlaces())
-        if(common.debug) console.log(" pinning: initializing place to pin", pinningModel.getPlaceToPinId())
+        if(common.debug) console.log(" pinning: loaded places", model.getPlaces())
+        if(common.debug) console.log(" pinning: initializing place to pin", model.getPlaceToPinId())
         
         check_place_to_pin_configuration()
         
@@ -165,7 +156,7 @@ define(function (require) {
     function check_place_to_pin_configuration () {
         
         // 1 load place config by id from all places configured for this map id 
-        var coordinates_to_pin = pinningModel.getCoordinatesOfPlaceToPin() // assume that placeToPin Id is set in model
+        var coordinates_to_pin = model.getCoordinatesOfPlaceToPin() // assume that placeToPin Id is set in model
         
         // 2 store coordinate for place to pin globally
         place_to_pin.lat = coordinates_to_pin['latitude']
@@ -173,15 +164,15 @@ define(function (require) {
         
         // 3 logged potential configuration errors to the browser console
         if (typeof coordinates_to_pin === "undefined") {
-            throw Error ("Place with ID \"" + pinningModel.getPlaceToPinId() + "\" is not configured for this Map "
+            throw Error ("Place with ID \"" + model.getPlaceToPinId() + "\" is not configured for this Map "
                 + " (check the MapId in your places config file)!")
         } else { // Configuration - OK
             if (common.verbose) console.log("Place to pin configuration - OK")
         }
         if (!map.getBounds().contains(L.latLng(place_to_pin.lat, place_to_pin.lng))) {
             throw Error ("The configured coordinates for our \"place_to_pin\" "
-                + " (Place "+pinningModel.getPlaceToPinId()+") are not within the viewport of "
-                + " this map configuration (" +pinningModel.getMapConfigId()+ "). Please check Map Center Coordinates "
+                + " (Place "+model.getPlaceToPinId()+") are not within the viewport of "
+                + " this map configuration (" +model.getMapConfigId()+ "). Please check Map Center Coordinates "
                 + " and/or all coordinates in the place configs for this map.")
         }
     }
@@ -208,7 +199,6 @@ define(function (require) {
     function set_task_description (message) {
         document.getElementById("title").innerHTML = message 
     }
-    
 
     // --- Run this script when it is called/loaded
 

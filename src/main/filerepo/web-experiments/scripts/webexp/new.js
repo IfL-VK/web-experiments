@@ -6,6 +6,7 @@ define(function (require) {
     var newCtrl     = require('./controller/newCtrl')
     var newModel    = require('./model/newModel')
     var d3          = require('d3')
+    var common      = require('common')
 
 
 
@@ -52,14 +53,13 @@ define(function (require) {
     function get_all_trial_configs () {
 
         newCtrl.fetchAllTrials(function (trials) {
-            console.log(trials)
+            if (common.debug) console.log(trials)
             var links = d3.select('.trials').selectAll('a').data(trials.items)
                 .attr('href', function (d) { 
                     return '/web-exp/trial/' + d.id + '/pinning' 
                 })
                 .attr('class', 'trial-links')
                 .text(function (d) {
-                    console.log(d.value)
                     return d.value 
                 })
 
@@ -69,7 +69,6 @@ define(function (require) {
                         return '/web-exp/trial/' + d.id + '/pinning' 
                     })
                     .text(function (d) {
-                        console.log(d.value)
                         return d.value 
                     })
 
@@ -78,12 +77,7 @@ define(function (require) {
         }, false)
     }
     
-    // ------------ Some rendering methods
-
-
-    /* $(function () {
-        controller.render(lib.getBody());
-    }); **/
+    // --- Run this script when it is called/loaded
 
     init_page()
 

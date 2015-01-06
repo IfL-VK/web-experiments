@@ -2,67 +2,105 @@
 // The main module called by/for the "new" page.
 
 define(function (require) {
+    
+    var d3          = require('d3')
+    var leaflet     = require('leaflet')
+    var common      = require('common')
 
     var newCtrl     = require('./controller/estimationCtrl')
     var newModel    = require('./model/estimationModel')
-    // var d3          = require('d3')
-    var leaflet     = require('leaflet')
 
-    var map
-    var place = {}
-    var memorize = {time: 15000}
-
-    var state = ""
+    var map                         // map leaflet reference
+    var placeFrom = {}              // configured place from
+    var placeTo = {}                // configured place to
+    var memorize = { time: 15000 }  // configured time for memorization (trial)
+    var trialId = -1
 
 
-    // ------ Initialization of client-side data
+    // ------ Initialization of client-side data for estimation
 
     function init_estimation_page () {
+        
+        // 0 get trial id out of url
+        trialId = common.parse_trial_id_from_resource_location()
 
-        init_user_view()
-        initialize_map()
-        initialize_estimation_features()
+        // 1 load user session
+        init_user_view() // ### todo: load a users preferenced marker
+        
+        // 2 load trial config and then initialize pinning for this trial
+        newCtrl.fetchTrialConfig(trialId, function (response) {
+            
+            // 2.1 initialize estimation page view model
+            newModel.setTrialConfig(response)
+            newModel.setMapConfig(response.map_config)
+            newModel.setPlaces(response.place_config.items)
+            // 2.2. ### prepare all estimations
+            console.log(response)
+            
+            // 2.2 initialize leaflet container according to map configuration
+            initialize_map("Trial1/Blank-Karte.png")
+            init_task_description()
+            
+            // 2.3 init pinning according to configured trial condition
+            // ... override default memo time with time for memo configured in trial
+            var memo_seconds = newModel.getTrialConfig()['trial_config']['memo_seconds']
+                memorize.time = (memo_seconds * 1000)
+
+            // 3 initialize estimation features
+            initialize_estimation_features()
+            
+        }, common.debug)
 
     }
 
     // --
-    // ---- Mapping Screen ----
+    // ---- Estimation Map View ----
     // --
 
-    function initialize_map(imageName) {
+    function initialize_map(blank_image_path) { // ### refactor to base? there is a duplicate in pinning
 
-        // ------- Map Setup -----
+        // ------- Leaflet Map Setup -----
 
-        // create a map in the "map" div, set the view to a given place and zoom
+        var mapConfig = newModel.getMapConfig().childs
+        var mapId = mapConfig['de.akmiraketen.webexp.trial_map_id'].value
+        if (common.debug) console.log("   init "+mapId+" config", mapConfig)
+        var centerLat, centerLng, zoomLevel, fileName;
+        try {
+            centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
+            centerLng = mapConfig['de.akmiraketen.webexp.trial_map_center_lng'].value
+            zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
+            fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
+        } catch (error) {
+            throw Error ("Map File config for " + mapId + " is missing a value.")
+        }
+        if (common.debug) console.log(" pinning: loaded map config for MapID:", mapId)
+        // .. create a map in the "map" div, set the view to a given place and zoom
         map = L.map('map',  {
-            dragging: false,
-            touchZooom: false,
-            scrollWheelZoom: false,
-            doubleClickZoom: false,
-            boxZoom: false,
-            zoomControl: false,
-            keyboard: false
+            dragging: false, touchZooom: false,
+            scrollWheelZoom: false, doubleClickZoom: false,
+            boxZoom: false, zoomControl: false, keyboard: false
         })
-        map.setView([52.955304, 8.326077], 12)
-
-        // add an OpenStreetMap tile layer
+        // .. set viewport by the corresponding map file configuration for this trial
+        map.setView([centerLat, centerLng], zoomLevel)
+        // ### fixme: find maptile layer 
+        // .. add an OpenStreetMap tile layer
         var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
-        // 
-        if (imageName) {
+        // uncomment the following linces to use bitmap map-files instead of tiles
+        // ### use blank screen
+        if (blank_image_path) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
                 northEast.lng += 0.001
                 southWest.lat -= 0.001
-            var imageUrl = 'images/' + imageName,
+            var imageUrl = '/filerepo/web-experiments/maps/' + blank_image_path,
                 // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
         }
-
     }
 
 
@@ -86,7 +124,7 @@ define(function (require) {
 
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)
-        var pointB = L.latLng(centerLat, centerLng)
+        // var pointB = L.latLng(centerLat, centerLng)
         var points = [pointA, pointA]
         var polyline = L.polyline(points, {
                 color: 'grey', weight: 8, opacity: 1
@@ -125,7 +163,8 @@ define(function (require) {
                 // using the Haversine formula. See description on
      	    // http://en.wikipedia.org/wiki/Haversine_formula
      	    var meters = Math.round(els[0].distanceTo(els[1]))
-            set_task_title("Result: " + (meters / 1000).toFixed(1) + " Kilometer")
+            // ### report values as results / write values into trial report
+            set_task_description("Result: " + (meters / 1000).toFixed(1) + " Kilometer")
              	
         }
 
@@ -152,24 +191,14 @@ define(function (require) {
         })
         featureGroup.addTo(map)
     }
-
-
-    function isClickNearby(place, event) {
-        var southWest = L.latLng(place.lat - 0.005, place.lng - 0.005)
-            northEast = L.latLng(place.lat + 0.005, place.lng + 0.005)
-        var activeControl = L.latLngBounds(southWest, northEast)
-        return activeControl.contains(event.latlng)
+    
+    function init_task_description () {
+        // ### 
+        /** var placeFrom = -1
+        var placeTo = -1
+        d3.select('i.from-place').text(newModel.getNameOfPlace())
+        d3.select('i.to-place').text(newModel.getNameOfPlace()) **/
     }
-
-    function runMemorizationTimer() {
-        set_task_title("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
-        setTimeout(function (e) {
-            window.document.location.href = "/pages/distance.html"
-        }, memorize.time)
-    }
-
-    // ------------
-
 
     function init_user_view () {
         newCtrl.fetchUser(function (data) {
@@ -181,8 +210,31 @@ define(function (require) {
 
         }, false)
     }
+    
+    // ------ Helper Methods
+    
+    function is_click_nearby(event) {
+        var southWest = L.latLng(place_to_pin.lat - 0.005, place_to_pin.lng - 0.005)
+        var northEast = L.latLng(place_to_pin.lat + 0.005, place_to_pin.lng + 0.005)
+        var activeControl = L.latLngBounds(southWest, northEast)
+        return activeControl.contains(event.latlng)
+    }
 
-    // ------------ Some rendering methods
+    function run_timer(seconds) {
+        if (typeof seconds === "undefined") 
+        set_task_description("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
+        setTimeout(function (e) {
+            window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
+        }, memorize.time)
+    
+        if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
+    }
+    
+    function set_task_description (message) {
+        document.getElementById("title").innerHTML = message 
+    }
+
+    // --- Run this script when it is called/loaded
 
     init_estimation_page()
 

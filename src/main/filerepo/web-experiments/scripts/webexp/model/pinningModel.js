@@ -3,52 +3,24 @@ define(['./BaseModel'], function (Base) {
 
     var m2 = new Base('This is the data for Pinning Page');
 
-    var map = {}
-    var trial = {}
-    var places = []
     var placeToPin = undefined
-
-    m2.setMapConfig = function (mapConfig) {
-        this.map = mapConfig
-    }
-
-    m2.getMapConfig = function () {
-        return this.map
-    }
-
-    m2.getMapConfigId = function () {
-        return this.map.childs['de.akmiraketen.webexp.trial_map_id'].value
-    }
-
-    m2.setTrialConfig = function (trialConfig) {
-        this.trial = trialConfig
-    }
-
-    m2.getTrialConfig = function () {
-        return this.trial
-    }
-
-    m2.setPlaces = function (places) {
-            this.places = places
-    }
-
-    m2.getPlaces = function () {
-        return this.places
-    }
+    
+    // Extending BaseModel for new page/app
 
     m2.setPlaceToPinId = function (placeToPinId) {
-        this.placeToPin = placeToPinId
+        placeToPin = placeToPinId
     }
 
     m2.getPlaceToPinId = function () {
-        return this.placeToPin
+        return placeToPin
     }
 
     m2.getCoordinatesOfPlaceToPin = function () {
-        if (!this.trial.hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
+        if (!m2.getTrialConfig().hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
         if (typeof this.getPlaceToPinId() === 'undefined') throw Error ("Error: No place to pin set.")
-        for (var idx in this.places) {
-            var place = this.places[idx]
+        var places = m2.getPlaces()
+        for (var idx in places) {
+            var place = places[idx]
             var currentPlaceId = place.childs['de.akmiraketen.webexp.place_id'].value
             if (currentPlaceId === this.getPlaceToPinId()) {
                 // get geo coordinates of this place
@@ -61,16 +33,7 @@ define(['./BaseModel'], function (Base) {
     }
 
     m2.getNameOfPlaceToPin = function () {
-        if (!this.trial.hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
-        if (typeof this.getPlaceToPinId() === 'undefined') throw Error ("Error: No place to pin set.")
-        for (var idx in this.places) {
-            var place = this.places[idx]
-            var currentPlaceId = place.childs['de.akmiraketen.webexp.place_id'].value
-            if (currentPlaceId === this.getPlaceToPinId()) {
-                // get name of this place
-                return place.childs['de.akmiraketen.webexp.place_name'].value
-            }   			
-        }
+        return m2.getNameOfPlace(m2.getPlaceToPinId())
     }
 
     return m2;

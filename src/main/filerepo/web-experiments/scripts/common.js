@@ -20,6 +20,7 @@ define(function () {
             var url = window.document.location.href
             var start = url.indexOf("trial/")
             var end = url.indexOf("/pinning")
+            if (end === -1) end = url.indexOf("/estimation")
             var id = url.substring(start + 6, end)
             if (this.debug) console.log("Trial ID is ", id)
             return parseInt(id)
