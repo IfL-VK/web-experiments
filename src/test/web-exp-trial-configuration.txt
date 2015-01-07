@@ -1,4 +1,4 @@
 webexp.config   | de.akmiraketen.webexp.trial_name      | de.akmiraketen.webexp.trial_map_id    | de.akmiraketen.webexp.trial_condition | de.akmiraketen.webexp.trial_place_to_pin  | de.akmiraketen.webexp.trial_place_from_1 | de.akmiraketen.webexp.trial_place_to_1 | de.akmiraketen.webexp.trial_place_from_2 | de.akmiraketen.webexp.trial_place_to_2 | de.akmiraketen.webexp.trial_place_from_3 | de.akmiraketen.webexp.trial_place_to_3 | de.akmiraketen.webexp.trial_place_from_4 | de.akmiraketen.webexp.trial_place_to_4 | de.akmiraketen.webexp.trial_place_from_5 | de.akmiraketen.webexp.trial_place_to_5 | de.akmiraketen.webexp.trial_memo_sec
 trial1          | Trial A   | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial2          | Trial B   | #Map2 | Indirect Pinning  | 2 | 1 | 3 | 2 | 1 | 3 | 1 | 0 | 0 | 4 | 2 | 60
-trial3          | Trial C   | #Map3 | 0                 | 0 | 1 | 2 | 2 | 3 | 0 | 0 | 0 | 0 | 4 | 2 | 30
+trial2          | Trial B   | #Map2 | No Pinning        | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 60
+trial3          | Trial C   | #Map3 | No Pinning        | 0 | 1 | 2 | 2 | 3 | 0 | 0 | 0 | 0 | 4 | 2 | 30

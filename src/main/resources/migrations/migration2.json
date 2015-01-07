@@ -1,8 +1,8 @@
 {
     "topic_types": [
         {
-            "value": "Trial Config: Condition Value",
-            "uri": "de.akmiraketen.webexp.condition_value_config",
+            "value": "Trial Report: Config ID",
+            "uri": "de.akmiraketen.webexp.report_trial_config_id",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -16,8 +16,8 @@
             ]
         },
         {
-            "value": "Trial Config: Place to pin",
-            "uri": "de.akmiraketen.webexp.place_to_pin_config",
+            "value": "Trial Report: Pinned coordinates",
+            "uri": "de.akmiraketen.webexp.report_pinned_coordinates",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -31,68 +31,8 @@
             ]
         },
         {
-            "value": "Pinned place: Coordinates",
-            "uri": "de.akmiraketen.webexp.pinned_coordinates",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Config: From Place",
-            "uri": "de.akmiraketen.webexp.from_place_config",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Config: To Place",
-            "uri": "de.akmiraketen.webexp.to_place_config",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Esimation: Coordinates",
-            "uri": "de.akmiraketen.webexp.estimation_coordinates",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Esimation: Number",
-            "uri": "de.akmiraketen.webexp.estimation_nr",
+            "value": "Trial Report: Pinning RT (ms)",
+            "uri": "de.akmiraketen.webexp.report_pinning_rt",
             "data_type_uri": "dm4.core.number",
             "view_config_topics": [
                 {
@@ -106,8 +46,23 @@
             ]
         },
         {
-            "value": "Difference in direction",
-            "uri": "de.akmiraketen.webexp.diff_in_direction",
+            "value": "Trial Report: Pinning count outside",
+            "uri": "de.akmiraketen.webexp.report_pinning_count_outside",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: From Place ID",
+            "uri": "de.akmiraketen.webexp.report_from_place_id",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -121,8 +76,8 @@
             ]
         },
         {
-            "value": "Real Distance",
-            "uri": "de.akmiraketen.webexp.real_distance",
+            "value": "Estimation Report: To Place ID",
+            "uri": "de.akmiraketen.webexp.report_to_place_id",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -136,8 +91,113 @@
             ]
         },
         {
-            "value": "Estimated Distance",
-            "uri": "de.akmiraketen.webexp.estimated_distance",
+            "value": "Estimation Report: Coordinates",
+            "uri": "de.akmiraketen.webexp.report_estimated_coordinates",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: To Start Time",
+            "uri": "de.akmiraketen.webexp.report_estimated_to_start_time",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Estimation Time",
+            "uri": "de.akmiraketen.webexp.report_estimation_time",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Estimation Confidence",
+            "uri": "de.akmiraketen.webexp.report_estimation_confidence",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report Nr.",
+            "uri": "de.akmiraketen.webexp.report_estimation_nr",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Difference in direction",
+            "uri": "de.akmiraketen.webexp.report_diff_in_direction",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Real distance",
+            "uri": "de.akmiraketen.webexp.report_real_distance",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Estimated Distance",
+            "uri": "de.akmiraketen.webexp.report_estimated_distance",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -156,43 +216,61 @@
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.estimation_nr",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimation_nr",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.from_place_config",
+                    "child_type_uri": "de.akmiraketen.webexp.report_from_place_id",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.to_place_config",
+                    "child_type_uri": "de.akmiraketen.webexp.report_to_place_id",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.estimation_coordinates",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimated_coordinates",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.diff_in_direction",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimated_to_start_time",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.real_distance",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimation_time",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.estimated_distance",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimation_confidence",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.report_diff_in_direction",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimated_distance",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.report_real_distance",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
@@ -215,19 +293,25 @@
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.condition_value_config",
+                    "child_type_uri": "de.akmiraketen.webexp.report_trial_config_id",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.place_to_pin_config",
+                    "child_type_uri": "de.akmiraketen.webexp.report_pinned_coordinates",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.pinned_coordinates",
+                    "child_type_uri": "de.akmiraketen.webexp.report_pinning_rt",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.report_pinning_count_outside",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"

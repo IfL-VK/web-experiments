@@ -7,8 +7,8 @@ define(function (require) {
     var leaflet     = require('leaflet')
     var common      = require('common')
 
-    var newCtrl     = require('./controller/estimationCtrl')
-    var newModel    = require('./model/estimationModel')
+    var control     = require('./controller/estimationCtrl')
+    var model       = require('./model/estimationModel')
 
     var map                         // map leaflet reference
     var placeFrom = {}              // configured place from
@@ -28,26 +28,38 @@ define(function (require) {
         init_user_view() // ### todo: load a users preferenced marker
         
         // 2 load trial config and then initialize pinning for this trial
-        newCtrl.fetchTrialConfig(trialId, function (response) {
+        control.fetchTrialConfig(trialId, function (response) {
             
             // 2.1 initialize estimation page view model
-            newModel.setTrialConfig(response)
-            newModel.setMapConfig(response.map_config)
-            newModel.setPlaces(response.place_config.items)
-            // 2.2. ### prepare all estimations
-            console.log(response)
+            model.setTrialConfig(response)
+            model.setMapConfig(response.map_config)
+            model.setPlaces(response.place_config.items)
+            model.setEstimations(response)
+
+            // 2.2 get first estimation "from" coordinates
+            var fromPlaceId = model.getFromPlaceOne()
+            var toPlaceId = model.getToPlaceOne()
+            // .. make sure all place details are configured (and thus loaded) for this map
+            var fromPlaceCoordinates = model.getCoordinatesOfPlace(fromPlaceId)
+            var toPlaceName = model.getNameOfPlace(toPlaceId)
+            // .. catch a possible mismatch if places used in this estimation config are not assigned 
+            //    are not (configured) for this map
+            if (typeof fromPlaceCoordinates === "undefined" || typeof toPlaceName === "undefined") {
+                throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
+                    + "(with ID= "+fromPlaceId+") configured for this estimation is not configured as "
+                    + " a place for this map (MapID:" + model.getMapConfigId()+")")
+            }
+            // 2.4 initialize leaflet container and task description according to map configuration
+            initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
+            init_task_description(fromPlaceId, toPlaceId)
             
-            // 2.2 initialize leaflet container according to map configuration
-            initialize_map("Trial1/Blank-Karte.png")
-            init_task_description()
-            
-            // 2.3 init pinning according to configured trial condition
+            // 2.5 init pinning according to configured trial condition
             // ... override default memo time with time for memo configured in trial
-            var memo_seconds = newModel.getTrialConfig()['trial_config']['memo_seconds']
+            var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
                 memorize.time = (memo_seconds * 1000)
 
             // 3 initialize estimation features
-            initialize_estimation_features()
+            initialize_estimation_features(fromPlaceCoordinates, 1)
             
         }, common.debug)
 
@@ -57,20 +69,21 @@ define(function (require) {
     // ---- Estimation Map View ----
     // --
 
-    function initialize_map(blank_image_path) { // ### refactor to base? there is a duplicate in pinning
+    function initialize_map(blank_image_path, placeToStartFrom) { // ### refactor to base? there is a duplicate in pinning
 
         // ------- Leaflet Map Setup -----
-
-        var mapConfig = newModel.getMapConfig().childs
+        
+        var mapConfig = model.getMapConfig().childs
         var mapId = mapConfig['de.akmiraketen.webexp.trial_map_id'].value
         if (common.debug) console.log("   init "+mapId+" config", mapConfig)
         var centerLat, centerLng, zoomLevel, fileName;
         try {
-            centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
-            centerLng = mapConfig['de.akmiraketen.webexp.trial_map_center_lng'].value
+            centerLat = placeToStartFrom['latitude']
+            centerLng = placeToStartFrom['longitude']
             zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
             fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
         } catch (error) {
+            console.log(error)
             throw Error ("Map File config for " + mapId + " is missing a value.")
         }
         if (common.debug) console.log(" pinning: loaded map config for MapID:", mapId)
@@ -90,7 +103,7 @@ define(function (require) {
             tileLayer.addTo(map)
         // uncomment the following linces to use bitmap map-files instead of tiles
         // ### use blank screen
-        if (blank_image_path) {
+        /** if (blank_image_path) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
@@ -100,7 +113,7 @@ define(function (require) {
                 // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
-        }
+        } **/
     }
 
 
@@ -108,11 +121,12 @@ define(function (require) {
     // ---- Estimation Screen ----
     // --
 
-    function initialize_estimation_features () {
+    function initialize_estimation_features (fromPlace, estimationId) {
 
-        var centerLat = 52.955304
-        var centerLng = 8.326077
+        // 1 --- estimation setup ---
         
+        var centerLat = fromPlace['latitude']
+        var centerLng = fromPlace['longitude']
         /** var labelMarker = L.marker([centerLat, centerLng], {
                 zIndexOffset: -1
             })
@@ -121,7 +135,6 @@ define(function (require) {
             })
             labelMarker.addTo(map) **/
         var startPoint = L.circle([centerLat, centerLng], 140, { fill: true, fillColor: 'black', weight: 5, color: 'gray', opacity: 1 })
-
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)
         // var pointB = L.latLng(centerLat, centerLng)
@@ -130,12 +143,18 @@ define(function (require) {
                 color: 'grey', weight: 8, opacity: 1
                 
             })
-            // polyline.showExtremities('arrowM');
+            // ### external plugin .. polyline.showExtremities('arrowM');
             
+        var featureGroup = L.featureGroup()
+            polyline.addTo(featureGroup)
+            startPoint.addTo(featureGroup)
+            featureGroup.addTo(map)
+        
+
+        // 2 --- estimation interaction handler ---
+        
         var isDrawing = false
         
-        var featureGroup = L.featureGroup()
-            
             startPoint.on('mousedown', function(e) {
                 updateEndPointOfPolyline(e)
                 isDrawing = true
@@ -148,7 +167,16 @@ define(function (require) {
             map.on('mouseup', function(e) {
                 if (isDrawing) {
                     isDrawing = false
-                    calculateDistance()
+                    var estimatedCoordinates = calculateDistance()
+                        var lat = estimatedCoordinates.lat
+                        var lng = estimatedCoordinates.lng
+                        var data = {
+                            "latitude": lat, "longitude": lng,
+                            "to_start_time": -1, "estimation_time": -1
+                        }
+                        control.postEstimationReport(trialId, estimationId, data, undefined, function (error) {
+                            console.log("FAIL - Estimated coordinates could not be saved!")
+                        }, false)
                 }
             })
             
@@ -159,76 +187,35 @@ define(function (require) {
         function calculateDistance() {
             // 
             var els = polyline.getLatLngs()
+            var fromPlace = els[0]
+            var toPlace = els[1]
             // Returns the distance (in meters) to the given LatLng calculated 
                 // using the Haversine formula. See description on
      	    // http://en.wikipedia.org/wiki/Haversine_formula
-     	    var meters = Math.round(els[0].distanceTo(els[1]))
+     	    var meters = Math.round(fromPlace.distanceTo(toPlace))
             // ### report values as results / write values into trial report
-            set_task_description("Result: " + (meters / 1000).toFixed(1) + " Kilometer")
-             	
+            return toPlace
         }
 
-        polyline.addTo(featureGroup)
-        startPoint.addTo(featureGroup)
-        featureGroup.addTo(map)
-
     }
 
-    function initialize_pinning_features () {
-
-        place.lat = 52.991019
-        place.lng = 8.272516
-
-        var featureGroup = L.featureGroup()
-        
-        map.on('click', function (e) {
-            if (isClickNearby(place, e)) {
-                // console.log("Active control pressed")
-                var marker = L.marker([place.lat, place.lng])
-                    marker.addTo(featureGroup)
-                runMemorizationTimer()
-            }
-        })
-        featureGroup.addTo(map)
-    }
-    
-    function init_task_description () {
-        // ### 
-        /** var placeFrom = -1
-        var placeTo = -1
-        d3.select('i.from-place').text(newModel.getNameOfPlace())
-        d3.select('i.to-place').text(newModel.getNameOfPlace()) **/
+    function init_task_description (fromId, toId) {
+        d3.select('i.from-place').text(model.getNameOfPlace(fromId))
+        d3.select('i.to-place').text(model.getNameOfPlace(toId))
     }
 
     function init_user_view () {
-        newCtrl.fetchUser(function (data) {
+        control.fetchUser(function (data) {
             // 
             var username = data
             d3.select('.username').text(username)
             // OK
-            newModel.setUsername(username)
+            model.setUsername(username)
 
         }, false)
     }
     
     // ------ Helper Methods
-    
-    function is_click_nearby(event) {
-        var southWest = L.latLng(place_to_pin.lat - 0.005, place_to_pin.lng - 0.005)
-        var northEast = L.latLng(place_to_pin.lat + 0.005, place_to_pin.lng + 0.005)
-        var activeControl = L.latLngBounds(southWest, northEast)
-        return activeControl.contains(event.latlng)
-    }
-
-    function run_timer(seconds) {
-        if (typeof seconds === "undefined") 
-        set_task_description("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
-        setTimeout(function (e) {
-            window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
-        }, memorize.time)
-    
-        if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
-    }
     
     function set_task_description (message) {
         document.getElementById("title").innerHTML = message 

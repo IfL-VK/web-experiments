@@ -48,7 +48,7 @@ define(function (require) {
             var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
             if (common.debug) console.log(" trial condition:", pinning_condition)
             
-            if (pinning_condition === "") {
+            if (pinning_condition === "webexp.config.no_pinning") {
                 if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
                 run_timer()
             } else if (pinning_condition === "webexp.config.pinning") {

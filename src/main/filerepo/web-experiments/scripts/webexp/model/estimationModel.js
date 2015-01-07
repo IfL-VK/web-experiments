@@ -6,6 +6,37 @@ define(['./BaseModel'], function (Base) {
     var fromPlaceOne    = -1
     var toPlaceOne      = -1
     
+    var fromPlaceTwo    = -1
+    var toPlaceTwo      = -1
+    
+    var fromPlaceThree  = -1
+    var toPlaceThree    = -1
+
+    var fromPlaceFour   = -1
+    var toPlaceFour     = -1
+    
+    var fromPlaceFive   = -1
+    var toPlaceFive     = -1
+    
+    m2.setEstimations = function (trialConfig) {
+        
+        this.setFromPlaceOne(trialConfig['from_place1'])
+        this.setToPlaceOne(trialConfig['to_place1'])
+        
+        this.setFromPlaceTwo(trialConfig['from_place2'])
+        this.setToPlaceTwo(trialConfig['to_place2'])
+        
+        this.setFromPlaceThree(trialConfig['from_place3'])
+        this.setToPlaceThree(trialConfig['to_place3'])
+        
+        this.setFromPlaceFour(trialConfig['from_place4'])
+        this.setToPlaceFour(trialConfig['to_place4'])
+        
+        this.setFromPlaceFive(trialConfig['from_place5'])
+        this.setToPlaceFive(trialConfig['to_place5'])
+        
+    }
+    
     m2.setFromPlaceOne = function (placeId) {
         fromPlaceOne = placeId
     }
@@ -22,9 +53,6 @@ define(['./BaseModel'], function (Base) {
         return toPlaceOne
     }
     
-    var fromPlaceTwo    = -1
-    var toPlaceTwo      = -1
-    
     m2.setFromPlaceTwo = function (placeId) {
         fromPlaceTwo = placeId
     }
@@ -40,10 +68,7 @@ define(['./BaseModel'], function (Base) {
     m2.getToPlaceTwo = function () {
         return toPlaceTwo
     }
-    
-    var fromPlaceThree  = -1
-    var toPlaceThree    = -1
-    
+
     m2.setFromPlaceThree = function (placeId) {
         fromPlaceThree = placeId
     }
@@ -60,9 +85,6 @@ define(['./BaseModel'], function (Base) {
         return toPlaceThree
     }
     
-    var fromPlaceFour   = -1
-    var toPlaceFour     = -1
-    
     m2.setFromPlaceFour = function (placeId) {
         fromPlaceFour = placeId
     }
@@ -78,9 +100,6 @@ define(['./BaseModel'], function (Base) {
     m2.getToPlaceFour = function () {
         return toPlaceFour
     }
-    
-    var fromPlaceFive   = -1
-    var toPlaceFive     = -1
     
     m2.setFromPlaceFive = function (placeId) {
         fromPlaceFive = placeId

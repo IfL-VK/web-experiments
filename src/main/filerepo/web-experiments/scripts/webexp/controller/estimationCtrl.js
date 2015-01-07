@@ -5,7 +5,10 @@ define(['./BaseCtrl'], function (BaseCtrl) {
 
     // Extending BaseCtrl module for new page/app specific controls
 
-
+    customCtrl.postEstimationReport = function (trialId, estimationNr, data, handle, fail, debug) {
+        customCtrl.restc.postEstimationReport(trialId, estimationNr, data, handle, fail, debug)
+    }
+    
     return customCtrl
 
 });

@@ -21,12 +21,14 @@ body {
 }
 
 .estimation .window {
-    width: 1180px;
-    height: 800px;
+    width: 1200px;
 }
 
-.estimation .window #map {
+.estimation #map {
     border: 1px solid #fff;
+    width: 1200px;
+    height: 750px;
+    margin: auto;
 }
 
 #map {

@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 
 
@@ -267,11 +269,44 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     @GET
     @Path("/trial/{trialId}")
-    public TrialConfigViewModel getFullTrialConfigTopic(@PathParam("trialId") long id) {
+    public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
         return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
     }
     
+    @POST
+    @Path("/estimation/{trialId}/{estimationNr}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public void storeEstimationReport(String payload, @PathParam("trialId") long trialId, 
+            @PathParam("estimationNr") long estimation) {
+        Topic user = getRequestingUser();
+        try {
+            // 
+            log.info("DEBUG-POST: " + payload);
+            JSONObject data = new JSONObject(payload);
+            Topic trialConfig = getTrialConfigTopic(trialId);
+            // 
+            String latitude = data.getString("latitude");
+            String longitude = data.getString("longitude");
+            log.info("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
+                    + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+        } catch (JSONException e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to parse estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
+               500);
+        } catch (Exception e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(e, 500);
+        }
+    }
+    
     // --- Private Helpers
+    
+    public Topic getTrialConfigTopic(@PathParam("trialId") long id) {
+        return dms.getTopic(id).loadChildTopics();
+    }
     
     private Topic getRequestingUser() {
         String username = acService.getUsername();

@@ -47,7 +47,7 @@
             ]
         },
         {
-            "value": "Trial Map Scale",
+            "value": "Trial Map Zoom Level",
             "uri": "de.akmiraketen.webexp.trial_map_scale",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
@@ -570,8 +570,8 @@
         },
         {
             "type_uri"  : "de.akmiraketen.webexp.trial_condition",
-            "uri"       : "webexp.config.indirect_pinning",
-            "value"     : "Indirect Pinning"
+            "uri"       : "webexp.config.no_pinning",
+            "value"     : "No Pinning"
         }
     ]
 }

@@ -49,6 +49,21 @@ define(function () {
                 }
             }
         },
+        getCoordinatesOfPlace: function (placeId) {
+            if (!trial.hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
+            if (places.length === 0) throw Error ("Error: No places loaded.")
+            for (var idx in places) {
+                var place = places[idx]
+                var currentPlaceId = place.childs['de.akmiraketen.webexp.place_id'].value
+                if (currentPlaceId === placeId) {
+                    // get geo coordinates of this place
+                    return {
+                        "latitude" :  place.childs['de.akmiraketen.webexp.place_latitude'].value,
+                        "longitude" : place.childs['de.akmiraketen.webexp.place_longitude'].value
+                    }
+                }   			
+            }
+        },
         getTitle: function () {
             return title
         },
