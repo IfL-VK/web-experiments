@@ -196,7 +196,7 @@
             ]
         },
         {
-            "value": "Estimation Report: Estimated Distance",
+            "value": "Estimation Report: Estimated Distance (m)",
             "uri": "de.akmiraketen.webexp.report_estimated_distance",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [

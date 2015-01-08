@@ -16,6 +16,17 @@ define(function (require) {
     var memorize = { time: 15000 }  // configured time for memorization (trial)
     var trialId = -1
 
+    var timerId = setInterval(count_to_start_time, 500)
+    var report = {
+        "from_place_id": 0,
+        "to_place_id": 0,
+        "to_start_time": 0,
+        "estimation_time": 0,
+        "estimated_distance": 0,
+        "geo_coordinates": {
+            "latitude": -1, "longitude" : -1
+        }
+    }
 
     // ------ Initialization of client-side data for estimation
 
@@ -37,21 +48,21 @@ define(function (require) {
             model.setEstimations(response)
 
             // 2.2 get first estimation "from" coordinates
-            var fromPlaceId = model.getFromPlaceOne()
-            var toPlaceId = model.getToPlaceOne()
+            report.from_place_id = model.getFromPlaceOne()
+            report.to_place_id = model.getToPlaceOne()
             // .. make sure all place details are configured (and thus loaded) for this map
-            var fromPlaceCoordinates = model.getCoordinatesOfPlace(fromPlaceId)
-            var toPlaceName = model.getNameOfPlace(toPlaceId)
+            var fromPlaceCoordinates = model.getCoordinatesOfPlace(report.from_place_id)
+            var toPlaceName = model.getNameOfPlace(report.to_place_id)
             // .. catch a possible mismatch if places used in this estimation config are not assigned 
             //    are not (configured) for this map
             if (typeof fromPlaceCoordinates === "undefined" || typeof toPlaceName === "undefined") {
                 throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
-                    + "(with ID= "+fromPlaceId+") configured for this estimation is not configured as "
+                    + "(with ID= "+report.from_place_id+") configured for this estimation is not configured as "
                     + " a place for this map (MapID:" + model.getMapConfigId()+")")
             }
             // 2.4 initialize leaflet container and task description according to map configuration
             initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
-            init_task_description(fromPlaceId, toPlaceId)
+            init_task_description(report.from_place_id, report.to_place_id)
             
             // 2.5 init pinning according to configured trial condition
             // ... override default memo time with time for memo configured in trial
@@ -159,6 +170,8 @@ define(function (require) {
             startPoint.on('mousedown', function(e) {
                 updateEndPointOfPolyline(e)
                 isDrawing = true
+                stop_reaction_interval(timerId)
+                timerId = setInterval(count_estimation_time, 100)
             })
             
             map.on('mousemove', function(e) {
@@ -168,14 +181,10 @@ define(function (require) {
             map.on('mouseup', function(e) {
                 if (isDrawing) {
                     isDrawing = false
+                    stop_reaction_interval(timerId)
                     var estimatedCoordinates = calculateDistance()
-                        var lat = estimatedCoordinates.lat
-                        var lng = estimatedCoordinates.lng
-                        var data = {
-                            "latitude": lat, "longitude": lng,
-                            "to_start_time": -1, "estimation_time": -1
-                        }
-                        control.postEstimationReport(trialId, estimationId, data, undefined, function (error) {
+                        set_geo_coordinates(estimatedCoordinates)
+                        control.postEstimationReport(trialId, estimationId, report, undefined, function (error) {
                             console.log("FAIL - Estimated coordinates could not be saved!")
                         }, false)
                 }
@@ -194,6 +203,7 @@ define(function (require) {
                 // using the Haversine formula. See description on
      	    // http://en.wikipedia.org/wiki/Haversine_formula
      	    var meters = Math.round(fromPlace.distanceTo(toPlace))
+            set_estimated_distance(meters)
             // ### report values as results / write values into trial report
             return toPlace
         }
@@ -217,6 +227,30 @@ define(function (require) {
     }
     
     // ------ Helper Methods
+    
+    function count_estimation_time() {
+        report.estimation_time += 100
+    }
+    
+    function count_to_start_time() {
+        report.to_start_time += 500
+    }
+    
+    function stop_reaction_interval(intervalId) {
+        console.log(" reaction time was: " + report.to_start_time + " and " + report.estimation_time)
+        clearInterval(intervalId)
+    }
+    
+    function set_geo_coordinates (object) {
+        console.log(" estimated coordinate was: " + object)
+        report.geo_coordinates.latitude = object.lat
+        report.geo_coordinates.longitude = object.lng
+    }
+    
+    function set_estimated_distance (value) {
+        console.log(" estimated distance was: " + value)
+        report.estimated_distance = value
+    }
     
     function set_task_description (message) {
         document.getElementById("title").innerHTML = message 

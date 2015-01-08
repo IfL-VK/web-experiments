@@ -22,15 +22,16 @@ import de.deepamehta.plugins.files.ItemKind;
 import de.deepamehta.plugins.files.service.FilesService;
 import java.io.File;
 import java.io.InputStream;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -74,6 +75,23 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TRIAL_CONFIG_TYPE = "de.akmiraketen.webexp.trial_config";
     private static final String TRIAL_SEEN_EDGE_TYPE = "de.akmiraketen.webexp.trial_seen_edge";
     private static final String MARKER_CONFIG_EDGE_TYPE = "de.akmiraketen.webexp.config_marker_symbol";
+    
+    // ----- Trial Pinning Report URIs
+    
+    private static final String COORDINATES_PINNED_URI = "de.akmiraketen.webexp.report_pinned_coordinates";
+    private static final String REACTION_TIME_URI = "de.akmiraketen.webexp.report_pinning_rt";
+    private static final String COUNT_OUTSIDE_URI = "de.akmiraketen.webexp.report_pinning_count_outside";
+    
+    // ----- Trial Estimation Report URIs
+    
+    private static final String ESTIMATION_REPORT_URI = "de.akmiraketen.webexp.trial_estimation_report";
+    private static final String ESTIMATION_NR_URI = "de.akmiraketen.webexp.report_estimation_nr";
+    private static final String COORDINATES_URI = "de.akmiraketen.webexp.report_estimated_coordinates";
+    private static final String ESTIMATED_DISTANCE_URI = "de.akmiraketen.webexp.report_estimated_distance";
+    private static final String TO_START_TIME_URI = "de.akmiraketen.webexp.report_estimated_to_start_time";
+    private static final String ESTIMATION_TIME_URI = "de.akmiraketen.webexp.report_estimation_time";
+    private static final String FROM_PLACE_URI = "de.akmiraketen.webexp.report_from_place_id";
+    private static final String TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
     
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
 
@@ -279,23 +297,65 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     public void storeEstimationReport(String payload, @PathParam("trialId") long trialId, 
-            @PathParam("estimationNr") long estimation) {
+            @PathParam("estimationNr") int estimation) {
         Topic user = getRequestingUser();
         try {
-            // 
+            // 1 Parse POST Request
             log.info("POST Estimation: " + payload);
             JSONObject data = new JSONObject(payload);
             Topic trialConfig = getTrialConfigTopic(trialId);
-            // 
-            String latitude = data.getString("latitude");
-            String longitude = data.getString("longitude");
+            JSONObject coordinates = data.getJSONObject("geo_coordinates");
+            String latitude = coordinates.getString("latitude");
+            String longitude = coordinates.getString("longitude");
+            String fromPlaceId = data.getString("from_place_id");
+            String toPlaceId = data.getString("to_place_id");
+            int estimatedDistance = data.getInt("estimated_distance");
+            int toStartTime = data.getInt("to_start_time");
+            int estimationTime = data.getInt("estimation_time");
             log.info("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
                     + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+            // 2 Check consistency of this request for reporting
+            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
+            List<Topic> estimations = null;
+            report.loadChildTopics(ESTIMATION_REPORT_URI);
+            if (report.getChildTopics().has(ESTIMATION_REPORT_URI)) {
+                estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                log.info("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                for (Topic estimationReport : estimations) {
+                    estimationReport.loadChildTopics(ESTIMATION_NR_URI);
+                    int eNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
+                    if (eNr == estimation) throw new InvalidParameterException("A trial estimation report "
+                            + "already exists for this user, trial and estimation nr!");
+                }
+            } else {
+                log.info("Trial report has NO  estimation reports associated.. ");
+            }
+            // 3 Start to build up new trial estimation report
+            ChildTopicsModel values = new ChildTopicsModel()
+                .put(COORDINATES_URI, latitude + ";" + longitude)
+                .put(FROM_PLACE_URI, fromPlaceId)
+                .put(TO_PLACE_URI, toPlaceId)
+                .put(TO_START_TIME_URI, toStartTime)
+                .put(ESTIMATION_TIME_URI, estimationTime)
+                .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
+                .put(ESTIMATION_NR_URI, estimation);
+            TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
+            // 4 assign new trial estimation report to trial report
+            report.setChildTopics(new ChildTopicsModel()
+                .add(ESTIMATION_REPORT_URI, estimationModel));
+            // sanity check for the log s
+            estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+            log.info("NOW Trial report has " + estimations.size()+ " estimation reports associated.. ");
+            /** ChildTopicsModel reportModel = report.getChildTopics().getModel();
+                reportModel.add(ESTIMATION_REPORT_URI, estimationModel);
+            report.setChildTopics(reportModel); **/
         } catch (JSONException e) {
             // ### store estimation in trial report for user
             log.warning("Failed to parse estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
             throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
                500);
+        } catch (InvalidParameterException ipe) {
+            throw new WebApplicationException(ipe, Response.Status.BAD_REQUEST);
         } catch (Exception e) {
             // ### store estimation in trial report for user
             log.warning("Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
@@ -322,14 +382,11 @@ public class WebExperimentsPlugin extends PluginActivator {
             log.info("Pinned Coordinates are \"" + latitude + "," 
                     + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
             // 2 Start new trial report
-            Topic report = getOrCreateTrialPinningReportTopic(trialId);
-            String coordinates_uri = "de.akmiraketen.webexp.report_pinned_coordinates";
-            String rt_uri = "de.akmiraketen.webexp.report_pinning_rt";
-            String count_uri = "de.akmiraketen.webexp.report_pinning_count_outside";
+            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
             ChildTopicsModel values = new ChildTopicsModel()
-                .put(coordinates_uri, latitude + ";" + longitude)
-                .put(rt_uri, reactionTime)
-                .put(count_uri, countClickOutside);
+                .put(COORDINATES_PINNED_URI, latitude + ";" + longitude)
+                .put(REACTION_TIME_URI, reactionTime)
+                .put(COUNT_OUTSIDE_URI, countClickOutside);
             report.setChildTopics(values);
         } catch (JSONException e) {
             // ### store estimation in trial report for user
@@ -343,25 +400,34 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
     
-    
-    private Topic getOrCreateTrialPinningReportTopic (long trialId) {
+    private Topic getOrCreateTrialPinningReportTopic (long trialId, Topic user) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         Topic report = null;
         String trialConfigUri = dms.getTopic(trialId).getUri();
-        log.info("Processing Trial Report for Trial : " + trialConfigUri);
-        Topic trialReport = dms.getTopic("de.akmiraketen.webexp.report_trial_config_id", 
-                new SimpleValue(trialConfigUri));
-        if (trialReport != null) {
-            log.warning("Trial Report was already started ... re-sing existing one!");
-            report = trialReport.getRelatedTopic("dm4.core.composition", "dm4.core.child", "dm4.core.parent", 
-                    "de.akmiraketen.webexp.trial_report");
+        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+        ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
+                "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
+        for (RelatedTopic trialReport : trialReports) {
+            String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+            if (trialConfigUri.equals(trial)) {
+                log.info("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+                return trialReport;
+            }
         }
         try {
+            log.info("Creating new Trial Report for user " + user.getSimpleValue() + " and Trial " + trialConfigUri);
             ChildTopicsModel child = new ChildTopicsModel(new JSONObject()
                     .put("de.akmiraketen.webexp.report_trial_config_id", trialConfigUri));
             TopicModel model = new TopicModel("de.akmiraketen.webexp.trial_report", child);
             report = dms.createTopic(model);
+            dms.createAssociation(new AssociationModel("dm4.core.association", 
+                    new TopicRoleModel(user.getId(), "dm4.core.parent"), 
+                    new TopicRoleModel(report.getId(), "dm4.core.child")));
+            tx.success();
         } catch (JSONException ex) {
-            Logger.getLogger(WebExperimentsPlugin.class.getName()).log(Level.SEVERE, null, ex);
+            log.severe("Could not create a Trial Report for user ..");
+        } finally {
+            tx.finish();
         }
         return report;
     }
