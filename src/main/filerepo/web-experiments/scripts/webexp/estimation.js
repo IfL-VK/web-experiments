@@ -97,8 +97,9 @@ define(function (require) {
         map.setView([centerLat, centerLng], zoomLevel)
         // ### fixme: find maptile layer 
         // .. add an OpenStreetMap tile layer
-        var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.ed29b27e/{z}/{x}/{y}.png?'
+                + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
+                attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
         // uncomment the following linces to use bitmap map-files instead of tiles

@@ -14,6 +14,15 @@ define(function (require) {
     var place_to_pin = {}           // configured place to pin geo-coordinates
     var memorize = { time: 15000 }  // configured time for memorization (trial)
     var trialId = -1
+    
+    var timerId = setInterval(count_reaction_time, 500)
+    var report = {
+        "count_click_outside": 0,
+        "reaction_time": 0,
+        "geo_coordinates": {
+            "latitude": -1, "longitude" : -1
+        }
+    }
 
 
     // ------ Initialization of client-side data for pinning
@@ -47,7 +56,6 @@ define(function (require) {
             // ... switch per trial condition
             var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
             if (common.debug) console.log(" trial condition:", pinning_condition)
-            
             if (pinning_condition === "webexp.config.no_pinning") {
                 if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
                 run_timer()
@@ -95,8 +103,9 @@ define(function (require) {
         map.setView([centerLat, centerLng], zoomLevel)
         // ### fixme: find maptile layer 
         // .. add an OpenStreetMap tile layer
-        var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.ed29b27e/{z}/{x}/{y}.png?'
+                + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
+                attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
         // uncomment the following linces to use bitmap map-files instead of tiles
@@ -135,18 +144,25 @@ define(function (require) {
         check_place_to_pin_configuration()
         
         var featureGroup = L.featureGroup()
-        var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
-
-        if (common.debug) marker.addTo(featureGroup)
+        // var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
+        // if (common.debug) marker.addTo(featureGroup)
 
         map.on('click', function (e) {
             if (common.verbose) console.log("  map clicked: " + e.latlng + " (vs.) " + place_to_pin.lat + ", " + place_to_pin.lng)
             if (is_click_nearby(e)) {
-                if (common.verbose) console.log("  active control clicked - pinned")
+                if (common.verbose) console.log(" active control clicked - pinned")
+                // do set values into report
+                set_geo_coordinates(e.latlng)
+                stop_reaction_interval(timerId)
+                control.postPinningReport(trialId, report, undefined, function (error) {
+                    console.warn(error)
+                }, common.debug)
                 // ### fixme: do not at marker (if already present) again
-                var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
+                var marker = L.marker([e.latlng.lat, e.latlng.lng])
                     marker.addTo(featureGroup)
                 run_timer()
+            } else {
+                click_count_outside_increase()
             }
         })
         
@@ -198,6 +214,25 @@ define(function (require) {
     
     function set_task_description (message) {
         document.getElementById("title").innerHTML = message 
+    }
+    
+    function click_count_outside_increase() {
+        report.count_click_outside++
+    }
+    
+    function count_reaction_time() {
+        report.reaction_time += 500
+    }
+    
+    function stop_reaction_interval(intervalId) {
+        console.log(" reaction time was: " + report.reaction_time)
+        clearInterval(intervalId)
+    }
+    
+    function set_geo_coordinates (object) {
+        console.log(" click count outside was: " + report.count_click_outside)
+        report.geo_coordinates.latitude = object.lat
+        report.geo_coordinates.longitude = object.lng
     }
 
     // --- Run this script when it is called/loaded

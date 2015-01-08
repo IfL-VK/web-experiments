@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -282,7 +283,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic user = getRequestingUser();
         try {
             // 
-            log.info("DEBUG-POST: " + payload);
+            log.info("POST Estimation: " + payload);
             JSONObject data = new JSONObject(payload);
             Topic trialConfig = getTrialConfigTopic(trialId);
             // 
@@ -302,7 +303,70 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
     
-    // --- Private Helpers
+    @POST
+    @Path("/pinning/{trialId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public void storePinningData(String payload, @PathParam("trialId") long trialId) {
+        Topic user = getRequestingUser();
+        try {
+            // 1 Parse data of POST request
+            log.info("POST Pinning: " + payload);
+            JSONObject data = new JSONObject(payload);
+            Topic trialConfig = getTrialConfigTopic(trialId);
+            JSONObject coordinates = data.getJSONObject("geo_coordinates");
+            int countClickOutside = data.getInt("count_click_outside");
+            int reactionTime = data.getInt("reaction_time");
+            String latitude = coordinates.getString("latitude");
+            String longitude = coordinates.getString("longitude");
+            log.info("Pinned Coordinates are \"" + latitude + "," 
+                    + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+            // 2 Start new trial report
+            Topic report = getOrCreateTrialPinningReportTopic(trialId);
+            String coordinates_uri = "de.akmiraketen.webexp.report_pinned_coordinates";
+            String rt_uri = "de.akmiraketen.webexp.report_pinning_rt";
+            String count_uri = "de.akmiraketen.webexp.report_pinning_count_outside";
+            ChildTopicsModel values = new ChildTopicsModel()
+                .put(coordinates_uri, latitude + ";" + longitude)
+                .put(rt_uri, reactionTime)
+                .put(count_uri, countClickOutside);
+            report.setChildTopics(values);
+        } catch (JSONException e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to parse pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
+               500);
+        } catch (Exception e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to store pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(e, 500);
+        }
+    }
+    
+    
+    private Topic getOrCreateTrialPinningReportTopic (long trialId) {
+        Topic report = null;
+        String trialConfigUri = dms.getTopic(trialId).getUri();
+        log.info("Processing Trial Report for Trial : " + trialConfigUri);
+        Topic trialReport = dms.getTopic("de.akmiraketen.webexp.report_trial_config_id", 
+                new SimpleValue(trialConfigUri));
+        if (trialReport != null) {
+            log.warning("Trial Report was already started ... re-sing existing one!");
+            report = trialReport.getRelatedTopic("dm4.core.composition", "dm4.core.child", "dm4.core.parent", 
+                    "de.akmiraketen.webexp.trial_report");
+        }
+        try {
+            ChildTopicsModel child = new ChildTopicsModel(new JSONObject()
+                    .put("de.akmiraketen.webexp.report_trial_config_id", trialConfigUri));
+            TopicModel model = new TopicModel("de.akmiraketen.webexp.trial_report", child);
+            report = dms.createTopic(model);
+        } catch (JSONException ex) {
+            Logger.getLogger(WebExperimentsPlugin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return report;
+    }
+    
+    // --- Helper Methods
     
     public Topic getTrialConfigTopic(@PathParam("trialId") long id) {
         return dms.getTopic(id).loadChildTopics();

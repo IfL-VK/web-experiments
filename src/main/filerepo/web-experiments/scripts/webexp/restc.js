@@ -42,7 +42,7 @@ define(['d3'], function (d3, require) {
             })
             xhr.on('error', function (e) {
                 console.warn(e.status, e.statusText)
-                fail(e)
+                if (typeof fail !== "undefined") fail(e)
             })
     }
 
@@ -69,7 +69,10 @@ define(['d3'], function (d3, require) {
         },
         postEstimationReport: function (trialId, estimationNr, payload, handle, fail, debug) {
             post('/web-exp/estimation/' + trialId + '/' + estimationNr, payload, handle, fail, false, debug)
-        }
+        },
+        postPinningReport: function (trialId, payload, handle, fail, debug) {
+            post('/web-exp/pinning/' + trialId, payload, handle, fail, false, debug)
+        },
 
     }
 
