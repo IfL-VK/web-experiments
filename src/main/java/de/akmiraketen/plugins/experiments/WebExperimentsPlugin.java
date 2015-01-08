@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -204,8 +205,8 @@ public class WebExperimentsPlugin extends PluginActivator {
     public Topic chooseSymbolFile(@PathParam("fileName") String fileName) {
         log.info("Setting Marker for User: " + acService.getUsername() + " fileName: " + fileName);
         Topic relatedIconTopic = null;
+        Topic username = getRequestingUser();
         try {
-            Topic username = getRequestingUser(); // throws RE
             relatedIconTopic = getSymbolFileTopic(SYMBOL_FOLDER + "/" + fileName); // throws FREs
             log.info("Icon topic to be related is " + relatedIconTopic.getId());
             assignNewMarkerSymbolToUsername(relatedIconTopic, username);
@@ -290,6 +291,33 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/{trialId}")
     public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
         return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
+    }
+    
+    @GET
+    @Path("/estimation/next/{trialId}")
+    public int getNextTrialEstimationNr(@PathParam("trialId") long id) {
+        Topic user = getRequestingUser();
+        String trialConfigUri = dms.getTopic(id).getUri();
+        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+        ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
+                "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
+        int count = 1; // default estimation is first
+        for (RelatedTopic trialReport : trialReports) {
+            String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+            if (trialConfigUri.equals(trial)) {
+                log.info("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+                trialReport.loadChildTopics(ESTIMATION_REPORT_URI);
+                if (trialReport.getChildTopics().has(ESTIMATION_REPORT_URI)) {
+                    List<Topic> estimations = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                    log.info("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                    count = estimations.size() + 1; // number of next estimation for this user and this trial
+                }
+                return count;
+            } else {
+                log.info("Next Estimation Debug: " + trialConfigUri + " === " + trial);
+            }
+        }
+        return count;
     }
     
     @POST
@@ -400,6 +428,8 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
     
+    // --- Helper Methods
+    
     private Topic getOrCreateTrialPinningReportTopic (long trialId, Topic user) {
         DeepaMehtaTransaction tx = dms.beginTx();
         Topic report = null;
@@ -432,15 +462,15 @@ public class WebExperimentsPlugin extends PluginActivator {
         return report;
     }
     
-    // --- Helper Methods
-    
     public Topic getTrialConfigTopic(@PathParam("trialId") long id) {
         return dms.getTopic(id).loadChildTopics();
     }
     
     private Topic getRequestingUser() {
         String username = acService.getUsername();
-        if (username.isEmpty()) throw new RuntimeException("Not logged in.");
+        if (username == null || username.isEmpty()) {
+            throw new WebApplicationException(Status.UNAUTHORIZED);
+        }
         return dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
     }
     

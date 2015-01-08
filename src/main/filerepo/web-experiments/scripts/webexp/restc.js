@@ -67,6 +67,10 @@ define(['d3'], function (d3, require) {
             //
             fetch('/web-exp/trial/' + trialId, handle, true, debug)
         },
+        fetchNextEstimationNr: function (trialId, handle, debug) {
+            //
+            fetch('/web-exp/estimation/next/' + trialId, handle, true, debug)
+        },
         postEstimationReport: function (trialId, estimationNr, payload, handle, fail, debug) {
             post('/web-exp/estimation/' + trialId + '/' + estimationNr, payload, handle, fail, false, debug)
         },

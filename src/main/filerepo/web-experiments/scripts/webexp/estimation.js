@@ -27,6 +27,8 @@ define(function (require) {
             "latitude": -1, "longitude" : -1
         }
     }
+    
+    var estimationNr = 1
 
     // ------ Initialization of client-side data for estimation
 
@@ -46,31 +48,40 @@ define(function (require) {
             model.setMapConfig(response.map_config)
             model.setPlaces(response.place_config.items)
             model.setEstimations(response)
-
-            // 2.2 get first estimation "from" coordinates
-            report.from_place_id = model.getFromPlaceOne()
-            report.to_place_id = model.getToPlaceOne()
-            // .. make sure all place details are configured (and thus loaded) for this map
-            var fromPlaceCoordinates = model.getCoordinatesOfPlace(report.from_place_id)
-            var toPlaceName = model.getNameOfPlace(report.to_place_id)
-            // .. catch a possible mismatch if places used in this estimation config are not assigned 
-            //    are not (configured) for this map
-            if (typeof fromPlaceCoordinates === "undefined" || typeof toPlaceName === "undefined") {
-                throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
-                    + "(with ID= "+report.from_place_id+") configured for this estimation is not configured as "
-                    + " a place for this map (MapID:" + model.getMapConfigId()+")")
-            }
-            // 2.4 initialize leaflet container and task description according to map configuration
-            initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
-            init_task_description(report.from_place_id, report.to_place_id)
             
-            // 2.5 init pinning according to configured trial condition
-            // ... override default memo time with time for memo configured in trial
-            var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
-                memorize.time = (memo_seconds * 1000)
+            // 2.1.2 get next estimation number for this trial and user
+            control.fetchNextEstimationNr(trialId, function (nr) {
+                
+                estimationNr = nr
+                
+                // 2.1.3 initialize place coordinates for current estimation
+                initialize_current_place_coordinates(estimationNr)
 
-            // 3 initialize estimation features
-            initialize_estimation_features(fromPlaceCoordinates, 1)
+                // .. maeke sure all place details are configured (and thus loaded) for this map
+                var fromPlaceCoordinates = model.getCoordinatesOfPlace(report.from_place_id)
+                var toPlaceName = model.getNameOfPlace(report.to_place_id)
+                // .. catch a possible mismatch if places used in this estimation config are not assigned 
+                //    are not (configured) for this map
+                if (typeof fromPlaceCoordinates === "undefined" || typeof toPlaceName === "undefined") {
+                    throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
+                        + "(with ID= "+report.from_place_id+") configured for this estimation is not configured as "
+                        + " a place for this map (MapID:" + model.getMapConfigId()+")")
+                }
+
+                // 2.1.4 initialize leaflet container and task description according to map configuration
+                initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
+                init_task_description(report.from_place_id, report.to_place_id)
+
+                // 2.1.5 init pinning according to configured trial condition
+                // ... override default memo time with time for memo configured in trial
+                var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
+                    memorize.time = (memo_seconds * 1000)
+
+                // 2.1.6 initialize estimation features
+                initialize_estimation_features(fromPlaceCoordinates, 1)
+                
+                
+            }, function (error) { console.warn(error) }, common.debug)
             
         }, common.debug)
 
@@ -126,6 +137,32 @@ define(function (require) {
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
         } **/
+    }
+    
+    function initialize_current_place_coordinates(estimation_nr) {
+        switch (estimation_nr) {
+            case 1:
+                report.from_place_id = model.getFromPlaceOne()
+                report.to_place_id = model.getToPlaceOne()
+                break
+            case 2:
+                report.from_place_id = model.getFromPlaceTwo()
+                report.to_place_id = model.getToPlaceTwo()
+                break
+            case 3:
+                report.from_place_id = model.getFromPlaceThree()
+                report.to_place_id = model.getToPlaceThree()
+                break
+            case 4:
+                report.from_place_id = model.getFromPlaceFour()
+                report.to_place_id = model.getToPlaceFour()
+                break
+            case 5:
+                report.from_place_id = model.getFromPlaceFive()
+                report.to_place_id = model.getToPlaceFive()
+                break
+            default: throw Error("Could not load next estimation")
+        }
     }
 
 
@@ -184,7 +221,7 @@ define(function (require) {
                     stop_reaction_interval(timerId)
                     var estimatedCoordinates = calculateDistance()
                         set_geo_coordinates(estimatedCoordinates)
-                        control.postEstimationReport(trialId, estimationId, report, undefined, function (error) {
+                        control.postEstimationReport(trialId, estimationNr, report, undefined, function (error) {
                             console.log("FAIL - Estimated coordinates could not be saved!")
                         }, false)
                 }

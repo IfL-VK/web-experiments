@@ -9,6 +9,10 @@ define(['./BaseCtrl'], function (BaseCtrl) {
         customCtrl.restc.postEstimationReport(trialId, estimationNr, data, handle, fail, debug)
     }
     
+    customCtrl.fetchNextEstimationNr = function (trialId, handle, fail, debug) {
+        customCtrl.restc.fetchNextEstimationNr(trialId, handle, fail, debug)
+    }
+    
     return customCtrl
 
 });
