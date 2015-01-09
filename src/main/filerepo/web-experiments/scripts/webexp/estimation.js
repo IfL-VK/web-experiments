@@ -23,6 +23,7 @@ define(function (require) {
         "to_start_time": 0,
         "estimation_time": 0,
         "estimated_distance": 0,
+        "certainty": -1,
         "geo_coordinates": {
             "latitude": -1, "longitude" : -1
         }
@@ -78,7 +79,7 @@ define(function (require) {
                     memorize.time = (memo_seconds * 1000)
 
                 // 2.1.6 initialize estimation features
-                initialize_estimation_features(fromPlaceCoordinates, 1)
+                initialize_estimation_features(fromPlaceCoordinates)
                 
                 
             }, function (error) { console.warn(error) }, common.debug)
@@ -87,9 +88,7 @@ define(function (require) {
 
     }
 
-    // --
-    // ---- Estimation Map View ----
-    // --
+    // --- Initialization of Leaflets Map View
 
     function initialize_map(blank_image_path, placeToStartFrom) { // ### refactor to base? there is a duplicate in pinning
 
@@ -161,19 +160,18 @@ define(function (require) {
                 report.from_place_id = model.getFromPlaceFive()
                 report.to_place_id = model.getToPlaceFive()
                 break
+            case 6: 
+                window.location.href = '/web-exp/'
+                break
             default: throw Error("Could not load next estimation")
         }
     }
 
 
-    // ---
-    // ---- Estimation Screen ----
-    // --
+    // ----  Estimation Interaction Setup ----
 
-    function initialize_estimation_features (fromPlace, estimationId) {
+    function initialize_estimation_features (fromPlace) {
 
-        // 1 --- estimation setup ---
-        
         var centerLat = fromPlace['latitude']
         var centerLng = fromPlace['longitude']
         /** var labelMarker = L.marker([centerLat, centerLng], {
@@ -200,10 +198,12 @@ define(function (require) {
             featureGroup.addTo(map)
         
 
-        // 2 --- estimation interaction handler ---
+        // --- estimation interaction handler ---
         
         var isDrawing = false
         
+            // ---- estimation starts
+            
             startPoint.on('mousedown', function(e) {
                 updateEndPointOfPolyline(e)
                 isDrawing = true
@@ -215,15 +215,25 @@ define(function (require) {
                 if (isDrawing) updateEndPointOfPolyline(e)
             })
             
+            // ---- estimation finishes
+            
             map.on('mouseup', function(e) {
-                if (isDrawing) {
+                if (isDrawing) { // estimation finished
                     isDrawing = false
-                    stop_reaction_interval(timerId)
-                    var estimatedCoordinates = calculateDistance()
-                        set_geo_coordinates(estimatedCoordinates)
-                        control.postEstimationReport(trialId, estimationNr, report, undefined, function (error) {
-                            console.log("FAIL - Estimated coordinates could not be saved!")
-                        }, false)
+                    stop_reaction_interval(timerId) // stop timer
+                    var estimatedCoordinates = calculateDistance() // gets values
+                        set_geo_coordinates(estimatedCoordinates) // sets values in report object
+                        // get certainty estimation score and set them to report object
+                        init_certainty_submission(function (){ // certainty submission done
+                            // save all values in report object to database
+                            control.postEstimationReport(trialId, estimationNr, report, function(done) {
+                                console.log("OK - Load next estimation ")
+                                // redirecting to index page for grabbing next trial
+                                window.document.location.reload() // ### do better
+                            }, function (error) {
+                                console.log("FAIL - Estimated coordinates could not be saved!")
+                            }, false)
+                        })
                 }
             })
             
@@ -245,6 +255,29 @@ define(function (require) {
             return toPlace
         }
 
+    }
+    
+    function init_certainty_submission (callback) {
+        // hide map
+        d3.select('#map').attr('style', 'display:none;')
+        // show certainty scale
+        var element = d3.select('.certainty-scale')
+            element.attr('style', 'display:block;')
+        // append possible values
+        var header = '<div class="header"><span class="first">Sehr unsicher</span>'
+            + '<span class="last">Sehr sicher</span></div>'
+        var options = '<label><input class="btn" type="radio" name="rating" value="0"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="1"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="2"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="3"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="4"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="5"></input></label>'
+            + '<label><input class="btn" type="radio" name="rating" value="6"></input></label>'
+        element.html(header + options)
+        element.selectAll('input.btn').on('click', function () {
+            set_certainty_value(parseInt(this.value))
+            callback()
+        })
     }
 
     function init_task_description (fromId, toId) {
@@ -276,6 +309,10 @@ define(function (require) {
     function stop_reaction_interval(intervalId) {
         console.log(" reaction time was: " + report.to_start_time + " and " + report.estimation_time)
         clearInterval(intervalId)
+    }
+    
+    function set_certainty_value(value) {
+        report.certainty = value
     }
     
     function set_geo_coordinates (object) {

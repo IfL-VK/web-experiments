@@ -101,6 +101,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String ESTIMATION_TIME_URI = "de.akmiraketen.webexp.report_estimation_time";
     private static final String FROM_PLACE_URI = "de.akmiraketen.webexp.report_from_place_id";
     private static final String TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
+    private static final String ESTIMATED_CONFIDENCE = "de.akmiraketen.webexp.report_estimation_confidence";
     
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
 
@@ -366,6 +367,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             String fromPlaceId = data.getString("from_place_id");
             String toPlaceId = data.getString("to_place_id");
             int estimatedDistance = data.getInt("estimated_distance");
+            int confidenceValue = data.getInt("certainty");
             int toStartTime = data.getInt("to_start_time");
             int estimationTime = data.getInt("estimation_time");
             log.info("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
@@ -394,7 +396,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(TO_START_TIME_URI, toStartTime)
                 .put(ESTIMATION_TIME_URI, estimationTime)
                 .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
-                .put(ESTIMATION_NR_URI, estimation);
+                .put(ESTIMATION_NR_URI, estimation)
+                .put(ESTIMATED_CONFIDENCE, confidenceValue);
             TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
             // 4 assign new trial estimation report to trial report
             report.setChildTopics(new ChildTopicsModel()

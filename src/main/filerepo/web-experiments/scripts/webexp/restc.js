@@ -47,6 +47,8 @@ define(['d3'], function (d3, require) {
                     if (typeof callback !== "function") throw Error("Please always specify a response "
                         + "handler when calling restClient for async HTTP")
                     callback(result)
+                } else if (typeof callback !== "undefined") {
+                    callback()
                 }
             })
             xhr.on('error', function (e) {

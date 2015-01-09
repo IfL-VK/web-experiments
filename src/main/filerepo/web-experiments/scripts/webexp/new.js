@@ -18,9 +18,6 @@ define(function (require) {
             // 
             var username = data.value
             var users_condition = data['first_trial_condition']
-            var condition_size = data['blocksize_first_condition']
-            
-            if (common.verbose) console.log("Loading first " + condition_size + " trials of type " + users_condition)
             
             // fetch and then render all loaded trials
             newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
@@ -29,6 +26,7 @@ define(function (require) {
                     d3.select('.trials').html('<p class="warning">To start testing, ' 
                         + 'please load some trial configurations.</p>')
                 } else {
+                    if (common.verbose) console.log("Loaded " + trials.items.length + " of type " + users_condition)
                     render_all_trial_configs(trials.items)   
                 }
             }, false)

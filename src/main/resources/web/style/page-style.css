@@ -31,6 +31,41 @@ body {
     margin: auto;
 }
 
+.certainty-scale {
+    display: none;
+    width: 800px;
+    height: 450px;
+    padding: 10px;
+    text-align: center;
+    margin-top: 200px;
+}
+
+.certainty-scale .header {
+    position: relative;
+    color: #898989;
+}
+
+.certainty-scale .header .first {
+    position: absolute;
+    left: 130px;
+}
+
+.certainty-scale .header .last {
+    position: absolute;
+    right: 130px;
+}
+
+.certainty-scale input.btn {
+    margin: 30px;
+    position: relative;
+    cursor: pointer;
+}
+
+/** .certainty-scale input.btn:hover {
+    border: 5px solid #005EA8;
+    opacity: 1;
+} **/
+
 .warning {
     color: #f00;
 }
