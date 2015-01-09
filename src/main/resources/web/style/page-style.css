@@ -31,6 +31,10 @@ body {
     margin: auto;
 }
 
+.warning {
+    color: #f00;
+}
+
 #map {
     width: 800px;
     height: 500px;

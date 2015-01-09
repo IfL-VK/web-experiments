@@ -12,14 +12,20 @@ define(['../restc'], function (restClient, require) {
         fetchUser: function (handle, debug) {
             restc.fetchUsername(handle, debug)
         },
-        fetchAllUnseenPinningTrials: function (handle, debug) {
-            restc.fetchAllUnseenPinningTrials(handle, debug)
+        fetchParticipant: function (handle, debug) {
+            restc.fetchParticipant(handle, debug)
+        },
+        fetchAllUnseenTrials: function (conditionUri, handle, debug) {
+            restc.fetchAllUnseenTrials(conditionUri, handle, debug)
         },
         fetchAllTrials: function (handle, debug) {
             restc.fetchAllTrials(handle, debug)
         },
         fetchTrialConfig: function (trialId, handle, debug) {
             restc.fetchTrialConfig(trialId, handle, debug)
+        },
+        doMarkTrialAsSeen: function (trialId, fail) {
+            restc.doMarkTrialAsSeen(trialId, fail)
         },
         setModel: function (model) {
             this.model = model;

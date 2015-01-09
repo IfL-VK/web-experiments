@@ -69,6 +69,12 @@ define(function (require) {
             }
 
         }, common.debug)
+        
+        // 3 do mark trial as seen by this VP (logged in user)
+        control.doMarkTrialAsSeen(trialId, function (response) {
+            if (response !== 200) throw Error("Trial could not be marked as seen: " + response.status)
+            console.log("  marked trial " +trialId+ " as seen" )
+        })
 
     }
 

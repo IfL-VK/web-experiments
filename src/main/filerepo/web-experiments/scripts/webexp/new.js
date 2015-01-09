@@ -14,27 +14,43 @@ define(function (require) {
 
     function init_page () {
 
-        init_user_view()
-        init_marker_selection_view()
-        get_all_trial_configs()
-
-    }
-
-    function init_user_view () {
-        newCtrl.fetchUser(function (data) {
+        newCtrl.fetchParticipant(function (data) {
             // 
-            var username = data
+            var username = data.value
+            var users_condition = data['first_trial_condition']
+            var condition_size = data['blocksize_first_condition']
+            
+            if (common.verbose) console.log("Loading first " + condition_size + " trials of type " + users_condition)
+            
+            // fetch and then render all loaded trials
+            newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
+                if (common.debug) console.log(trials.items)
+                if (trials.total_count === 0) {
+                    d3.select('.trials').html('<p class="warning">To start testing, ' 
+                        + 'please load some trial configurations.</p>')
+                } else {
+                    render_all_trial_configs(trials.items)   
+                }
+            }, false)
+        
+        
             // GUI
             d3.select('.username').text(username)
             // OK
             newModel.setUsername(username)
 
         }, false)
+        
+        init_marker_selection_view()
+        
     }
 
     function init_marker_selection_view () {
         
         newCtrl.fetchAllMarker(function (data) {
+            
+            if (data.length === 0) d3.select('.content').html('<p class="warning">To enable personalization, ' 
+                    + 'please copy some icons into the symbols folder of the file repository.</p>')
             // 
             var iconPaths = data
             // GUI
@@ -50,31 +66,28 @@ define(function (require) {
         }, false)
     }
 
-    function get_all_trial_configs () {
+    function render_all_trial_configs(items) {
+        
+        var links = d3.select('.trials').selectAll('a').data(items)
+            .attr('href', function (d) { 
+                return '/web-exp/trial/' + d.id + '/pinning' 
+            })
+            .attr('class', 'trial-links')
+            .text(function (d) {
+                return d.value 
+            })
 
-        newCtrl.fetchAllTrials(function (trials) {
-            if (common.debug) console.log(trials)
-            var links = d3.select('.trials').selectAll('a').data(trials.items)
+            links.enter()
+                .append('a')
                 .attr('href', function (d) { 
                     return '/web-exp/trial/' + d.id + '/pinning' 
                 })
-                .attr('class', 'trial-links')
                 .text(function (d) {
                     return d.value 
                 })
 
-                links.enter()
-                    .append('a')
-                    .attr('href', function (d) { 
-                        return '/web-exp/trial/' + d.id + '/pinning' 
-                    })
-                    .text(function (d) {
-                        return d.value 
-                    })
-
-                links.exit().remove()
-
-        }, false)
+            links.exit().remove()
+        
     }
     
     // --- Run this script when it is called/loaded

@@ -1,8 +1,10 @@
 
 package de.akmiraketen.plugins.experiments;
 
+import de.akmiraketen.plugins.experiments.model.ParticipantViewModel;
 import de.akmiraketen.plugins.experiments.model.TrialConfigViewModel;
 import de.deepamehta.core.Association;
+import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
@@ -15,6 +17,10 @@ import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
+import de.deepamehta.plugins.accesscontrol.model.ACLEntry;
+import de.deepamehta.plugins.accesscontrol.model.AccessControlList;
+import de.deepamehta.plugins.accesscontrol.model.Operation;
+import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.DirectoryListing;
 import de.deepamehta.plugins.files.DirectoryListing.FileItem;
@@ -74,6 +80,8 @@ public class WebExperimentsPlugin extends PluginActivator {
     // --- Web Experiment URIs
     
     private static final String TRIAL_CONFIG_TYPE = "de.akmiraketen.webexp.trial_config";
+    private static final String TRIAL_CONDITION_TYPE = "de.akmiraketen.webexp.trial_condition";
+    private static final String TRIAL_CONDITION_BLOCKS_SIZE_TYPE = "de.akmiraketen.webexp.trial_condition_block_size";
     private static final String TRIAL_SEEN_EDGE_TYPE = "de.akmiraketen.webexp.trial_seen_edge";
     private static final String MARKER_CONFIG_EDGE_TYPE = "de.akmiraketen.webexp.config_marker_symbol";
     
@@ -237,6 +245,19 @@ public class WebExperimentsPlugin extends PluginActivator {
         return dms.getTopics(TRIAL_CONFIG_TYPE, 0);
     }
     
+    @GET
+    @Path("/trial/{trialId}")
+    public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
+        return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
+    }
+    
+    @GET
+    @Path("/participant")
+    public ParticipantViewModel getParticipantViewModel() {
+        Topic username = getRequestingUser();
+        return new ParticipantViewModel(username, dms);
+    }
+    
     /** 
      * Fetches all Trial Configs of a certain condition currently in database.
      * @parameter   condition   String containing an URI of an instance of "de.akmiraketen.webexp.trial_condition"
@@ -251,14 +272,13 @@ public class WebExperimentsPlugin extends PluginActivator {
         Iterator<RelatedTopic> i = trials.iterator();
         while (i.hasNext()) {
             RelatedTopic trial = i.next();
-            Topic trial_condition = trial.getChildTopics().getTopic("de.akmiraketen.webexp.trial_condition");
+            Topic trial_condition = trial.getChildTopics().getTopic(TRIAL_CONDITION_TYPE);
             if (!trial_condition.getUri().equals(givenUri)) {
                 i.remove();
             }
         }
         return trials;
     }
-    
     
     /** 
      * Fetches all unseen Trial Configs of a certain condition for a certain user.
@@ -288,9 +308,17 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
     
     @GET
-    @Path("/trial/{trialId}")
-    public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
-        return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
+    @Path("/trial/{trialId}/seen")
+    @Transactional
+    public Response doMarkTrialAsSeen(@PathParam("trialId") long trialId) {
+        Topic user = getRequestingUser();
+        Association trial_seen = user.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
+                ROLE_DEFAULT, ROLE_DEFAULT, trialId);
+        if (trial_seen != null) throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
+        dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE, 
+                new TopicRoleModel(user.getId(), "dm4.core.default"), 
+                new TopicRoleModel(trialId, "dm4.core.default")));
+        return Response.ok().build();
     }
     
     @GET
@@ -478,16 +506,23 @@ public class WebExperimentsPlugin extends PluginActivator {
         // for 1000 do acService.createUser()
         log.info("Setting up some new users for Web Experiments");
         DeepaMehtaTransaction tx = dms.beginTx();
+        String conditionA = "webexp.config.pinning";
+        String conditionB = "webexp.config.no_pinning";
+        String conditionValue = conditionA;
         try {
-            for (int i=1; i<=10; i++) {
-                String username = "user"+ i;
+            for (int i=10; i<=30; i++) {
+                String username = "VP "+ i;
                 if (isUsernameAvailable(username)) {
+                    if (i > 20) conditionValue = conditionB;
                     ChildTopicsModel userAccount = new ChildTopicsModel()
                         .put(USERNAME_TYPE_URI, username)
-                        .put(USER_PASSWORD_TYPE_URI, "");
+                        .put(USER_PASSWORD_TYPE_URI, "")
+                        .putRef(TRIAL_CONDITION_TYPE, conditionValue)
+                        .put(TRIAL_CONDITION_BLOCKS_SIZE_TYPE, 15);
                     // ### set user account to "Blocked" until verified (introduce this in a new migration)
                     TopicModel userModel = new TopicModel(USER_ACCOUNT_TYPE_URI, userAccount);
-                    Topic user = dms.createTopic(userModel);
+                    Topic vpAccount = dms.createTopic(userModel);
+                    setDefaultAdminACLEntries(vpAccount);
                     log.info("Created user \"" + username + "\" for web-experiments.");
                 } else {
                     log.info("DEBUG: Username is already taken ..");
@@ -497,6 +532,15 @@ public class WebExperimentsPlugin extends PluginActivator {
         } finally {
             tx.finish();
         }
+    }
+    
+    private DeepaMehtaObject setDefaultAdminACLEntries(DeepaMehtaObject item) {
+        // Let's repair broken/missing ACL-Entries
+        ACLEntry writeEntry = new ACLEntry(Operation.WRITE, UserRole.CREATOR, UserRole.OWNER);
+        acService.setACL(item, new AccessControlList(writeEntry));
+        acService.setCreator(item, "admin");
+        acService.setOwner(item, "admin");
+        return item;
     }
     
     private void createFolderWithName(String folderName, String parentFolderName) {
@@ -539,7 +583,9 @@ public class WebExperimentsPlugin extends PluginActivator {
         
     private void assignNewMarkerSymbolToUsername(Topic relatedIconTopic, Topic username) {
         // deleting former marker config for given username
-        List<Association> assignments = username.getAssociations();
+        Topic account = username.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+                "dm4.core.parent", "dm4.accesscontrol.user_account");
+        List<Association> assignments = account.getAssociations();
         Iterator<Association> i = assignments.iterator();
         while (i.hasNext()) {
             Association assoc = i.next();
@@ -550,12 +596,12 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
         }
         // before setting a new one (and make sure there is always just one)
-        createSymbolUserAssignment(relatedIconTopic, username);
+        createSymbolUserAssignment(relatedIconTopic, account);
     }
     
-    private Association createSymbolUserAssignment(Topic relatedIconTopic, Topic username) {
+    private Association createSymbolUserAssignment(Topic relatedIconTopic, Topic account) {
         return dms.createAssociation(new AssociationModel(MARKER_CONFIG_EDGE_TYPE, 
-            new TopicRoleModel(username.getId(), ROLE_DEFAULT), 
+            new TopicRoleModel(account.getId(), ROLE_DEFAULT), 
             new TopicRoleModel(relatedIconTopic.getId(), ROLE_DEFAULT)));
     }
     

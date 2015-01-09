@@ -22,6 +22,15 @@ define(['d3'], function (d3, require) {
         })
     }
     
+    function mark(resource, fail) {
+        var xhr = d3.xhr(resource)
+            xhr.get()
+            xhr.on('error', function (e){
+                console.warn(e.status, e.statusText)
+                if (typeof fail !== "undefined") fail(e)                
+            })
+    }
+    
     function post(resource, data, callback, fail, json, debug) {
         var response_type = "application/json"
         var xhr = d3.xhr(resource, response_type)
@@ -52,6 +61,10 @@ define(['d3'], function (d3, require) {
             if (debug) console.log(" restc: requesting username ... ")
             fetch('/accesscontrol/user', handle, false, debug)
         },
+        fetchParticipant: function (handle, debug) {
+            if (debug) console.log(" restc: requesting participant ... ")
+            fetch('/web-exp/participant', handle, true, debug)
+        },
         fetchAllIcons: function (handle, debug) {
             // 
             fetch('/web-exp/symbol/all', handle, true, debug)
@@ -59,9 +72,9 @@ define(['d3'], function (d3, require) {
         fetchAllTrials: function (handle, debug) {
             fetch('/web-exp/trial/all', handle, true, debug)
         },
-        fetchAllUnseenPinningTrials: function (handle, debug) {
+        fetchAllUnseenTrials: function (conditionUri, handle, debug) {
             // 
-            fetch('/web-exp/trial/unseen/webexp.config.pinning', handle, true, debug)
+            fetch('/web-exp/trial/unseen/' + conditionUri, handle, true, debug)
         },
         fetchTrialConfig: function (trialId, handle, debug) {
             //
@@ -76,6 +89,9 @@ define(['d3'], function (d3, require) {
         },
         postPinningReport: function (trialId, payload, handle, fail, debug) {
             post('/web-exp/pinning/' + trialId, payload, handle, fail, false, debug)
+        },
+        doMarkTrialAsSeen: function (trialId, callback) {
+            mark('/web-exp/trial/' + trialId + "/seen", callback)
         },
 
     }
