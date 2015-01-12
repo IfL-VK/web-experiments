@@ -19,6 +19,7 @@ import de.deepamehta.core.service.Transactional;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.model.ACLEntry;
 import de.deepamehta.plugins.accesscontrol.model.AccessControlList;
+import de.deepamehta.plugins.accesscontrol.model.Credentials;
 import de.deepamehta.plugins.accesscontrol.model.Operation;
 import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
@@ -517,9 +518,10 @@ public class WebExperimentsPlugin extends PluginActivator {
                 String username = "VP "+ i;
                 if (isUsernameAvailable(username)) {
                     if (i > 20) conditionValue = conditionB;
+                    Credentials cred = new Credentials(username, "");
                     ChildTopicsModel userAccount = new ChildTopicsModel()
-                        .put(USERNAME_TYPE_URI, username)
-                        .put(USER_PASSWORD_TYPE_URI, "")
+                        .put(USERNAME_TYPE_URI, cred.username)
+                        .put(USER_PASSWORD_TYPE_URI, cred.password)
                         .putRef(TRIAL_CONDITION_TYPE, conditionValue)
                         .put(TRIAL_CONDITION_BLOCKS_SIZE_TYPE, 15);
                     // ### set user account to "Blocked" until verified (introduce this in a new migration)

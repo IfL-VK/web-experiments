@@ -12,8 +12,8 @@ define(['../restc'], function (restClient, require) {
         fetchUser: function (handle, debug) {
             restc.fetchUsername(handle, debug)
         },
-        fetchParticipant: function (handle, debug) {
-            restc.fetchParticipant(handle, debug)
+        fetchParticipant: function (handle, fail, debug) {
+            restc.fetchParticipant(handle, fail, debug)
         },
         fetchAllUnseenTrials: function (conditionUri, handle, debug) {
             restc.fetchAllUnseenTrials(conditionUri, handle, debug)
@@ -33,6 +33,9 @@ define(['../restc'], function (restClient, require) {
         render: function (bodyDom) {
             bodyDom.prepend('<h1>Controller ' + this.id + ' says "' +
                       this.model.getTitle() + '"</h1>');
+        },
+        startSession: function (vpId, handle, debug) {
+            restc.startSession(vpId, handle, debug)
         },
         restc: restc 
         

@@ -22,7 +22,7 @@ define(['./BaseCtrl'], function (BaseCtrl) {
     customCtrl.fetchAllUnseenPinningTrials = function (handle, debug) {
         customCtrl.restc.fetchAllUnseenPinningTrials(handle, debug)
     }
-
+    
     // 
 
     return customCtrl

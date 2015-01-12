@@ -15,10 +15,14 @@ define(function (require) {
     function init_page () {
 
         newCtrl.fetchParticipant(function (data) {
-            // 
-            var username = data.value
-            var users_condition = data['first_trial_condition']
             
+            var username = data.value
+
+            // 1 load marker selection
+            init_marker_selection_view()
+
+            // 2 load trials
+            var users_condition = data['first_trial_condition']
             // fetch and then render all loaded trials
             newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
                 if (common.debug) console.log(trials.items)
@@ -30,17 +34,21 @@ define(function (require) {
                     render_all_trial_configs(trials.items)   
                 }
             }, false)
-        
-        
+
+
             // GUI
             d3.select('.username').text(username)
             // OK
             newModel.setUsername(username)
-
+                
+        }, function (error) {
+            
+            console.log("Auth response", error.status)
+            console.warn("Please log in as \"VP <Nr>\"")
+            render_start_session_dialog()
+            throw Error("No session to start the experiment")
+            
         }, false)
-        
-        init_marker_selection_view()
-        
     }
 
     function init_marker_selection_view () {
@@ -62,6 +70,22 @@ define(function (require) {
             newModel.setIcons(data)
                 
         }, false)
+    }
+    
+    function render_start_session_dialog() {
+        var hello = d3.select('.title .username').text('!')
+        var trials = d3.select('.trials').remove()
+        var content = d3.select('.content')
+            content.html('<p>Zum starten des Experiments bitte eine ID f&uuml;r die Versuchsperson ' 
+                + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><input class="vp-id" type="text" '
+                + 'name="username" placeholder="VP <Nr>"><input type="button" value="OK" class="login-btn" '
+                + 'name="submit"></p>')
+        content.select('.login-btn').on('click', function (){
+            var element = d3.select('input.vp-id')[0][0]
+            newCtrl.startSession(element.value, function (){
+               window.location.reload() 
+            }, common.debug)
+        })
     }
 
     function render_all_trial_configs(items) {
