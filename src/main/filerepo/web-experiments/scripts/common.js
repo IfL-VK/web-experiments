@@ -24,6 +24,13 @@ define(function () {
             var id = url.substring(start + 6, end)
             if (this.debug) console.log("Trial ID is ", id)
             return parseInt(id)
+        },
+        parse_view_state_from_page: function () {
+            var url = window.document.location.href
+            var start = url.indexOf("web-exp/")
+            var screen_name = url.substring(start + 8)
+            if (this.debug) console.log("View state is ", screen_name)
+            return screen_name
         }
     }
     

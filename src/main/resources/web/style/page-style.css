@@ -122,6 +122,10 @@ body {
     margin-left: 10px;
 }
 
+.start .trials {
+    display: none;
+}
+
 ul.menu {
     padding-left: 0px;
     margin: 25%;
@@ -159,6 +163,16 @@ ul.menu li a.button {
 
 p {
     margin-left: 10px;
+}
+
+p.wichtig {
+    color: #CD0000;
+    font-weight: bold;
+}
+
+.start p {
+    font-size: 20px;
+    color: #3D3D3D;
 }
 
 h3 {
@@ -220,6 +234,7 @@ li.btn img {
     padding: 5px;
 }
 
+li.btn img.selected,
 li.btn img:hover {
     background-color: #898989;
 }

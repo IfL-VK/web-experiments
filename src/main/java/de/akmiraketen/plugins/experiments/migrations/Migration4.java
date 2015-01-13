@@ -17,10 +17,11 @@ public class Migration4 extends Migration {
     
     @Override
     public void run() {
-        
-        TopicType sizeOfFirstConditionBlock = dms.createTopicType(new TopicTypeModel(
+        // 1) Introduce new configuration option
+        dms.createTopicType(new TopicTypeModel(
                 "de.akmiraketen.webexp.trial_condition_block_size", "Trial Condition Block Size", 
                 "dm4.core.number"));
+        // 2) Introduce default trial condition types for every user account
         TopicType userAccount = dms.getTopicType("dm4.accesscontrol.user_account");
         userAccount.addAssocDef(new AssociationDefinitionModel("dm4.core.aggregation_def", 
                 "dm4.accesscontrol.user_account", "de.akmiraketen.webexp.trial_condition", 

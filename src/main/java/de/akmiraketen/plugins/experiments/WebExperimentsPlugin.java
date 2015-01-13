@@ -27,13 +27,17 @@ import de.deepamehta.plugins.files.DirectoryListing;
 import de.deepamehta.plugins.files.DirectoryListing.FileItem;
 import de.deepamehta.plugins.files.ItemKind;
 import de.deepamehta.plugins.files.service.FilesService;
+import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -126,6 +130,9 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Inject
     private FilesService fileService = null;
     
+    @Inject
+    private WorkspacesService workspaceService = null;
+    
     @Override
     public void init() {
         log.info("INIT: Thanks for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
@@ -151,8 +158,35 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getNewScreen() {
-        // ###
-        return getStaticResource("web/new.html"); // ### to be removed completely
+        return getStaticResource("web/new.html");
+    }
+    
+    @GET
+    @Path("/icon")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getNewIconView() {
+        return getStaticResource("web/new.html");
+    }
+    
+    @GET
+    @Path("/welcome")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getNewWelcomeView() {
+        return getStaticResource("web/new.html");
+    }
+    
+    @GET
+    @Path("/finish")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getNewFinishView() {
+        return getStaticResource("web/new.html");
+    }
+    
+    @GET
+    @Path("/pause")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getNewPauseView() {
+        return getStaticResource("web/new.html");
     }
     
     @GET
@@ -193,10 +227,10 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/symbol/all")
     @Transactional
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<FileItem> getAllSymbolFileTopics() {
+    public String getAllSymbolFileTopics() {
         DirectoryListing items = fileService.getDirectoryListing(SYMBOL_FOLDER);
         // ArrayList<Topic> symbols = new ArrayList<Topic>(); 
-        ArrayList<FileItem> symbolFiles = new ArrayList<FileItem>(); 
+        ArrayList<JSONObject> symbolFiles = new ArrayList<JSONObject>();
         // 1) Gather svg-icon files from our symbols directory
         Iterator<FileItem> files = items.getFileItems().iterator();
         while (files.hasNext()) {
@@ -208,43 +242,38 @@ public class WebExperimentsPlugin extends PluginActivator {
         Iterator<FileItem> icons = items.getFileItems().iterator();
         while (icons.hasNext()) {
             FileItem file = icons.next();
-            // Topic fileTopic = fileService.createFileTopic(file.getPath());
-            symbolFiles.add(file);
+            Topic fileTopic = fileService.createFileTopic(file.getPath()); // fetches topic if existing
+            JSONObject responseObject = new JSONObject();
+            try {
+                responseObject.put("path", file.getPath()).put("topic_id", fileTopic.getId());
+            } catch (JSONException ex) {
+                log.severe("Could not build up icon response list");
+            }
+            symbolFiles.add(responseObject);
         }
-        return symbolFiles;
+        return symbolFiles.toString();
     }
     
     /** 
      * 
-     * @param fileName  String to icon file uri in filerepo
-     * @return  List of FileItems in JSON
+     * @param topicId   long value id of file topic
+     * @return  related File topic
      */
     
     @GET
-    @Path("/symbol/choose/{fileName}")
+    @Path("/symbol/choose/{topicId}")
     @Transactional
-    public Topic chooseSymbolFile(@PathParam("fileName") String fileName) {
-        log.info("Setting Marker for User: " + acService.getUsername() + " fileName: " + fileName);
-        Topic relatedIconTopic = null;
+    public Topic chooseSymbolFile(@PathParam("topicId") long topicId) {
+        log.info("Setting Marker for User: " + acService.getUsername() + " topicId: " + topicId);
+        Topic relatedIconTopic = dms.getTopic(topicId);
         Topic username = getRequestingUser();
         try {
-            relatedIconTopic = getSymbolFileTopic(SYMBOL_FOLDER + "/" + fileName); // throws FREs
             log.info("Icon topic to be related is " + relatedIconTopic.getId());
             assignNewMarkerSymbolToUsername(relatedIconTopic, username);
         } catch(RuntimeException e) {
             throw new RuntimeException(e);
         }
         return relatedIconTopic.loadChildTopics(FILE_PATH_TYPE);
-    }
-    
-    private Topic getSymbolFileTopic(String filePath) {
-        Topic fileTopic = null;
-        try {
-            fileTopic = fileService.createFileTopic(filePath); // does a fetch if existing
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return fileTopic;
     }
     
     /** 
@@ -256,6 +285,18 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/all")
     public ResultList<RelatedTopic> getAllTrialConfigs() {
         return dms.getTopics(TRIAL_CONFIG_TYPE, 0);
+    }
+
+    @GET
+    @Path("/trial")
+    public Response getFirstTrialConfigViewModel() {
+        long trialConfigId = getNextUnseenTrialId();
+        try {
+            return Response.seeOther(new URI ("/web-exp/trial/" + trialConfigId + "/pinning")).build();
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(WebExperimentsPlugin.class.getName()).log(Level.SEVERE, null, ex);
+            throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+        }
     }
     
     @GET
@@ -564,6 +605,9 @@ public class WebExperimentsPlugin extends PluginActivator {
                     // ### set user account to "Blocked" until verified (introduce this in a new migration)
                     TopicModel userModel = new TopicModel(USER_ACCOUNT_TYPE_URI, userAccount);
                     Topic vpAccount = dms.createTopic(userModel);
+                    Topic usernameTopic = vpAccount.loadChildTopics(USERNAME_TYPE_URI)
+                            .getChildTopics().getTopic(USERNAME_TYPE_URI);
+                    workspaceService.assignToWorkspace(usernameTopic, workspaceService.getDefaultWorkspace().getId());
                     setDefaultAdminACLEntries(vpAccount);
                     log.info("Created user \"" + username + "\" for web-experiments.");
                 } else {

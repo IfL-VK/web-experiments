@@ -130,6 +130,9 @@ define(['d3'], function (d3, require) {
         doMarkTrialAsSeen: function (trialId, callback, fail) {
             mark('/web-exp/trial/' + trialId + "/seen", callback, fail)
         },
+        doMarkIconPreference: function (fileTopicId, callback, fail) {
+            mark('/web-exp/symbol/choose/' + fileTopicId, callback, fail)
+        },
         startSession: function (id, handle, debug) {
             authenticate(id, "", handle, false, debug)
         }

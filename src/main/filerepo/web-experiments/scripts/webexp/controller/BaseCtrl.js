@@ -27,6 +27,9 @@ define(['../restc'], function (restClient, require) {
         doMarkTrialAsSeen: function (trialId, handle, fail) {
             restc.doMarkTrialAsSeen(trialId, handle, fail)
         },
+        doMarkIconPreference: function (fileTopicId, handle, fail) {
+            restc.doMarkIconPreference(fileTopicId, handle, fail)
+        },
         setModel: function (model) {
             this.model = model;
         },

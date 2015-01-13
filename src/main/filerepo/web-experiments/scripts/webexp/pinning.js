@@ -24,6 +24,7 @@ define(function (require) {
         }
     }
 
+    var pinned_already = false
 
     // ------ Initialization of client-side data for pinning
 
@@ -44,29 +45,35 @@ define(function (require) {
             model.setPlaces(response.place_config.items)
             model.setPlaceToPinId(response['trial_config']['place_to_pin'])
             
-            // 2.2 initialize leaflet container according to map configuration
-            initialize_map()
             init_task_description()
             
-            // 2.3 init pinning according to configured trial condition
+            // 2.2 init pinning according to configured trial condition
             // ... override default memo time with time for memo configured in trial
             var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
                 memorize.time = (memo_seconds * 1000)
 
-            // ... switch per trial condition
-            var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
-            if (common.debug) console.log(" trial condition:", pinning_condition)
-            if (pinning_condition === "webexp.config.no_pinning") {
-                if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
-                run_timer()
-            } else if (pinning_condition === "webexp.config.pinning") {
-                if(common.verbose) console.log(" ... pinning active - no timer (" + trialId + ")")
-                initialize_pinning_features()
-                // run_timer() // ### what if user has not pinned after timer ran out
-                // my suggestion would be: run timer just after pinning was done 
-            } else {
-                throw Error("Unknown trial condition for pinning (\""+pinning_condition+"\"), Trial: " + trialId)
-            }
+            // 3 .. load participant data
+            control.fetchParticipant(function (data) {
+                var icon_path = data['selected_marker_path']
+                // 2.2 initialize leaflet container according to map configuration
+                initialize_map()
+                // ... switch per trial condition
+                var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
+                if (common.debug) console.log(" trial condition:", pinning_condition)
+                if (pinning_condition === "webexp.config.no_pinning") {
+                    if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
+                    run_timer()
+                } else if (pinning_condition === "webexp.config.pinning") {
+                    if(common.verbose) console.log(" ... pinning active - no timer (" + trialId + ")")
+                    initialize_pinning_features(icon_path)
+                    // run_timer() // ### what if user has not pinned after timer ran out
+                    // my suggestion would be: run timer just after pinning was done
+                } else {
+                    throw Error("Unknown trial condition for pinning (\""+pinning_condition+"\"), Trial: " + trialId)
+                }
+            }, function (error) {
+                console.warn("Error loading participant ..")
+            }, common.debug)
 
         }, common.debug)
         
@@ -150,7 +157,7 @@ define(function (require) {
         d3.select('i.place-to-pin').text(model.getNameOfPlaceToPin())
     }
 
-    function initialize_pinning_features () {
+    function initialize_pinning_features (icon_path) {
         
         if(common.debug) console.log(" pinning: loaded places", model.getPlaces())
         if(common.debug) console.log(" pinning: initializing place to pin", model.getPlaceToPinId())
@@ -161,20 +168,38 @@ define(function (require) {
         // var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
         // if (common.debug) marker.addTo(featureGroup)
 
+        var personalIcon = undefined
+        if (icon_path) {
+            /* iconAnchor:   [24, 24] *shadowUrl: 'leaf-shadow.png', shadowSize: [50, 64],
+             * shadowAnchor: [4, 62], popupAnchor:  [-3, -76] **/
+            personalIcon = L.icon({
+                iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24], iconAnchor: [12, 24]
+            });
+        }
+
         map.on('click', function (e) {
             if (common.verbose) console.log("  map clicked: " + e.latlng + " (vs.) " + place_to_pin.lat + ", " + place_to_pin.lng)
             if (is_click_nearby(e)) {
                 if (common.verbose) console.log(" active control clicked - pinned")
                 // do set values into report
-                set_geo_coordinates(e.latlng)
-                stop_reaction_interval(timerId)
-                control.postPinningReport(trialId, report, undefined, function (error) {
-                    console.warn(error)
-                }, common.debug)
-                // ### fixme: do not at marker (if already present) again
-                var marker = L.marker([e.latlng.lat, e.latlng.lng])
+                if (!pinned_already) {
+                    set_geo_coordinates(e.latlng)
+                    stop_reaction_interval(timerId)
+                    control.postPinningReport(trialId, report, undefined, function (error) {
+                        console.warn(error)
+                    }, common.debug)
+                    // ### fixme: do not at marker (if already present) again
+                    var marker = undefined
+                    if (icon_path) {
+                        marker = L.marker([e.latlng.lat, e.latlng.lng], {icon: personalIcon})
+                        if (common.debug) console.log("using personal icon from " + icon_path)
+                    } else {
+                        marker = L.marker([e.latlng.lat, e.latlng.lng])
+                    }
                     marker.addTo(featureGroup)
-                run_timer()
+                    run_timer()
+                }
+                pinned_already = true
             } else {
                 click_count_outside_increase()
             }

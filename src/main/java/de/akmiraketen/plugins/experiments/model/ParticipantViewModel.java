@@ -32,7 +32,8 @@ public class ParticipantViewModel implements JSONEnabled {
         Topic relatedIconTopic = topic.getRelatedTopic(MARKER_CONFIG_EDGE_TYPE, "dm4.core.default", 
                 "dm4.core.default", "dm4.files.file");
         if (relatedIconTopic != null) {
-            path = relatedIconTopic.getChildTopics().getString("dm4.files.file_path");
+            relatedIconTopic.loadChildTopics("dm4.files.path");
+            path = relatedIconTopic.getChildTopics().getString("dm4.files.path");
         }
         return path;
     }
