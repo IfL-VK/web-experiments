@@ -57,21 +57,27 @@ body {
     padding: 10px;
     text-align: center;
     margin-top: 200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .certainty-scale .header {
     position: relative;
     color: #898989;
+    font-size: 1.2em;
+    font-weight: bold;
 }
 
 .certainty-scale .header .first {
     position: absolute;
-    left: 130px;
+    left: 95px;
+    top: -30px;
 }
 
 .certainty-scale .header .last {
     position: absolute;
-    right: 130px;
+    right: 100px;
+    top: -30px;
 }
 
 .certainty-scale input.btn {
@@ -160,6 +166,7 @@ h3 {
     margin: 10px;
     margin-top: 15px;
     margin-bottom: 15px;
+    text-align: center
 }
 
 h4 {

@@ -72,8 +72,16 @@ define(function (require) {
         
         // 3 do mark trial as seen by this VP (logged in user)
         control.doMarkTrialAsSeen(trialId, function (response) {
-            if (response !== 200) throw Error("Trial could not be marked as seen: " + response.status)
-            console.log("  marked trial " +trialId+ " as seen" )
+            console.log("trialID:" + trialId  + "; response: ", response)
+            var loadedTrialId = parseInt(response.response)
+            if (loadedTrialId === 1) {
+                if (common.verbose) console.log("OK - Trial marked as seen!")
+            } else if (trialId !== loadedTrialId) {
+                if (common.verbose) console.log(" Trial already seen because server says we should move to next-trial: " + loadedTrialId )
+                window.location.href = '/web-exp/trial/' + loadedTrialId + '/pinning'
+            }
+        }, function (error) {
+            throw Error("Trial could not be marked as seen: " + error.status)
         })
 
     }

@@ -160,10 +160,11 @@ define(function (require) {
                 report.from_place_id = model.getFromPlaceFive()
                 report.to_place_id = model.getToPlaceFive()
                 break
-            case 6: 
-                window.location.href = '/web-exp/'
-                break
-            default: throw Error("Could not load next estimation")
+            case -1: // no unseen trial (id) left for requesting user
+                window.location.href = '/web-exp/finish'
+            default: 
+                // response contains not an estimationId but a trialid
+                window.location.href = '/web-exp/trial/' + estimationNr + '/pinning'
         }
     }
 
@@ -181,7 +182,8 @@ define(function (require) {
                 noHide: true, offset: [-40,15], zIndexOffset: -1
             })
             labelMarker.addTo(map) **/
-        var startPoint = L.circle([centerLat, centerLng], 140, { fill: true, fillColor: 'black', weight: 5, color: 'gray', opacity: 1 })
+        var startPoint = L.circle([centerLat, centerLng], 200, { 
+            fill: true, fillColor: 'black', weight: 4, color: 'gray', opacity: 1 })
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)
         // var pointB = L.latLng(centerLat, centerLng)
@@ -224,7 +226,7 @@ define(function (require) {
                     var estimatedCoordinates = calculateDistance() // gets values
                         set_geo_coordinates(estimatedCoordinates) // sets values in report object
                         // get certainty estimation score and set them to report object
-                        init_certainty_submission(function (){ // certainty submission done
+                        init_certainty_submission(function () { // certainty submission done
                             // save all values in report object to database
                             control.postEstimationReport(trialId, estimationNr, report, function(done) {
                                 console.log("OK - Load next estimation ")
@@ -260,6 +262,8 @@ define(function (require) {
     function init_certainty_submission (callback) {
         // hide map
         d3.select('#map').attr('style', 'display:none;')
+        // change page title
+        set_task_description('Wie sicher warst du dir bei deiner Schätzung?')
         // show certainty scale
         var element = d3.select('.certainty-scale')
             element.attr('style', 'display:block;')
@@ -278,6 +282,7 @@ define(function (require) {
             set_certainty_value(parseInt(this.value))
             callback()
         })
+        // 
     }
 
     function init_task_description (fromId, toId) {
@@ -307,7 +312,8 @@ define(function (require) {
     }
     
     function stop_reaction_interval(intervalId) {
-        console.log(" reaction time was: " + report.to_start_time + " and " + report.estimation_time)
+        if (common.verbose) console.log(" reaction time was: " + report.to_start_time 
+                + " and " + report.estimation_time)
         clearInterval(intervalId)
     }
     
@@ -316,7 +322,7 @@ define(function (require) {
     }
     
     function set_geo_coordinates (object) {
-        console.log(" estimated coordinate was: " + object)
+        if (common.verbose) console.log(" estimated coordinate was: " + object)
         report.geo_coordinates.latitude = object.lat
         report.geo_coordinates.longitude = object.lng
     }

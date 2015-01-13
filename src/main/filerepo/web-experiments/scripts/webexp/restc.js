@@ -9,29 +9,31 @@ define(['d3'], function (d3, require) {
         var xhr = d3.xhr(resource, response_type)
             xhr.get()
             xhr.on('load', function (response) {
-                // process response
-                var result = undefined    
-                if (json) {
-                    result = JSON.parse(response.response)
-                } else {
-                    result = response.response
+                var result = undefined
+                if (response !== null) {
+                    result = response
+                    if (debug) console.log(response.status, response)
+                    if  (response.status === 200) {
+                        // process response
+                        if (json) {
+                            result = JSON.parse(response.response)
+                        } else {
+                            result = response.response
+                        }
+                    }
+                    if (typeof callback === "function") callback(result)
                 }
-                if (debug) console.log(response.status, result)
-                if (response.status !== 200 && response.status !== 204) throw Error(response.status)
-                if (typeof callback !== "function") throw Error("Please always specify a response "
-                    + "handler when calling restClient for async HTTP")
-                callback(result)
             })
             xhr.on('error', function (error) {
                 if (typeof failure === "function") failure(error)
             })
     }
     
-    function mark(resource, fail) {
+    function mark(resource, callback, fail) {
         var xhr = d3.xhr(resource)
             xhr.get()
+            xhr.on('load', callback)
             xhr.on('error', function (e){
-                console.warn(e.status, e.statusText)
                 if (typeof fail !== "undefined") fail(e)                
             })
     }
@@ -125,8 +127,8 @@ define(['d3'], function (d3, require) {
         postPinningReport: function (trialId, payload, handle, fail, debug) {
             post('/web-exp/pinning/' + trialId, payload, handle, fail, false, debug)
         },
-        doMarkTrialAsSeen: function (trialId, callback) {
-            mark('/web-exp/trial/' + trialId + "/seen", callback)
+        doMarkTrialAsSeen: function (trialId, callback, fail) {
+            mark('/web-exp/trial/' + trialId + "/seen", callback, fail)
         },
         startSession: function (id, handle, debug) {
             authenticate(id, "", handle, false, debug)

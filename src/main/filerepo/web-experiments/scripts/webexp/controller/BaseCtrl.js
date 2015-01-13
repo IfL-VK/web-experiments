@@ -24,8 +24,8 @@ define(['../restc'], function (restClient, require) {
         fetchTrialConfig: function (trialId, handle, debug) {
             restc.fetchTrialConfig(trialId, handle, debug)
         },
-        doMarkTrialAsSeen: function (trialId, fail) {
-            restc.doMarkTrialAsSeen(trialId, fail)
+        doMarkTrialAsSeen: function (trialId, handle, fail) {
+            restc.doMarkTrialAsSeen(trialId, handle, fail)
         },
         setModel: function (model) {
             this.model = model;

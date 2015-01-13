@@ -33,6 +33,7 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import java.util.logging.Logger;
 
@@ -104,9 +105,18 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
     private static final String ESTIMATED_CONFIDENCE = "de.akmiraketen.webexp.report_estimation_confidence";
     
+    private static final String TRIAL_CONDITION_A = "webexp.config.pinning";
+    private static final String TRIAL_CONDITION_B = "webexp.config.no_pinning";
+    private static final int MAX_ESTIMATION_COUNT = 6;
+    private static final int OK_NR = 1;
+    private static final int FAIL_NR = -1;
+    
+    
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
 
     // ###
+    
+    private Random random = null;
     
     // --- Plugin Services
     
@@ -119,6 +129,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Override
     public void init() {
         log.info("INIT: Thanks for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
+        random = new Random();
     }
     
     @Override
@@ -300,13 +311,32 @@ public class WebExperimentsPlugin extends PluginActivator {
             Association trial_seen = trial.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
                 ROLE_DEFAULT, ROLE_DEFAULT, user.getId());
             if (trial_seen != null) {
-                log.info("Removing seen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
+                log.fine("Removing seen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
                 k.remove();
             } else {
-                log.info("Identified unseen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
+                log.fine("Identified unseen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
             }
         }
         return trials;
+    }
+    
+    @GET
+    @Path("/trial/unseen/next")
+    public long getNextUnseenTrialId() {
+        Topic user = getRequestingUser();
+        ParticipantViewModel vp = new ParticipantViewModel(user, dms);
+        ResultList<RelatedTopic> unseen_trials = getUnseenTrialConfigsByCondition(vp.getFirstTrialConditionURI());
+        // if no more trials for requesting user under her default condition
+        if (unseen_trials.getSize() == 0) { // > check the other condition for unseen trials
+            if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_A)) {
+                unseen_trials = getUnseenTrialConfigsByCondition(TRIAL_CONDITION_B);
+            } else if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_B)) {
+                unseen_trials = getUnseenTrialConfigsByCondition(TRIAL_CONDITION_A);
+            }
+        }
+        if (unseen_trials.getItems().isEmpty()) return FAIL_NR; // experiment finished > no unseen trial left
+        int index = random.nextInt(unseen_trials.getItems().size());
+        return unseen_trials.getItems().get(index).getId();
     }
     
     @GET
@@ -316,38 +346,48 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic user = getRequestingUser();
         Association trial_seen = user.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
                 ROLE_DEFAULT, ROLE_DEFAULT, trialId);
-        if (trial_seen != null) throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
+        if (trial_seen != null) {
+            long nextTrialId = getNextUnseenTrialId();
+            log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
+            // throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
+            return Response.ok(nextTrialId).build();
+        }
         dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE, 
                 new TopicRoleModel(user.getId(), "dm4.core.default"), 
                 new TopicRoleModel(trialId, "dm4.core.default")));
-        return Response.ok().build();
+        return Response.ok(OK_NR).build();
     }
     
     @GET
     @Path("/estimation/next/{trialId}")
-    public int getNextTrialEstimationNr(@PathParam("trialId") long id) {
+    public Response getNextTrialEstimationNr(@PathParam("trialId") long id) {
         Topic user = getRequestingUser();
         String trialConfigUri = dms.getTopic(id).getUri();
         log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
         ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
                 "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
-        int count = 1; // default estimation is first
+        long count = 1; // default estimation is first
         for (RelatedTopic trialReport : trialReports) {
             String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
             if (trialConfigUri.equals(trial)) {
-                log.info("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+                log.fine("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
                 trialReport.loadChildTopics(ESTIMATION_REPORT_URI);
                 if (trialReport.getChildTopics().has(ESTIMATION_REPORT_URI)) {
                     List<Topic> estimations = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                    log.info("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                    log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
                     count = estimations.size() + 1; // number of next estimation for this user and this trial
                 }
-                return count;
+                // check if we are now over the maximum number of estimations
+                if (count == MAX_ESTIMATION_COUNT) {
+                    count = getNextUnseenTrialId(); // return ID of next unseen trial instead of estimationNR
+                    log.info("Could and should redirect VP directly to her very next trial => " + count);
+                }
+                return Response.ok(count).build();
             } else {
-                log.info("Next Estimation Debug: " + trialConfigUri + " === " + trial);
+                log.fine("> Next Estimation: " + trialConfigUri + " === " + trial);
             }
         }
-        return count;
+        return Response.ok(count).build();
     }
     
     @POST
@@ -371,7 +411,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             int confidenceValue = data.getInt("certainty");
             int toStartTime = data.getInt("to_start_time");
             int estimationTime = data.getInt("estimation_time");
-            log.info("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
+            log.fine("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
                     + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
             // 2 Check consistency of this request for reporting
             Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
@@ -379,7 +419,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             report.loadChildTopics(ESTIMATION_REPORT_URI);
             if (report.getChildTopics().has(ESTIMATION_REPORT_URI)) {
                 estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                log.info("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
                 for (Topic estimationReport : estimations) {
                     estimationReport.loadChildTopics(ESTIMATION_NR_URI);
                     int eNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
@@ -431,7 +471,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic user = getRequestingUser();
         try {
             // 1 Parse data of POST request
-            log.info("POST Pinning: " + payload);
+            log.fine("POST Pinning: " + payload);
             JSONObject data = new JSONObject(payload);
             Topic trialConfig = getTrialConfigTopic(trialId);
             JSONObject coordinates = data.getJSONObject("geo_coordinates");
@@ -439,7 +479,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             int reactionTime = data.getInt("reaction_time");
             String latitude = coordinates.getString("latitude");
             String longitude = coordinates.getString("longitude");
-            log.info("Pinned Coordinates are \"" + latitude + "," 
+            log.fine("Pinned Coordinates are \"" + latitude + "," 
                     + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
             // 2 Start new trial report
             Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
@@ -466,7 +506,6 @@ public class WebExperimentsPlugin extends PluginActivator {
         DeepaMehtaTransaction tx = dms.beginTx();
         Topic report = null;
         String trialConfigUri = dms.getTopic(trialId).getUri();
-        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
         ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
                 "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
         for (RelatedTopic trialReport : trialReports) {
@@ -510,14 +549,12 @@ public class WebExperimentsPlugin extends PluginActivator {
         // for 1000 do acService.createUser()
         log.info("Setting up some new users for Web Experiments");
         DeepaMehtaTransaction tx = dms.beginTx();
-        String conditionA = "webexp.config.pinning";
-        String conditionB = "webexp.config.no_pinning";
-        String conditionValue = conditionA;
+        String conditionValue = TRIAL_CONDITION_A;
         try {
             for (int i=10; i<=30; i++) {
                 String username = "VP "+ i;
                 if (isUsernameAvailable(username)) {
-                    if (i > 20) conditionValue = conditionB;
+                    if (i > 20) conditionValue = TRIAL_CONDITION_B;
                     Credentials cred = new Credentials(username, "");
                     ChildTopicsModel userAccount = new ChildTopicsModel()
                         .put(USERNAME_TYPE_URI, cred.username)
