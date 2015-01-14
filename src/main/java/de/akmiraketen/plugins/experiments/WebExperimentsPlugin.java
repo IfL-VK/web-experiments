@@ -91,6 +91,24 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TRIAL_SEEN_EDGE_TYPE = "de.akmiraketen.webexp.trial_seen_edge";
     private static final String MARKER_CONFIG_EDGE_TYPE = "de.akmiraketen.webexp.config_marker_symbol";
     
+    // -- Trial Report & Config 
+    
+    private static final String TRIAL_REPORT_URI = "de.akmiraketen.webexp.trial_report";
+    
+    private static final String TRIAL_CONFIG_ID_URI = "de.akmiraketen.webexp.report_trial_config_id";
+    private static final String TRIAL_CONFIG_MAP_ID = "de.akmiraketen.webexp.trial_map_id";
+    private static final String TRIAL_CONFIG_PLACE_TO_PIN = "de.akmiraketen.webexp.trial_place_to_pin";
+    private static final String TRIAL_CONFIG_PLACE_FROM1 = "de.akmiraketen.webexp.trial_place_from_1";
+    private static final String TRIAL_CONFIG_PLACE_TO1 = "de.akmiraketen.webexp.trial_place_to_1";
+    
+    // ----- Place Config
+    
+    private static final String PLACE_CONFIG = "de.akmiraketen.webexp.place_config";
+    private static final String PLACE_CONFIG_ID = "de.akmiraketen.webexp.place_id";
+    private static final String PLACE_CONFIG_NAME = "de.akmiraketen.webexp.place_name";
+    private static final String PLACE_CONFIG_LAT = "de.akmiraketen.webexp.place_latitude";
+    private static final String PLACE_CONFIG_LNG = "de.akmiraketen.webexp.place_longitude";
+    
     // ----- Trial Pinning Report URIs
     
     private static final String COORDINATES_PINNED_URI = "de.akmiraketen.webexp.report_pinned_coordinates";
@@ -217,6 +235,45 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     
     // --- REST Resources / API Endpoints
+    
+    
+    @GET
+    @Path("/report/generate")
+    @Transactional
+    @Produces(MediaType.TEXT_PLAIN)
+    public String doGenerateCompleteReport() {
+        StringBuilder report = new StringBuilder();
+        ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
+        report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
+        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1");
+        report.append("\n");
+        for (RelatedTopic vp : propositi.getItems()) {
+            Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
+            String vpId = username.getSimpleValue().toString();
+            ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent", 
+                    "dm4.core.child", TRIAL_REPORT_URI, 30);
+            if (trialReports.getTotalCount() > 0) {
+                log.info("There are overall " + trialReports.getTotalCount() + " written to DB for VP " + vpId);
+                for (RelatedTopic trialReport : trialReports.getItems()) {
+                    String trialConfigId = trialReport.loadChildTopics(TRIAL_CONFIG_ID_URI)
+                            .getChildTopics().getString(TRIAL_CONFIG_ID_URI);
+                    Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
+                    String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
+                            .getChildTopics().getString(TRIAL_CONDITION_TYPE);
+                    String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
+                            .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
+                    String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
+                            .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
+                    Topic placeConfig = getConfiguredPlace(placeToPinId);
+                    String placeToPinName = getConfiguredPlaceName(placeConfig);
+                    String placeCoordinates = getConfiguredPlaceCoordinates(placeConfig);
+                    report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName);
+                    report.append("\n");
+                }
+            }
+        }
+        return report.toString();
+    }
     
     /** 
      * 
@@ -369,6 +426,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         ResultList<RelatedTopic> unseen_trials = getUnseenTrialConfigsByCondition(vp.getFirstTrialConditionURI());
         // if no more trials for requesting user under her default condition
         if (unseen_trials.getSize() == 0) { // > check the other condition for unseen trials
+            // now we should redirect to a "Pause"-screen but just once for each VP!
             if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_A)) {
                 unseen_trials = getUnseenTrialConfigsByCondition(TRIAL_CONDITION_B);
             } else if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_B)) {
@@ -572,6 +630,23 @@ public class WebExperimentsPlugin extends PluginActivator {
             tx.finish();
         }
         return report;
+    }
+    
+    private Topic getConfiguredPlace(String id) {
+        Topic placeConfigIdTopic = dms.getTopic(PLACE_CONFIG_ID, new SimpleValue(id));
+        return placeConfigIdTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+                "dm4.core.parent", PLACE_CONFIG);
+    }
+    
+    private String getConfiguredPlaceName(Topic configTopic) {
+        configTopic.loadChildTopics(PLACE_CONFIG_NAME);
+        return configTopic.getChildTopics().getString(PLACE_CONFIG_NAME);
+    }
+    
+    private String getConfiguredPlaceCoordinates(Topic configTopic) {
+        String lat = configTopic.loadChildTopics(PLACE_CONFIG_LAT).getChildTopics().getString(PLACE_CONFIG_LAT);
+        String lng = configTopic.loadChildTopics(PLACE_CONFIG_LNG).getChildTopics().getString(PLACE_CONFIG_LNG);
+        return lat + ";" + lng;
     }
     
     public Topic getTrialConfigTopic(@PathParam("trialId") long id) {
