@@ -1,7 +1,7 @@
 webexp.config   | de.akmiraketen.webexp.trial_name      | de.akmiraketen.webexp.trial_map_id    | de.akmiraketen.webexp.trial_condition | de.akmiraketen.webexp.trial_place_to_pin  | de.akmiraketen.webexp.trial_place_from_1 | de.akmiraketen.webexp.trial_place_to_1 | de.akmiraketen.webexp.trial_place_from_2 | de.akmiraketen.webexp.trial_place_to_2 | de.akmiraketen.webexp.trial_place_from_3 | de.akmiraketen.webexp.trial_place_to_3 | de.akmiraketen.webexp.trial_place_from_4 | de.akmiraketen.webexp.trial_place_to_4 | de.akmiraketen.webexp.trial_place_from_5 | de.akmiraketen.webexp.trial_place_to_5 | de.akmiraketen.webexp.trial_memo_sec
-trial1  | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial2  | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial3  | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial1  | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial2  | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial3  | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
 trial4  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
 trial5  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
 trial6  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
@@ -10,22 +10,22 @@ trial8  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 
 trial9  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
 trial10 | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
 trial11 | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial12 | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial13 | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial14 | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial15 | Trial A | #Map1 | Pinning           | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
-trial16  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial17  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial18  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial19  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial20  | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
-trial21  | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
-trial22  | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
-trial23  | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
-trial24  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial25  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial26  | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial27  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial28  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial29  | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
-trial30  | Trial C | #Map1 | Pinning          | 5 | 1 | 2 | 2 | 3 | 3 | 1 | 2 | 5 | 4 | 2 | 30
+trial12 | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial13 | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial14 | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial15 | Trial A | #Map1 | Pinning          | 1 | 1 | 2 | 2 | 1 | 3 | 1 | 4 | 1 | 4 | 2 | 60
+trial16 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial17 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial18 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial19 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial20 | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
+trial21 | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
+trial22 | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
+trial23 | Trial C | #Map1 | No Pinning       | 4 | 1 | 2 | 2 | 3 | 1 | 5 | 2 | 5 | 4 | 2 | 30
+trial24 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial25 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial26 | Trial C | #Map2 | Pinning          | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial27 | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial28 | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial29 | Trial C | #Map2 | No Pinning       | 7 | 6 | 8 | 7 | 6 | 7 | 9 | 10 | 6 | 9 | 8 | 30
+trial30 | Trial C | #Map1 | Pinning          | 5 | 1 | 2 | 2 | 3 | 3 | 1 | 2 | 5 | 4 | 2 | 30

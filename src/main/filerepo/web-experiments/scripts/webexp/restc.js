@@ -13,7 +13,7 @@ define(['d3'], function (d3, require) {
                 if (response !== null) {
                     result = response
                     if (debug) console.log(response.status, response)
-                    if  (response.status === 200) {
+                    if (response.status === 200) {
                         // process response
                         if (json) {
                             result = JSON.parse(response.response)

@@ -48,6 +48,7 @@ define(function () {
                     return place.childs['de.akmiraketen.webexp.place_name'].value
                 }
             }
+            console.warn("No name for place with id " +placeId+ " found in loaded places", places)
         },
         getCoordinatesOfPlace: function (placeId) {
             if (!trial.hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
@@ -61,8 +62,9 @@ define(function () {
                         "latitude" :  place.childs['de.akmiraketen.webexp.place_latitude'].value,
                         "longitude" : place.childs['de.akmiraketen.webexp.place_longitude'].value
                     }
-                }   			
+                }
             }
+            console.warn("No coordinates for place with id " +placeId+ " found in loaded places", places)
         },
         getTitle: function () {
             return title

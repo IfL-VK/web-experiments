@@ -16,20 +16,7 @@ define(['./BaseModel'], function (Base) {
     }
 
     m2.getCoordinatesOfPlaceToPin = function () {
-        if (!m2.getTrialConfig().hasOwnProperty('trial_config')) throw Error ("Misusage: No trial config loaded.")
-        if (typeof this.getPlaceToPinId() === 'undefined') throw Error ("Error: No place to pin set.")
-        var places = m2.getPlaces()
-        for (var idx in places) {
-            var place = places[idx]
-            var currentPlaceId = place.childs['de.akmiraketen.webexp.place_id'].value
-            if (currentPlaceId === this.getPlaceToPinId()) {
-                // get geo coordinates of this place
-                return {
-                    "latitude" :  place.childs['de.akmiraketen.webexp.place_latitude'].value,
-                    "longitude" : place.childs['de.akmiraketen.webexp.place_longitude'].value
-                }
-            }   			
-        }
+        return m2.getCoordinatesOfPlace(m2.getPlaceToPinId())
     }
 
     m2.getNameOfPlaceToPin = function () {

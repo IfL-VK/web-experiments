@@ -79,7 +79,7 @@ define(function (require) {
         
         // 3 do mark trial as seen by this VP (logged in user)
         control.doMarkTrialAsSeen(trialId, function (response) {
-            console.log("trialID:" + trialId  + "; response: ", response)
+            // console.log("trialID:" + trialId  + "; response: ", response)
             var loadedTrialId = parseInt(response.response)
             if (loadedTrialId === 1) {
                 if (common.verbose) console.log("OK - Trial marked as seen!")

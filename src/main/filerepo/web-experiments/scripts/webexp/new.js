@@ -20,7 +20,7 @@ define(function (require) {
             
             var marker_id = data.selected_marker_id
             var username = data.value
-s
+
             if (view_state === "icon") {
                 // 2 load marker selection
                 init_marker_selection_view(marker_id)
@@ -128,7 +128,7 @@ s
         function do_auth() {
             var element = d3.select('input.vp-id')[0][0]
             newCtrl.startSession(element.value, function (){
-                window.location.href = '/web-exp/icon'
+                window.location.href = '/web-exp/welcome'
             }, common.debug)
         }
     }

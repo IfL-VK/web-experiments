@@ -4,6 +4,7 @@ package de.akmiraketen.plugins.experiments;
 import de.akmiraketen.plugins.experiments.model.ParticipantViewModel;
 import de.akmiraketen.plugins.experiments.model.TrialConfigViewModel;
 import de.deepamehta.core.Association;
+import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
@@ -95,7 +96,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String TRIAL_REPORT_URI = "de.akmiraketen.webexp.trial_report";
     
-    private static final String TRIAL_CONFIG_ID_URI = "de.akmiraketen.webexp.report_trial_config_id";
     private static final String TRIAL_CONFIG_MAP_ID = "de.akmiraketen.webexp.trial_map_id";
     private static final String TRIAL_CONFIG_PLACE_TO_PIN = "de.akmiraketen.webexp.trial_place_to_pin";
     private static final String TRIAL_CONFIG_PLACE_FROM1 = "de.akmiraketen.webexp.trial_place_from_1";
@@ -119,13 +119,14 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String ESTIMATION_REPORT_URI = "de.akmiraketen.webexp.trial_estimation_report";
     private static final String ESTIMATION_NR_URI = "de.akmiraketen.webexp.report_estimation_nr";
-    private static final String COORDINATES_URI = "de.akmiraketen.webexp.report_estimated_coordinates";
+    private static final String ESTIMATED_COORDINATES_URI = "de.akmiraketen.webexp.report_estimated_coordinates";
     private static final String ESTIMATED_DISTANCE_URI = "de.akmiraketen.webexp.report_estimated_distance";
-    private static final String TO_START_TIME_URI = "de.akmiraketen.webexp.report_estimated_to_start_time";
+    private static final String ESTIMATION_CONFIDENCE = "de.akmiraketen.webexp.report_estimation_confidence";
+    private static final String ESTIMATION_TO_START_TIME_URI = "de.akmiraketen.webexp.report_estimated_to_start_time";
     private static final String ESTIMATION_TIME_URI = "de.akmiraketen.webexp.report_estimation_time";
-    private static final String FROM_PLACE_URI = "de.akmiraketen.webexp.report_from_place_id";
-    private static final String TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
-    private static final String ESTIMATED_CONFIDENCE = "de.akmiraketen.webexp.report_estimation_confidence";
+    private static final String ESTIMATION_FROM_PLACE_URI = "de.akmiraketen.webexp.report_from_place_id";
+    private static final String ESTIMATION_TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
+   
     
     private static final String TRIAL_CONDITION_A = "webexp.config.pinning";
     private static final String TRIAL_CONDITION_B = "webexp.config.no_pinning";
@@ -245,29 +246,125 @@ public class WebExperimentsPlugin extends PluginActivator {
         StringBuilder report = new StringBuilder();
         ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
         report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
-        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1");
+        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
+        report.append("Estfrom.2\tEstfromname.2\tEstto.2\tEsttoname.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
+        report.append("Estfrom.3\tEstfromname.3\tEstto.3\tEsttoname.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
+        report.append("Estfrom.4\tEstfromname.4\tEstto.4\tEsttoname.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
+        report.append("Estfrom.5\tEstfromname.5\tEstto.5\tEsttoname.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
         report.append("\n");
         for (RelatedTopic vp : propositi.getItems()) {
             Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
             String vpId = username.getSimpleValue().toString();
             ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent", 
-                    "dm4.core.child", TRIAL_REPORT_URI, 30);
+                    "dm4.core.child", TRIAL_REPORT_URI, 0);
             if (trialReports.getTotalCount() > 0) {
                 log.info("There are overall " + trialReports.getTotalCount() + " written to DB for VP " + vpId);
                 for (RelatedTopic trialReport : trialReports.getItems()) {
-                    String trialConfigId = trialReport.loadChildTopics(TRIAL_CONFIG_ID_URI)
-                            .getChildTopics().getString(TRIAL_CONFIG_ID_URI);
+                    trialReport.loadChildTopics();
+                    String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
+                            .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
                     Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
+                    // General Info
                     String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
                             .getChildTopics().getString(TRIAL_CONDITION_TYPE);
                     String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
                             .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
+                    // Pinning Data
                     String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
-                            .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
+                        .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
                     Topic placeConfig = getConfiguredPlace(placeToPinId);
                     String placeToPinName = getConfiguredPlaceName(placeConfig);
                     String placeCoordinates = getConfiguredPlaceCoordinates(placeConfig);
-                    report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName);
+                    String pinnedCoordinates = "-1;-1";
+                    int pinningRT = -1, pinInactive = -1;
+                    try {
+                        pinnedCoordinates = trialReport.loadChildTopics(COORDINATES_PINNED_URI)
+                            .getChildTopics().getString(COORDINATES_PINNED_URI);
+                        pinningRT = trialReport.loadChildTopics(REACTION_TIME_URI)
+                                .getChildTopics().getInt(REACTION_TIME_URI);
+                        pinInactive = trialReport.loadChildTopics(COUNT_OUTSIDE_URI)
+                                .getChildTopics().getInt(COUNT_OUTSIDE_URI);
+                    } catch (Exception e) {
+                        log.warning("No pinning data was recorded during trial: " + trialConfigId + " for " + username.getSimpleValue());
+                    }
+                    // Estimation Report Data
+                    String estimation1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
+                    int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
+                    String estimation2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
+                    int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
+                    String estimation3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
+                    int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
+                    String estimation4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
+                    int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
+                    String estimation5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
+                    int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
+                    try {
+                        List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                        for (Topic estimationReport : estimationReports) {
+                            int estimationNr = -1;
+                            estimationReport.loadChildTopics();
+                            estimationNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
+                            Topic fromPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_FROM_PLACE_URI));
+                            Topic toPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_TO_PLACE_URI));
+                            switch (estimationNr) {
+                                case 1:
+                                    estFrom1 = getConfiguredPlaceCoordinates(fromPlace);
+                                    estFromName1 = getConfiguredPlaceName(fromPlace);
+                                    estTo1 = getConfiguredPlaceCoordinates(toPlace);;
+                                    estToName1 = getConfiguredPlaceName(toPlace);
+                                    estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                    estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                    estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                    estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                case 2:
+                                    estFrom2 = getConfiguredPlaceCoordinates(fromPlace);
+                                    estFromName2 = getConfiguredPlaceName(fromPlace);
+                                    estTo2 = getConfiguredPlaceCoordinates(toPlace);;
+                                    estToName2 = getConfiguredPlaceName(toPlace);
+                                    estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                    estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                    estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                    estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                case 3:
+                                    estFrom3 = getConfiguredPlaceCoordinates(fromPlace);
+                                    estFromName3 = getConfiguredPlaceName(fromPlace);
+                                    estTo3 = getConfiguredPlaceCoordinates(toPlace);;
+                                    estToName3 = getConfiguredPlaceName(toPlace);
+                                    estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                    estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                    estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                    estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                case 4:
+                                    estFrom4 = getConfiguredPlaceCoordinates(fromPlace);
+                                    estFromName4 = getConfiguredPlaceName(fromPlace);
+                                    estTo4 = getConfiguredPlaceCoordinates(toPlace);;
+                                    estToName4 = getConfiguredPlaceName(toPlace);
+                                    estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                    estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                    estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                    estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                case 5:
+                                    estFrom5 = getConfiguredPlaceCoordinates(fromPlace);
+                                    estFromName5 = getConfiguredPlaceName(fromPlace);
+                                    estTo5 = getConfiguredPlaceCoordinates(toPlace);;
+                                    estToName5 = getConfiguredPlaceName(toPlace);
+                                    estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                    estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                    estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                    estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);                                    
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warning("No estimation data was recorded during trial " + trialConfigId + " for " + username.getSimpleValue());
+                    }
+                    // Write line
+                    report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName 
+                            + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive 
+                            + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
+                            + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
+                            + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
+                            + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
+                            + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
                     report.append("\n");
                 }
             }
@@ -462,7 +559,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     public Response getNextTrialEstimationNr(@PathParam("trialId") long id) {
         Topic user = getRequestingUser();
         String trialConfigUri = dms.getTopic(id).getUri();
-        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
         ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
                 "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
         long count = 1; // default estimation is first
@@ -530,14 +627,14 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
             // 3 Start to build up new trial estimation report
             ChildTopicsModel values = new ChildTopicsModel()
-                .put(COORDINATES_URI, latitude + ";" + longitude)
-                .put(FROM_PLACE_URI, fromPlaceId)
-                .put(TO_PLACE_URI, toPlaceId)
-                .put(TO_START_TIME_URI, toStartTime)
+                .put(ESTIMATED_COORDINATES_URI, latitude + ";" + longitude)
+                .put(ESTIMATION_FROM_PLACE_URI, fromPlaceId)
+                .put(ESTIMATION_TO_PLACE_URI, toPlaceId)
+                .put(ESTIMATION_TO_START_TIME_URI, toStartTime)
                 .put(ESTIMATION_TIME_URI, estimationTime)
                 .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
                 .put(ESTIMATION_NR_URI, estimation)
-                .put(ESTIMATED_CONFIDENCE, confidenceValue);
+                .put(ESTIMATION_CONFIDENCE, confidenceValue);
             TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
             // 4 assign new trial estimation report to trial report
             report.setChildTopics(new ChildTopicsModel()
