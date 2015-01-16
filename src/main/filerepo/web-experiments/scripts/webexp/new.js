@@ -5,60 +5,72 @@ define(function (require) {
 
     var newCtrl     = require('./controller/newCtrl')
     var newModel    = require('./model/newModel')
-    var d3          = require('d3')
+    // var d3          = require('d3')
     var common      = require('common')
 
-    var view_state  = "" // values may be "", "finish", "welcome", "pause" or "icon"
+    var view_state  = "" // values may be "", "finish", "welcome", "pause" or "icon", "intro"
 
     // ------ Initialization of client-side data
 
     function init_page () {
 
         view_state = common.parse_view_state_from_page()
+        console.log(view_state)
 
-        newCtrl.fetchParticipant(function (data) {
+        // if "intro", "break" or "pract" mark trial as seen, too
+
+        if (view_state.indexOf("intro") !== -1) {
             
-            var marker_id = data.selected_marker_id
-            var username = data.value
+            var trialId = common.parse_trial_id_from_resource_location()
+            newCtrl.doMarkTrialAsSeen(trialId) // ###
+            
+        } else {
+            
+            newCtrl.fetchParticipant(function (data) {
+            
+                var marker_id = data.selected_marker_id
+                var username = data.value
 
-            if (view_state === "icon") {
-                // 2 load marker selection
-                init_marker_selection_view(marker_id)
-            } else if (view_state === "welcome") {
-                // 1 show welcome message
-                init_welcome_view()
-                console.log("Render welcome message")
-            } else if (view_state === "finish") {
-                // ###
-                console.log("Render finish message")
-            } else if (view_state === "pause") {
-                // ###
-                console.log("Render pause view")
-            }
-
-            // 2 load trials
-            var users_condition = data['first_trial_condition']
-            // fetch and then render all loaded trials
-            newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
-                if (common.debug) console.log(trials.items)
-                if (trials.total_count === 0) {
-                    d3.select('.trials').html('<p class="warning">To start testing, ' 
-                        + 'please load some trial configurations.</p>')
-                } else {
-                    if (common.verbose) console.log("Loaded " + trials.items.length + " of type " + users_condition)
-                    render_all_trial_configs(trials.items)   
+                if (view_state === "icon") {
+                    // 2 load marker selection
+                    init_marker_selection_view(marker_id)
+                } else if (view_state === "welcome") {
+                    // 1 show welcome message
+                    init_welcome_view()
+                    console.log("Render welcome message")
+                } else if (view_state === "finish") {
+                    // ###
+                    console.log("Render finish message")
+                } else if (view_state === "pause") {
+                    // ###
+                    console.log("Render pause view")
                 }
+
+                /** 2 load trials
+                var users_condition = data['first_trial_condition']
+                // fetch and then render all loaded trials
+                newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
+                    if (common.debug) console.log(trials.items)
+                    if (trials.total_count === 0) {
+                        d3.select('.trials').html('<p class="warning">To start testing, '
+                            + 'please load some trial configurations.</p>')
+                    } else {
+                        if (common.verbose) console.log("Loaded " + trials.items.length + " of type " + users_condition)
+                        render_all_trial_configs(trials.items)
+                    }
+                }, false)
+                // GUI
+                d3.select('.username').text(username)
+                // OK
+                newModel.setUsername(username) **/
+            }, function (error) {
+                console.log("Auth response", error.status)
+                console.warn("Please log in as \"VP <Nr>\"")
+                render_start_session_dialog()
+                throw Error("No session to start the experiment")
             }, false)
-            // GUI
-            d3.select('.username').text(username)
-            // OK
-            newModel.setUsername(username)
-        }, function (error) {
-            console.log("Auth response", error.status)
-            console.warn("Please log in as \"VP <Nr>\"")
-            render_start_session_dialog()
-            throw Error("No session to start the experiment")
-        }, false)
+        }
+
     }
 
     function init_welcome_view () {
@@ -97,7 +109,7 @@ define(function (require) {
                             .attr('src', iconPath).attr('id', topicId)
                 }
             }
-            d3.select('.content').append('a').attr('href', '/web-exp/trial').text('Los geht\'s')
+            d3.select('.content').append('a').attr('href', '/web-exp/nextpage').text('Los geht\'s')
             d3.selectAll('li.symbol img').on('click', function () {
                 newCtrl.doMarkIconPreference(this.id, function (){
                     console.log("OK - Icon set") // ### render icon as silected

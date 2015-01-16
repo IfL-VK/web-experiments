@@ -3,12 +3,12 @@
 
 define(function (require) {
     
-    var d3          = require('d3')
-    var leaflet     = require('leaflet')
-    var common      = require('common')
-
-    var control     = require('./controller/estimationCtrl')
-    var model       = require('./model/estimationModel')
+    var d3              = require('d3'),
+        leaflet         = require('leaflet'),
+        leaflet_label   = require('leaflet_label'),
+        common          = require('common'),
+        control         = require('./controller/estimationCtrl'),
+        model           = require('./model/estimationModel')
 
     var map                         // map leaflet reference
     var placeFrom = {}              // configured place from
@@ -102,6 +102,7 @@ define(function (require) {
             centerLat = placeToStartFrom['latitude']
             centerLng = placeToStartFrom['longitude']
             zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
+            console.log("Zoomlevel: " + zoomLevel)
             fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
         } catch (error) {
             console.log(error)
@@ -112,13 +113,14 @@ define(function (require) {
         map = L.map('map',  {
             dragging: false, touchZooom: false,
             scrollWheelZoom: false, doubleClickZoom: false,
-            boxZoom: false, zoomControl: false, keyboard: false
+            boxZoom: false, zoomControl: false, keyboard: false,
+            attributionControl: false
         })
         // .. set viewport by the corresponding map file configuration for this trial
         map.setView([centerLat, centerLng], zoomLevel)
         // ### fixme: find maptile layer 
         // .. add an OpenStreetMap tile layer
-        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.ed29b27e/{z}/{x}/{y}.png?'
+        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.2823bf39/{z}/{x}/{y}.png?'
                 + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
@@ -163,8 +165,7 @@ define(function (require) {
             case -1: // no unseen trial (id) left for requesting user
                 window.location.href = '/web-exp/finish'
             default: 
-                // response contains not an estimationId but a trialid
-                window.location.href = '/web-exp/trial/' + estimationNr + '/pinning'
+                window.location.href = '/web-exp/nextpage'
         }
     }
 
@@ -182,7 +183,7 @@ define(function (require) {
                 noHide: true, offset: [-40,15], zIndexOffset: -1
             })
             labelMarker.addTo(map) **/
-        var startPoint = L.circle([centerLat, centerLng], 200, { 
+        var startPoint = L.circle([centerLat, centerLng], 100, {
             fill: true, fillColor: 'black', weight: 4, color: 'gray', opacity: 1 })
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)

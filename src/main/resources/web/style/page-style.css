@@ -50,6 +50,16 @@ body {
     margin: auto;
 }
 
+#map .leaflet-marker-iconlabel {
+    background: transparent;
+    border-color: transparent;
+    border-radius: 0px;
+    border-width: 0px;
+    border-style: none;
+    font: 12px/20px "Helvetica Neue","Arial","Helvetica",sans-serif;
+    box-shadow: 1px 1px 1px transparent;
+}
+
 .certainty-scale {
     display: none;
     width: 800px;

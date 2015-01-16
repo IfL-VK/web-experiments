@@ -3,12 +3,12 @@
 
 define(function (require) {
 
-    var d3          = require('d3')
-    var leaflet     = require('leaflet')
-    var common      = require('common')
-
-    var control     = require('./controller/pinningCtrl')
-    var model    = require('./model/pinningModel')
+    var d3              = require('d3'),
+        some_L          = require('leaflet'),
+        some_leaflet    = require('leaflet_label'),
+        common          = require('common'),
+        control         = require('./controller/pinningCtrl'),
+        model           = require('./model/pinningModel')
 
     var map                         // map leaflet reference
     var place_to_pin = {}           // configured place to pin geo-coordinates
@@ -32,6 +32,7 @@ define(function (require) {
         
         // 0 get trial id out of url
         trialId = common.parse_trial_id_from_resource_location()
+        if (trialId === -1) throw Error("No more trials available for this VP - You're done.")
 
         // 1 load user session
         init_user_view() // ### todo: load a users preferenced marker
@@ -71,6 +72,10 @@ define(function (require) {
                 } else {
                     throw Error("Unknown trial condition for pinning (\""+pinning_condition+"\"), Trial: " + trialId)
                 }
+
+                // 4 show place name
+                init_place_labels()
+
             }, function (error) {
                 console.warn("Error loading participant ..")
             }, common.debug)
@@ -109,6 +114,7 @@ define(function (require) {
             centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
             centerLng = mapConfig['de.akmiraketen.webexp.trial_map_center_lng'].value
             zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
+            console.log("Zoomlevel: " + zoomLevel)
             fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
         } catch (error) {
             throw Error ("Map File config for " + mapId + " is missing a value.")
@@ -118,13 +124,14 @@ define(function (require) {
         map = L.map('map',  {
             dragging: false, touchZooom: false,
             scrollWheelZoom: false, doubleClickZoom: false,
-            boxZoom: false, zoomControl: false, keyboard: false
+            boxZoom: false, zoomControl: false, keyboard: false,
+            attributionControl: false
         })
         // .. set viewport by the corresponding map file configuration for this trial
         map.setView([centerLat, centerLng], zoomLevel)
         // ### fixme: find maptile layer 
         // .. add an OpenStreetMap tile layer
-        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.ed29b27e/{z}/{x}/{y}.png?'
+        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.2823bf39/{z}/{x}/{y}.png?'
                 + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
@@ -141,6 +148,32 @@ define(function (require) {
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
         } **/
+    }
+
+    function init_place_labels () {
+        for (var i = 0; i < model.getPlaces().length; i++) {
+            var place = model.getPlaces()[i]
+            var lat = place.childs['de.akmiraketen.webexp.place_latitude'].value
+            var lng = place.childs['de.akmiraketen.webexp.place_longitude'].value
+            var name = place.childs['de.akmiraketen.webexp.place_name'].value
+            /* var blankIcon = L.icon({
+                iconUrl: '/de.akmiraketen.web-experiments/images/circle20-grey.png', iconSize: [15, 15],
+                labelAnchor: [3, 0] // as I want the label to appear 2px past the icon (10 + 2 - 6)
+            }) **/
+            
+            var NewIcon = L.Icon.Label.extend({
+                options: {
+                    iconUrl: '/de.akmiraketen.web-experiments/images/circle20-grey.png', shadowUrl: null,
+                    iconSize: new L.Point(10, 10), iconAnchor: new L.Point(10, 5),
+                    labelAnchor: new L.Point(17, -4), wrapperAnchor: new L.Point(15, -0)
+                }
+            });
+            var m = L.marker([lat, lng], { draggable: false, icon: new NewIcon({ labelText: name }) })
+            // if (!m.hasOwnProperty('bindLabel')) throw Error("Laeflet label plugin was not initialized correctly..")
+                // m.bindLabel(name, { noHide: true })
+                m.addTo(map)
+                // m.showLabel();
+        }
     }
 
     function init_user_view () {
@@ -173,7 +206,7 @@ define(function (require) {
             /* iconAnchor:   [24, 24] *shadowUrl: 'leaf-shadow.png', shadowSize: [50, 64],
              * shadowAnchor: [4, 62], popupAnchor:  [-3, -76] **/
             personalIcon = L.icon({
-                iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24], iconAnchor: [12, 24]
+                iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24]
             });
         }
 
@@ -191,10 +224,12 @@ define(function (require) {
                     // ### fixme: do not at marker (if already present) again
                     var marker = undefined
                     if (icon_path) {
-                        marker = L.marker([e.latlng.lat, e.latlng.lng], {icon: personalIcon})
+                        // marker = L.marker([e.latlng.lat, e.latlng.lng], {icon: personalIcon})
+                        marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
                         if (common.debug) console.log("using personal icon from " + icon_path)
                     } else {
-                        marker = L.marker([e.latlng.lat, e.latlng.lng])
+                        // marker = L.marker([e.latlng.lat, e.latlng.lng])
+                        marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
                     }
                     marker.addTo(featureGroup)
                     run_timer()

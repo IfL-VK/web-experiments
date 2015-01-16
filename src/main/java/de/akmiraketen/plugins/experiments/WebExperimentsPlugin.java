@@ -4,7 +4,6 @@ package de.akmiraketen.plugins.experiments;
 import de.akmiraketen.plugins.experiments.model.ParticipantViewModel;
 import de.akmiraketen.plugins.experiments.model.TrialConfigViewModel;
 import de.deepamehta.core.Association;
-import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
@@ -35,6 +34,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -202,13 +203,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
     
     @GET
-    @Path("/pause")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getNewPauseView() {
-        return getStaticResource("web/new.html");
-    }
-    
-    @GET
     @Path("/start")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getWelcomeScreen() {
@@ -233,7 +227,43 @@ public class WebExperimentsPlugin extends PluginActivator {
         // setViewParameter(trialId)
         return getStaticResource("web/estimation.html");
     }
-    
+
+    @GET
+    @Path("/pract/{trialId}/pinning")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getPracticeTrialPinningScreen(@PathParam("trialId") String trialId) {
+        // ### use templates to preset:
+        // setViewParameter(trialId)
+        return getStaticResource("web/pinning.html");
+    }
+
+    @GET
+    @Path("/pract/{trialId}/estimation")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getPracticeTrialEstimationScreen(@PathParam("trialId") String trialId) {
+        // ### use templates to preset:
+        // setViewParameter(trialId)
+        return getStaticResource("web/estimation.html");
+    }
+
+    @GET
+    @Path("/intro/{trialId}")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getIntroductionScreen(@PathParam("trialId") String trialId) {
+        // ### use templates to preset:
+        // setViewParameter(trialId)
+        return getStaticResource("web/introduction.html");
+    }
+
+    @GET
+    @Path("/pause")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getPauseScreen() {
+        // ### use templates to preset:
+        // setViewParameter(trialId)
+        return getStaticResource("web/pause.html");
+    }
+
     
     // --- REST Resources / API Endpoints
     
@@ -442,21 +472,11 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
 
     @GET
-    @Path("/trial")
-    public Response getFirstTrialConfigViewModel() {
-        long trialConfigId = getNextUnseenTrialId();
-        try {
-            return Response.seeOther(new URI ("/web-exp/trial/" + trialConfigId + "/pinning")).build();
-        } catch (URISyntaxException ex) {
-            Logger.getLogger(WebExperimentsPlugin.class.getName()).log(Level.SEVERE, null, ex);
-            throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GET
     @Path("/trial/{trialId}")
     public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
-        return new TrialConfigViewModel(dms.getTopic(id).loadChildTopics(), dms);
+        Topic trial = dms.getTopic(id);
+        log.info("Requested Trial Config \"" + trial.getUri() + "\"");
+        return new TrialConfigViewModel(trial.loadChildTopics(), dms);
     }
     
     @GET
@@ -502,22 +522,14 @@ public class WebExperimentsPlugin extends PluginActivator {
         // Check if trial_seen_edge exists between trial and user
         Iterator<RelatedTopic> k = trials.iterator();
         while (k.hasNext()) {
-            RelatedTopic trial = k.next();
-            Association trial_seen = trial.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
-                ROLE_DEFAULT, ROLE_DEFAULT, user.getId());
-            if (trial_seen != null) {
-                log.fine("Removing seen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
-                k.remove();
-            } else {
-                log.fine("Identified unseen trial for user \""+user.getSimpleValue()+"\" => " + trial.getSimpleValue());
-            }
+            if (hasSeenTrial(user, k.next())) k.remove();
         }
         return trials;
     }
     
     @GET
-    @Path("/trial/unseen/next")
-    public long getNextUnseenTrialId() {
+    @Path("/trial/unseen/random/next")
+    public long getNextUnseenRandomTrialId() {
         Topic user = getRequestingUser();
         ParticipantViewModel vp = new ParticipantViewModel(user, dms);
         ResultList<RelatedTopic> unseen_trials = getUnseenTrialConfigsByCondition(vp.getFirstTrialConditionURI());
@@ -533,6 +545,40 @@ public class WebExperimentsPlugin extends PluginActivator {
         if (unseen_trials.getItems().isEmpty()) return FAIL_NR; // experiment finished > no unseen trial left
         int index = random.nextInt(unseen_trials.getItems().size());
         return unseen_trials.getItems().get(index).getId();
+    }
+    
+    @GET
+    @Path("/nextpage")
+    public Response getNextPage() throws URISyntaxException {
+        Topic user = getRequestingUser();
+        long trialId = getNextUnseenTrialId();
+        if (trialId == FAIL_NR) {
+            log.info("Experiment finished, no configured trial left for requesting user");
+            Response.noContent();
+        }
+        Topic trialConfig = dms.getTopic(trialId);
+        if (!hasSeenTrial(user, trialConfig)) {
+            if (trialConfig.getUri().contains("intro")) {
+                // route to intro page
+                log.info(" Redirect to intro ... " + trialConfig.getUri());
+                URI location = new URI("/web-exp/intro/" + trialConfig.getId());
+                return Response.seeOther(location).build();
+            } else if (trialConfig.getUri().contains("break")) {
+                log.info(" Redirect to practice trial ... " + trialConfig.getUri());
+                URI location = new URI("/web-exp/pause");
+                return Response.seeOther(location).build();
+            } else if (trialConfig.getUri().contains("pract")) {
+                // start practice session
+                log.info(" Redirect to practice trial ... " + trialConfig.getUri());
+                URI location = new URI("/web-exp/pract/" + trialConfig.getId() + "/pinning");
+                return Response.seeOther(location).build();
+            } else {
+                log.info(" Loading next trial ... " + trialConfig.getUri());
+                URI location = new URI("/web-exp/trial/" + trialConfig.getId() + "/pinning");
+                return Response.seeOther(location).build();
+            }
+        }
+        return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
     }
     
     @GET
@@ -698,6 +744,52 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     // --- Helper Methods
     
+    private ArrayList<RelatedTopic> getAllTrialsSortedByURI(ResultList<RelatedTopic> all) {
+        // build up sortable collection of all result-items
+        ArrayList<RelatedTopic> in_memory = new ArrayList<RelatedTopic>();
+        for (RelatedTopic obj : all) {
+            in_memory.add(obj);
+        }
+        // sort all result-items
+        Collections.sort(in_memory, new Comparator<RelatedTopic>() {
+            public int compare(RelatedTopic t1, RelatedTopic t2) {
+                try { // ### webexp.config.intro + webexp.config.pract
+                    int index = "webexp.config.trial".length();
+                    String one = t1.getUri().substring(index);
+                    String two = t2.getUri().substring(index);
+                    if ( Long.parseLong(one.toString()) < Long.parseLong(two.toString()) ) return -1;
+                    if ( Long.parseLong(one.toString()) > Long.parseLong(two.toString()) ) return 1;
+                } catch (Exception nfe) {
+                    log.warning("Error while accessing URI of Topic 1: " + t1.getId() + " Topic2: "
+                            + t2.getId() + " nfe: " + nfe.getMessage());
+                    return 0;
+                }
+                return 0;
+            }
+        });
+        return in_memory;
+    }
+    
+    private long getNextUnseenTrialId() {
+        Topic user = getRequestingUser();
+        ResultList<RelatedTopic> all_trials = dms.getTopics(TRIAL_CONFIG_TYPE, 0);
+        ArrayList<RelatedTopic> sorted_trial_config_lines = getAllTrialsSortedByURI(all_trials);
+        Iterator<RelatedTopic> iterator = sorted_trial_config_lines.iterator();
+        while (iterator.hasNext()) {
+            RelatedTopic trialConfig = iterator.next();
+            if (!hasSeenTrial(user, trialConfig)) {
+                return trialConfig.getId();
+            }
+        }
+        return FAIL_NR; // experiment finished > no unseen trial left
+    }
+
+    private boolean hasSeenTrial(Topic user, Topic trial) {
+        Association trial_seen = trial.getAssociation(TRIAL_SEEN_EDGE_TYPE,
+            ROLE_DEFAULT, ROLE_DEFAULT, user.getId());
+        return trial_seen != null;
+    }
+
     private Topic getOrCreateTrialPinningReportTopic (long trialId, Topic user) {
         DeepaMehtaTransaction tx = dms.beginTx();
         Topic report = null;
