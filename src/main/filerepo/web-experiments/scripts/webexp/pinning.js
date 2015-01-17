@@ -4,8 +4,7 @@
 define(function (require) {
 
     var d3              = require('d3'),
-        some_L          = require('leaflet'),
-        some_leaflet    = require('leaflet_label'),
+        L               = require('leaflet'),
         common          = require('common'),
         control         = require('./controller/pinningCtrl'),
         model           = require('./model/pinningModel')
@@ -14,6 +13,7 @@ define(function (require) {
     var place_to_pin = {}           // configured place to pin geo-coordinates
     var memorize = { time: 15000 }  // configured time for memorization (trial)
     var trialId = -1
+    var icon_path = undefined
     
     var timerId = setInterval(count_reaction_time, 500)
     var report = {
@@ -23,7 +23,8 @@ define(function (require) {
             "latitude": -1, "longitude" : -1
         }
     }
-
+    
+    var view_state  = "" // values may be "" or "practice"
     var pinned_already = false
 
     // ------ Initialization of client-side data for pinning
@@ -32,6 +33,8 @@ define(function (require) {
         
         // 0 get trial id out of url
         trialId = common.parse_trial_id_from_resource_location()
+        view_state = common.parse_view_state_from_page()
+        console.log(view_state)
         if (trialId === -1) throw Error("No more trials available for this VP - You're done.")
 
         // 1 load user session
@@ -55,7 +58,7 @@ define(function (require) {
 
             // 3 .. load participant data
             control.fetchParticipant(function (data) {
-                var icon_path = data['selected_marker_path']
+                icon_path = data['selected_marker_path']
                 // 2.2 initialize leaflet container according to map configuration
                 initialize_map()
                 // ... switch per trial condition
@@ -63,21 +66,24 @@ define(function (require) {
                 if (common.debug) console.log(" trial condition:", pinning_condition)
                 if (pinning_condition === "webexp.config.no_pinning") {
                     if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
-                    run_timer()
+                    // run_timer()
                 } else if (pinning_condition === "webexp.config.pinning") {
                     if(common.verbose) console.log(" ... pinning active - no timer (" + trialId + ")")
-                    initialize_pinning_features(icon_path)
+                    initialize_pinning_features()
                     // run_timer() // ### what if user has not pinned after timer ran out
                     // my suggestion would be: run timer just after pinning was done
                 } else {
                     throw Error("Unknown trial condition for pinning (\""+pinning_condition+"\"), Trial: " + trialId)
                 }
-
+                
                 // 4 show place name
                 init_place_labels()
-
+                
+                // 5 run time
+                run_timer()
+                
             }, function (error) {
-                console.warn("Error loading participant ..")
+                console.warn("Error loading participant ..", error)
             }, common.debug)
 
         }, common.debug)
@@ -114,7 +120,6 @@ define(function (require) {
             centerLat = mapConfig['de.akmiraketen.webexp.trial_map_center_lat'].value
             centerLng = mapConfig['de.akmiraketen.webexp.trial_map_center_lng'].value
             zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
-            console.log("Zoomlevel: " + zoomLevel)
             fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
         } catch (error) {
             throw Error ("Map File config for " + mapId + " is missing a value.")
@@ -151,96 +156,121 @@ define(function (require) {
     }
 
     function init_place_labels () {
+        // 
+        var circleGroup = L.featureGroup()
+        var markerGroup = L.featureGroup()
+        // 
         for (var i = 0; i < model.getPlaces().length; i++) {
             var place = model.getPlaces()[i]
             var lat = place.childs['de.akmiraketen.webexp.place_latitude'].value
             var lng = place.childs['de.akmiraketen.webexp.place_longitude'].value
             var name = place.childs['de.akmiraketen.webexp.place_name'].value
-            /* var blankIcon = L.icon({
+            /** var greyIcon = L.icon({
                 iconUrl: '/de.akmiraketen.web-experiments/images/circle20-grey.png', iconSize: [15, 15],
                 labelAnchor: [3, 0] // as I want the label to appear 2px past the icon (10 + 2 - 6)
-            }) **/
-            
-            var NewIcon = L.Icon.Label.extend({
-                options: {
-                    iconUrl: '/de.akmiraketen.web-experiments/images/circle20-grey.png', shadowUrl: null,
-                    iconSize: new L.Point(10, 10), iconAnchor: new L.Point(10, 5),
-                    labelAnchor: new L.Point(17, -4), wrapperAnchor: new L.Point(15, -0)
-                }
-            });
-            var m = L.marker([lat, lng], { draggable: false, icon: new NewIcon({ labelText: name }) })
-            // if (!m.hasOwnProperty('bindLabel')) throw Error("Laeflet label plugin was not initialized correctly..")
-                // m.bindLabel(name, { noHide: true })
-                m.addTo(map)
-                // m.showLabel();
+            })
+            var marker = L.marker([lat, lng], {
+                draggable: false, icon: greyIcon, zIndexOffset: 900
+            }).addTo(markerGroup) **/
+            L.marker([lat, lng], {
+                draggable: false, zIndexOffset: 1000,
+                icon: L.divIcon({ className: 'text-labels',  html: name }),
+            }).addTo(markerGroup)
+            markerGroup.addTo(map)
+            // 
+            var active_control = L.circle([lat, lng], 75, {
+                color: '#a9a9a9', 'fillColor': '#666', fillOpacity: 1, 'stroke-width': 2
+            }).addTo(circleGroup)
+            // controls:
+            active_control.on('mouseover', highlight_marker)
+            active_control.on('mouseout', reset_marker_highlight)
+            active_control.on('click', active_control_clicked)
+            /* marker.on('mouseover', highlight_marker)
+            marker.on('mouseout', reset_marker_highlight)
+            marker.on('click', active_control_clicked) */
         }
+        markerGroup.addTo(map)
+        circleGroup.addTo(map)
+        
+        function highlight_marker(e) {
+            e.target.setStyle({ 'color': '#0033ff', 'fillColor': '#0033ff', fillOpacity: 0.7, 'stroke-width': 4 });
+            e.target.setRadius(75)
+            if (!L.Browser.ie && !L.Browser.opera) e.target.bringToFront();
+        }
+        
+        function reset_marker_highlight(e) {
+            e.target.setStyle({ color: '#a9a9a9', 'fillColor': '#666', fillOpacity: 1, 'stroke-width': 2 });
+            e.target.setRadius(75)
+        }
+        
+        function active_control_clicked(e) {
+            // check_event_active_control(e)
+            control_clicked(e)
+        }
+
     }
 
     function init_user_view () {
         control.fetchUser(function (data) {
             var username = data
             // GUI
-            d3.select('.username').text(username)
+            // d3.select('.username').text(username)
             // OK
             model.setUsername(username)
         }, common.debug)
     }
     
     function init_task_description () {
+        if (view_state.indexOf("pract") !== -1) {
+            console.log("Practice Mode.. ")
+        }
         d3.select('i.place-to-pin').text(model.getNameOfPlaceToPin())
     }
 
-    function initialize_pinning_features (icon_path) {
+    function initialize_pinning_features () {
         
         if(common.debug) console.log(" pinning: loaded places", model.getPlaces())
         if(common.debug) console.log(" pinning: initializing place to pin", model.getPlaceToPinId())
-        
         check_place_to_pin_configuration()
-        
-        var featureGroup = L.featureGroup()
-        // var marker = L.marker([place_to_pin.lat, place_to_pin.lng])
-        // if (common.debug) marker.addTo(featureGroup)
-
-        var personalIcon = undefined
-        if (icon_path) {
-            /* iconAnchor:   [24, 24] *shadowUrl: 'leaf-shadow.png', shadowSize: [50, 64],
-             * shadowAnchor: [4, 62], popupAnchor:  [-3, -76] **/
-            personalIcon = L.icon({
-                iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24]
-            });
-        }
-
         map.on('click', function (e) {
             if (common.verbose) console.log("  map clicked: " + e.latlng + " (vs.) " + place_to_pin.lat + ", " + place_to_pin.lng)
-            if (is_click_nearby(e)) {
-                if (common.verbose) console.log(" active control clicked - pinned")
-                // do set values into report
-                if (!pinned_already) {
-                    set_geo_coordinates(e.latlng)
-                    stop_reaction_interval(timerId)
-                    control.postPinningReport(trialId, report, undefined, function (error) {
-                        console.warn(error)
-                    }, common.debug)
-                    // ### fixme: do not at marker (if already present) again
-                    var marker = undefined
-                    if (icon_path) {
-                        // marker = L.marker([e.latlng.lat, e.latlng.lng], {icon: personalIcon})
-                        marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
-                        if (common.debug) console.log("using personal icon from " + icon_path)
-                    } else {
-                        // marker = L.marker([e.latlng.lat, e.latlng.lng])
-                        marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
-                    }
-                    marker.addTo(featureGroup)
-                    run_timer()
-                }
-                pinned_already = true
-            } else {
-                click_count_outside_increase()
-            }
+            check_map_event_active_control(e)
         })
-        
-        featureGroup.addTo(map)
+    }
+    
+    function control_clicked(e) {
+        if (is_click_on_place_to_pin(e)) {
+            if (!pinned_already) {
+                set_geo_coordinates(e.latlng)
+                stop_reaction_interval(timerId)
+                set_task_description("Task: Please memorize this map now.")
+                control.postPinningReport(trialId, report, undefined, function (error) {
+                    console.warn(error)
+                }, common.debug)
+                var personalIcon = undefined
+                if (icon_path) {
+                    /* iconAnchor:   [24, 24] *shadowUrl: 'leaf-shadow.png', shadowSize: [50, 64],
+                     * shadowAnchor: [4, 62], popupAnchor:  [-3, -76] **/
+                    personalIcon = L.icon({
+                        iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24]
+                    });
+                }
+                var marker = undefined
+                if (icon_path) {
+                    // marker = L.marker([e.latlng.lat, e.latlng.lng], {icon: personalIcon})
+                    marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
+                    if (common.debug) console.log("using personal icon from " + icon_path)
+                } else {
+                    // marker = L.marker([e.latlng.lat, e.latlng.lng])
+                    marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
+                }
+                var featureGroup = L.featureGroup()
+                marker.addTo(featureGroup)
+                featureGroup.addTo(map)
+                run_timer()
+            }
+            pinned_already = true
+        }
     }
     
     function check_place_to_pin_configuration () {
@@ -269,16 +299,42 @@ define(function (require) {
 
     // ------ Helper Methods
     
-    function is_click_nearby(event) {
-        var southWest = L.latLng(place_to_pin.lat - 0.005, place_to_pin.lng - 0.005)
-        var northEast = L.latLng(place_to_pin.lat + 0.005, place_to_pin.lng + 0.005)
-        var activeControl = L.latLngBounds(southWest, northEast)
-        return activeControl.contains(event.latlng)
+    function check_map_event_active_control(e) {
+        if (is_click_on_map_nearby(e)) {
+            if (common.verbose) console.log(" active control clicked - pinned")
+            // do set values into report
+            control_clicked(e)
+        } else {
+            click_count_outside_increase()
+        }
+    }
+    
+    function is_click_on_map_nearby(event) {
+        try {
+            var southWest = L.latLng(place_to_pin.lat + 0.1, place_to_pin.lng + 0.1)
+            var northEast = L.latLng(place_to_pin.lat + 0.1, place_to_pin.lng + 0.1)
+            var poi = L.latLngBounds(southWest, northEast)
+            return poi.contains(event.latlng)
+        } catch (err) {
+            console.warn("Could not convert place to pin data to latLngs")
+        }
+        return false
+    }
+    
+    function is_click_on_place_to_pin(event) {
+        var southWest = L.latLng(place_to_pin.lat, place_to_pin.lng)
+        var northEast = L.latLng(place_to_pin.lat, place_to_pin.lng)
+        var poi = L.latLngBounds(southWest, northEast)
+        if (event.target.getBounds().contains(poi)) {
+            return true
+        } else {
+            click_count_outside_increase()
+            return false
+        }
     }
 
     function run_timer(seconds) {
         if (typeof seconds === "undefined") 
-        set_task_description("Task: Please memorize this map in the next " + (memorize.time / 1000) + " seconds")
         setTimeout(function (e) {
             window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
         }, memorize.time)
@@ -304,7 +360,7 @@ define(function (require) {
     }
     
     function set_geo_coordinates (object) {
-        console.log(" click count outside was: " + report.count_click_outside)
+        if (typeof object === "undefined") throw Error("Storing coordinates got an empty object ..") 
         report.geo_coordinates.latitude = object.lat
         report.geo_coordinates.longitude = object.lng
     }

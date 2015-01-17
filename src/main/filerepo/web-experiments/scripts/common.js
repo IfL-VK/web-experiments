@@ -6,15 +6,14 @@ require.config({
     baseUrl: "/filerepo/web-experiments/scripts/",
     paths: {
       d3: "/de.akmiraketen.web-experiments/script/vendor/d3/d3.min",
-      leaflet: "/de.akmiraketen.web-experiments/script/vendor/leaflet/leaflet-0.7.3/leaflet",
-      leaflet_label: "/de.akmiraketen.web-experiments/script/vendor/leaflet/leaflet-label/dist/leaflet.iconlabel"
+      leaflet: "/de.akmiraketen.web-experiments/script/vendor/leaflet/leaflet-0.7.3/leaflet"
     },
     shim: {
         'leaflet': {
             exports: 'L'
         },
-        'leaflet_label': {
-            deps: ['leaflet'],
+        'd3': {
+            exports: 'd3'
         }
     },
     waitSeconds: 15

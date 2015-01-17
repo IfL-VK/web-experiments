@@ -4,8 +4,7 @@
 define(function (require) {
     
     var d3              = require('d3'),
-        leaflet         = require('leaflet'),
-        leaflet_label   = require('leaflet_label'),
+        L               = require('leaflet'),
         common          = require('common'),
         control         = require('./controller/estimationCtrl'),
         model           = require('./model/estimationModel')
@@ -295,7 +294,7 @@ define(function (require) {
         control.fetchUser(function (data) {
             // 
             var username = data
-            d3.select('.username').text(username)
+            // d3.select('.username').text(username)
             // OK
             model.setUsername(username)
 

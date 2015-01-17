@@ -34,7 +34,7 @@ define(function (require) {
                 if (view_state === "icon") {
                     // 2 load marker selection
                     init_marker_selection_view(marker_id)
-                } else if (view_state === "welcome") {
+                } else if (view_state === "welcome" || view_state === "") {
                     // 1 show welcome message
                     init_welcome_view()
                     console.log("Render welcome message")
@@ -109,7 +109,8 @@ define(function (require) {
                             .attr('src', iconPath).attr('id', topicId)
                 }
             }
-            d3.select('.content').append('a').attr('href', '/web-exp/nextpage').text('Los geht\'s')
+            d3.select('.content').append('a').attr('href', '/web-exp/nextpage')
+                    .attr('class', 'button').text('Ok, weiter')
             d3.selectAll('li.symbol img').on('click', function () {
                 newCtrl.doMarkIconPreference(this.id, function (){
                     console.log("OK - Icon set") // ### render icon as silected

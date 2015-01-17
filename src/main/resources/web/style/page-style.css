@@ -20,6 +20,8 @@ body {
     width: 800px;
 }
 
+.main.intro .title,
+.main.intro .content,
 .main.start .title,
 .main.start .content {
     width: 800px;
@@ -50,7 +52,7 @@ body {
     margin: auto;
 }
 
-#map .leaflet-marker-iconlabel {
+#map .text-labels {
     background: transparent;
     border-color: transparent;
     border-radius: 0px;
@@ -58,6 +60,8 @@ body {
     border-style: none;
     font: 12px/20px "Helvetica Neue","Arial","Helvetica",sans-serif;
     box-shadow: 1px 1px 1px transparent;
+    margin-top: 5px !important;
+    margin-left: -25px !important;
 }
 
 .certainty-scale {
@@ -91,9 +95,18 @@ body {
 }
 
 .certainty-scale input.btn {
-    margin: 30px;
+    width: 30px; height: 30px;
     position: relative;
     cursor: pointer;
+}
+
+.certainty-scale input.btn:hover {
+    background-color: #005ea8;
+    color: #fff;
+}
+
+.certainty-scale label {
+    margin: 20px;
 }
 
 /** .certainty-scale input.btn:hover {
