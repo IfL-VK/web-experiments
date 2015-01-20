@@ -104,7 +104,7 @@ body {
 }
 
 .certainty-scale input.btn {
-    width: 30px; height: 30px;
+    width: 30px; height: 70px;
     position: relative;
     cursor: pointer;
 }

@@ -58,25 +58,19 @@ define(function (require) {
                 // 2.1.3 initialize place coordinates for current estimation
                 initialize_current_place_coordinates(estimationNr)
 
-                // .. maeke sure all place details are configured (and thus loaded) for this map
+                // .. make sure all place details are configured (and thus loaded) for this map
                 var fromPlaceCoordinates = model.getCoordinatesOfPlace(report.from_place_id)
                 var toPlaceName = model.getNameOfPlace(report.to_place_id)
-                // .. catch a possible mismatch if places used in this estimation config are not assigned 
-                //    are not (configured) for this map
-                if (typeof fromPlaceCoordinates === "undefined" || typeof toPlaceName === "undefined") {
-                    throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
-                        + "(with ID= "+report.from_place_id+") configured for this estimation is not configured as "
-                        + " a place for this map (MapID:" + model.getMapConfigId()+")")
-                }
+                check_places_for_estimation_configuration(fromPlaceCoordinates, toPlaceName)
 
                 // 2.1.4 initialize leaflet container and task description according to map configuration
                 initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
                 init_task_description(report.from_place_id, report.to_place_id)
 
                 // 2.1.5 init pinning according to configured trial condition
-                // ... override default memo time with time for memo configured in trial
                 var memo_seconds = model.getTrialConfig()['trial_config']['memo_seconds']
-                    memorize.time = (memo_seconds * 1000)
+                    // ... override default memo time if configured for trial
+                    if (typeof memo_seconds !== "undefined") memorize.time = (memo_seconds * 1000)
 
                 // 2.1.6 initialize estimation features
                 initialize_estimation_features(fromPlaceCoordinates)
@@ -96,7 +90,6 @@ define(function (require) {
         
         var mapConfig = model.getMapConfig().childs
         var mapId = mapConfig['de.akmiraketen.webexp.trial_map_id'].value
-        if (common.debug) console.log("   init "+mapId+" config", mapConfig)
         var centerLat, centerLng, zoomLevel, fileName;
         try {
             centerLat = placeToStartFrom['latitude']
@@ -117,15 +110,12 @@ define(function (require) {
         })
         // .. set viewport by the corresponding map file configuration for this trial
         map.setView([centerLat, centerLng], zoomLevel)
-        // ### fixme: find maptile layer 
-        // .. add an OpenStreetMap tile layer
         var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.2823bf39/{z}/{x}/{y}.png?'
                 + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
-        // uncomment the following linces to use bitmap map-files instead of tiles
-        // ### use blank screen
+        // ..
         if (blank_image_path) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
@@ -133,10 +123,10 @@ define(function (require) {
                 northEast.lng += 0.001
                 southWest.lat -= 0.001
             var imageUrl = '/filerepo/web-experiments/maps/' + blank_image_path,
-                // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
         }
+        if (common.debug) console.log("   init " + mapId + " config, viewport: " + map.getBounds(), mapConfig)
     }
     
     function initialize_current_place_coordinates(estimation_nr) {
@@ -161,8 +151,6 @@ define(function (require) {
                 report.from_place_id = model.getFromPlaceFive()
                 report.to_place_id = model.getToPlaceFive()
                 break
-            case -1: // no unseen trial (id) left for requesting user
-                window.location.href = '/web-exp/finish'
             default:
                 window.location.href = '/web-exp/nextpage'
         }
@@ -175,13 +163,6 @@ define(function (require) {
 
         var centerLat = fromPlace['latitude']
         var centerLng = fromPlace['longitude']
-        /** var labelMarker = L.marker([centerLat, centerLng], {
-                zIndexOffset: -1
-            })
-            labelMarker.bindLabel("Huntlosen", { 
-                noHide: true, offset: [-40,15], zIndexOffset: -1
-            })
-            labelMarker.addTo(map) **/
         var startPoint = L.circle([centerLat, centerLng], 100, {
             fill: true, fillColor: 'black', weight: 4, color: 'gray', opacity: 1 })
         // create a red polyline from an arrays of LatLng points
@@ -198,7 +179,6 @@ define(function (require) {
             polyline.addTo(featureGroup)
             startPoint.addTo(featureGroup)
             featureGroup.addTo(map)
-        
 
         // --- estimation interaction handler ---
         
@@ -244,16 +224,14 @@ define(function (require) {
         }
         
         function calculateDistance() {
-            // 
+            // Returns the distance (in meters) to the given LatLng calculated 
+            // .. using the Haversine formula. See description on
+            // http://en.wikipedia.org/wiki/Haversine_formula
             var els = polyline.getLatLngs()
             var fromPlace = els[0]
             var toPlace = els[1]
-            // Returns the distance (in meters) to the given LatLng calculated 
-                // using the Haversine formula. See description on
-     	    // http://en.wikipedia.org/wiki/Haversine_formula
      	    var meters = Math.round(fromPlace.distanceTo(toPlace))
             set_estimated_distance(meters)
-            // ### report values as results / write values into trial report
             return toPlace
         }
 
@@ -285,7 +263,6 @@ define(function (require) {
             set_certainty_value(parseInt(this.value))
             callback()
         })
-        // 
     }
 
     function init_task_description (fromId, toId) {
@@ -309,6 +286,16 @@ define(function (require) {
     }
     
     // ------ Helper Methods
+
+    function check_places_for_estimation_configuration (fromCoords, toName) {
+        //    are not (configured) for this map
+        if (typeof fromCoords === "undefined" || typeof toName === "undefined") {
+            throw Error ("Could not load the place_to_start from trial config. Proabably the Place "
+                + "(with ID= "+report.from_place_id+") configured for this estimation is not configured as "
+                + " a place for this map (MapID:" + model.getMapConfigId()+")")
+        }
+
+    }
     
     function count_estimation_time() {
         report.estimation_time += 100

@@ -5,7 +5,6 @@ define(function (require) {
 
     var newCtrl     = require('./controller/newCtrl')
     var newModel    = require('./model/newModel')
-    // var d3          = require('d3')
     var common      = require('common')
 
     var view_state  = "" // values may be "", "finish", "welcome", "pause" or "icon", "intro"
@@ -15,66 +14,71 @@ define(function (require) {
     function init_page () {
 
         view_state = common.parse_view_state_from_page()
-        console.log(view_state)
-        // if "intro", "break" or "pract" mark trial as seen, too
+        if (common.verbose) console.log(" Page initialization => ", view_state)
 
-        if (view_state.indexOf("intro") !== -1 ||
-            view_state.indexOf("pause") !== -1 ||
-            view_state.indexOf("start") !== -1) {
+        if (view_state.indexOf("intro") !== -1 || view_state.indexOf("start") !== -1) {
+        // --- Render intro and start pages per condition
 
             var trialId = common.parse_trial_id_from_resource_location()
-            if (common.verbose) console.log(trialId)
+            newCtrl.fetchTrialConfig(trialId, function(data) {
 
-            if (view_state.indexOf("intro") !== -1) {
-                // --- Render introduction views
-                render_pinning_intro()
-            } else if (view_state.indexOf("pause") !== -1 ||
-                       view_state.indexOf("start") !== -1) {
-                //
-            }
-            newCtrl.doMarkTrialAsSeen(trialId) // ###
+                var page_condition = data['trial_config']['trial_condition']
+                
+                if (view_state.indexOf("intro") !== -1) { // intro page per condition
+
+                    if (page_condition === "webexp.config.pinning") {
+                        console.log(" Render intro view for block with pinning ", page_condition)
+                        render_pinning_intro()
+                    } else {
+                        console.log(" Render intro view for block without pinning ", page_condition)
+                        render_no_pinning_intro()
+                    }
+
+                } else if (view_state.indexOf("start") !== -1) { // start page per condition
+
+                    console.log(" Render per condition for start views", page_condition)
+                    // render
+                    if (page_condition === "webexp.config.no_pinning") {
+                        console.log(" Render start view for block without pinning ", page_condition)
+                        render_no_pinning_start()   
+                    }
+
+                }
+
+                newCtrl.doMarkTrialAsSeen(trialId)
+
+            }, false)
             
-        } else { // --- Render icon or welcome View
-            
+        } else {
+        // --- Render icon, welcome View or static page (namely finish + pause)
+
             newCtrl.fetchParticipant(function (data) {
             
                 var marker_id = data.selected_marker_id
                 var username = data.value
 
                 if (view_state === "icon") {
-                    // 2 load marker selection
+                    
                     init_marker_selection_view(marker_id)
+
                 } else if (view_state === "welcome" || view_state === "") {
-                    // 1 show welcome message
+                    
                     init_welcome_view()
-                    console.log("Render welcome message")
+                    
                 } else if (view_state === "finish") {
-                    // ###
-                    set_task_description('Done')
-                    set_page_content('<p class="textblock">Thank you!</p>')
-                    console.log("Render finish message")
-                } else if (view_state === "pause") {
-                    // ###
-                    console.log("Render pause view")
+
+                    set_task_description('Das war\' am PC')
+                    set_page_content('<p class="textblock">Die Aufgaben am PC hast du nun erfolgreich beendet.<br/>'
+                        + 'Bitte f&uuml;lle nun die Fragebogen der Reihe nach aus.<br/>'
+                        + 'Wende dich danach bitte leise an die Versuchsleitung.</p>')
+
+                } else if (view_state.indexOf("pause") !== -1) {
+                    // is modellled as a trial config, too, so we need to mark it as seen
+                    var trialId = common.parse_trial_id_from_resource_location()
+                    newCtrl.doMarkTrialAsSeen(trialId)
+
                 }
 
-                /** 2 load trials
-                var users_condition = data['first_trial_condition']
-                // fetch and then render all loaded trials
-                newCtrl.fetchAllUnseenTrials(users_condition, function (trials) {
-                    if (common.debug) console.log(trials.items)
-                    if (trials.total_count === 0) {
-                        d3.select('.trials').html('<p class="warning">To start testing, '
-                            + 'please load some trial configurations.</p>')
-                    } else {
-                        if (common.verbose) console.log("Loaded " + trials.items.length + " of type " + users_condition)
-                        render_all_trial_configs(trials.items)
-                    }
-                }, false)
-                // GUI
-                d3.select('.username').text(username)
-                // OK
-                newModel.setUsername(username) **/
             }, function (error) {
                 render_start_session_dialog()
                 throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
@@ -96,6 +100,21 @@ define(function (require) {
         set_page_content(content)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_filler_intro() })
+    }
+
+    function render_no_pinning_intro() {
+        var content = '<p class="textblock">In den folgenden &Uuml;bungen wirst du wieder eine Karte sehen, dieses mal jedoch ohne die Aufgabe, einen Ort zu markieren.<br/>'
+            + 'Du hast wieder etwa eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
+            + 'Stelle dir dazu bitte vor, du wirst an einem der Orte ausgesetzt und sollst nun die Strecken zu den anderen Ortsnamen auswendig wiederfinden.</p>'
+        set_page_content(content)
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
+    }
+
+    function render_no_pinning_start() {
+        var content = '<p class="textblock">Falls du noch Fragen zu diesem Versuchsblock hast, melde dich bitte bei der Versuchsleitung.<br/>'
+            + 'Ansonsten starte bitte nun den zweiten Block.<br/></p>'
+        set_page_content(content)
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')   
     }
 
     function render_filler_intro() {
