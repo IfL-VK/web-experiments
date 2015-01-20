@@ -58,15 +58,10 @@ public class ParticipantViewModel implements JSONEnabled {
     
     public int getSizeOfFirstConditionBlock() {
         int value = -1;
-        try {
-            if (!topic.getChildTopics().has(TRIAL_CONDITION_BLOCKS_SIZE_TYPE)) {
-                return DEFAULT_TRIAL_CONDITION_BLOCK_SIZE; // case for logged in user "admin"
-            }
-            value = topic.getChildTopics().getInt(TRIAL_CONDITION_BLOCKS_SIZE_TYPE);
-        } catch (ClassCastException ce) {
-            // most probably string due to an edit in the webclient
-            value = Integer.parseInt(topic.getChildTopics().getString(TRIAL_CONDITION_BLOCKS_SIZE_TYPE));
+        if (!topic.getChildTopics().has(TRIAL_CONDITION_BLOCKS_SIZE_TYPE)) {
+            return DEFAULT_TRIAL_CONDITION_BLOCK_SIZE; // case for logged in user "admin"
         }
+        value = topic.getChildTopics().getInt(TRIAL_CONDITION_BLOCKS_SIZE_TYPE);
         return value;
     }
 

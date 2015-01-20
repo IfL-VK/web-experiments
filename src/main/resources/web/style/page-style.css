@@ -32,8 +32,17 @@ body {
     text-align: center;
 }
 
+.pinning .title {
+    font-size: 16px;
+}
+
 .main.start .content input.login-btn {
     cursor: pointer;
+}
+
+.intro .content img {
+    border: 1px solid #afafaf;
+    margin: 10px;
 }
 
 .main.start .content input {
@@ -184,18 +193,24 @@ ul.menu li a.button {
     background-image: linear-gradient(to bottom, #4b546a, #2c354b);filter:progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr=#4b546a, endColorstr=#2c354b);
 }
 
-p {
-    margin-left: 10px;
-}
-
-p.wichtig {
+p.wichtig,
+.start p.wichtig {
     color: #CD0000;
     font-weight: bold;
+}
+
+p.textblock {
+    line-height: 2em;
+    font-size: 20px;
 }
 
 .start p {
     font-size: 20px;
     color: #3D3D3D;
+}
+
+.start {
+    padding-top: 60px;
 }
 
 h3 {

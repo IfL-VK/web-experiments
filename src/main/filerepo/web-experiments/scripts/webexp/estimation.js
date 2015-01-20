@@ -3,8 +3,7 @@
 
 define(function (require) {
     
-    var d3              = require('d3'),
-        L               = require('leaflet'),
+    var L               = require('leaflet'),
         common          = require('common'),
         control         = require('./controller/estimationCtrl'),
         model           = require('./model/estimationModel')
@@ -28,6 +27,7 @@ define(function (require) {
         }
     }
     
+    var view_state  = "" // values may be "" or "pract"
     var estimationNr = 1
 
     // ------ Initialization of client-side data for estimation
@@ -36,6 +36,7 @@ define(function (require) {
         
         // 0 get trial id out of url
         trialId = common.parse_trial_id_from_resource_location()
+        view_state = common.parse_view_state_from_page()
 
         // 1 load user session
         init_user_view() // ### todo: load a users preferenced marker
@@ -101,7 +102,6 @@ define(function (require) {
             centerLat = placeToStartFrom['latitude']
             centerLng = placeToStartFrom['longitude']
             zoomLevel = mapConfig['de.akmiraketen.webexp.trial_map_scale'].value
-            console.log("Zoomlevel: " + zoomLevel)
             fileName  = mapConfig['de.akmiraketen.webexp.trial_map_filename'].value
         } catch (error) {
             console.log(error)
@@ -126,7 +126,7 @@ define(function (require) {
             tileLayer.addTo(map)
         // uncomment the following linces to use bitmap map-files instead of tiles
         // ### use blank screen
-        /** if (blank_image_path) {
+        if (blank_image_path) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
@@ -136,7 +136,7 @@ define(function (require) {
                 // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
-        } **/
+        }
     }
     
     function initialize_current_place_coordinates(estimation_nr) {
@@ -163,7 +163,7 @@ define(function (require) {
                 break
             case -1: // no unseen trial (id) left for requesting user
                 window.location.href = '/web-exp/finish'
-            default: 
+            default:
                 window.location.href = '/web-exp/nextpage'
         }
     }
@@ -263,7 +263,10 @@ define(function (require) {
         // hide map
         d3.select('#map').attr('style', 'display:none;')
         // change page title
-        set_task_description('Wie sicher warst du dir bei deiner Schätzung?')
+        var html = ''
+        if (view_state.indexOf("pract") !== -1) html += '<span class="mode">&Uuml;bungsmodus: </span>'
+        html += 'Wie sicher warst du dir bei deiner Schätzung?'
+        set_task_description(html)
         // show certainty scale
         var element = d3.select('.certainty-scale')
             element.attr('style', 'display:block;')
@@ -286,6 +289,10 @@ define(function (require) {
     }
 
     function init_task_description (fromId, toId) {
+        if (view_state.indexOf("pract") !== -1) {
+            if (common.verbose) console.log("Practice Mode.. ")
+            d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
+        }
         d3.select('i.from-place').text(model.getNameOfPlace(fromId))
         d3.select('i.to-place').text(model.getNameOfPlace(toId))
     }

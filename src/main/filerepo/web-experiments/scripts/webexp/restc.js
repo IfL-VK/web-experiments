@@ -95,8 +95,7 @@ define(['d3'], function (d3, require) {
     restClient.prototype = {
 
         fetchUsername: function (handle, debug) {
-            if (debug) console.log(" restc: requesting username ... ")
-            fetch('/accesscontrol/user', handle, undefined, false, debug)
+            fetch('/accesscontrol/user', handle, undefined, false, false)
         },
         fetchParticipant: function (handle, failure, debug) {
             if (debug) console.log(" restc: requesting participant ... ")

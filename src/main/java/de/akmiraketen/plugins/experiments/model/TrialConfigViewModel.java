@@ -55,7 +55,6 @@ public class TrialConfigViewModel implements JSONEnabled {
 
     public JSONObject getRelatedPlaceConfigs() throws JSONException {
         Topic mapFileTopicId = getTrialMapIdTopic();
-        log.info("Loading Places Configuration for Map Id " + mapFileTopicId.getSimpleValue());
         ResultList<RelatedTopic> places = mapFileTopicId.getRelatedTopics("dm4.core.aggregation", 
                 "dm4.core.child", "dm4.core.parent", PLACE_CONFIG, 0); // load list all places related to this map-id
         // ArrayList<TopicModel> places = new ArrayList<TopicModel>();
@@ -66,7 +65,7 @@ public class TrialConfigViewModel implements JSONEnabled {
     public JSONObject getRelatedMapFileConfig() throws JSONException {
         Topic mapFileTopicId = getTrialMapIdTopic();
         log.info("Loading Map File Config Id " + mapFileTopicId.getSimpleValue() + " "
-                + "for Trial Config " + trialConfig.getSimpleValue().toString());
+                + "for Trial Config \"" + trialConfig.getUri().toString() + "\"");
         Topic mapFileConfig = mapFileTopicId.getRelatedTopic("dm4.core.aggregation", 
                 "dm4.core.child", "dm4.core.parent", TRIAL_MAP_CONFIG_ID); // load map config for this map-id
         mapFileConfig.loadChildTopics();

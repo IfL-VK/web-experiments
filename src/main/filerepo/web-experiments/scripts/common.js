@@ -30,6 +30,8 @@ define(function () {
             var start = url.indexOf("trial/")
             if (start === -1) start = url.indexOf("pract/")
             if (start === -1) start = url.indexOf("intro/")
+            if (start === -1) start = url.indexOf("pause/")
+            if (start === -1) start = url.indexOf("start/")
             var end = url.indexOf("/pinning")
             if (end === -1) end = url.indexOf("/estimation")
             if (end === -1) {

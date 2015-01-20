@@ -3,8 +3,8 @@
 
 define(function (require) {
 
-    var d3              = require('d3'),
-        L               = require('leaflet'),
+    // var // d3              = require('d3'),
+    var L               = require('leaflet'),
         common          = require('common'),
         control         = require('./controller/pinningCtrl'),
         model           = require('./model/pinningModel')
@@ -34,7 +34,6 @@ define(function (require) {
         // 0 get trial id out of url
         trialId = common.parse_trial_id_from_resource_location()
         view_state = common.parse_view_state_from_page()
-        console.log(view_state)
         if (trialId === -1) throw Error("No more trials available for this VP - You're done.")
 
         // 1 load user session
@@ -66,7 +65,7 @@ define(function (require) {
                 if (common.debug) console.log(" trial condition:", pinning_condition)
                 if (pinning_condition === "webexp.config.no_pinning") {
                     if(common.verbose) console.log(" ... no pinning (" + trialId + ")")
-                    // run_timer()
+                    set_place_description()
                 } else if (pinning_condition === "webexp.config.pinning") {
                     if(common.verbose) console.log(" ... pinning active - no timer (" + trialId + ")")
                     initialize_pinning_features()
@@ -96,7 +95,8 @@ define(function (require) {
                 if (common.verbose) console.log("OK - Trial marked as seen!")
             } else if (trialId !== loadedTrialId) {
                 if (common.verbose) console.log(" Trial already seen because server says we should move to next-trial: " + loadedTrialId )
-                window.location.href = '/web-exp/trial/' + loadedTrialId + '/pinning'
+                // window.location.href = '/web-exp/trial/' + loadedTrialId + '/pinning'
+                window.location.href = '/web-exp/nextpage'
             }
         }, function (error) {
             throw Error("Trial could not be marked as seen: " + error.status)
@@ -222,13 +222,13 @@ define(function (require) {
     
     function init_task_description () {
         if (view_state.indexOf("pract") !== -1) {
-            console.log("Practice Mode.. ")
+            if (common.verbose) console.log("Practice Mode.. ")
+            d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
         }
-        d3.select('i.place-to-pin').text(model.getNameOfPlaceToPin())
+        d3.select('i.place-to-pin').html(model.getNameOfPlaceToPin() + '<br/>')
     }
 
     function initialize_pinning_features () {
-        
         if(common.debug) console.log(" pinning: loaded places", model.getPlaces())
         if(common.debug) console.log(" pinning: initializing place to pin", model.getPlaceToPinId())
         check_place_to_pin_configuration()
@@ -243,7 +243,7 @@ define(function (require) {
             if (!pinned_already) {
                 set_geo_coordinates(e.latlng)
                 stop_reaction_interval(timerId)
-                set_task_description("Task: Please memorize this map now.")
+                set_place_description()
                 control.postPinningReport(trialId, report, undefined, function (error) {
                     console.warn(error)
                 }, common.debug)
@@ -267,7 +267,7 @@ define(function (require) {
                 var featureGroup = L.featureGroup()
                 marker.addTo(featureGroup)
                 featureGroup.addTo(map)
-                run_timer()
+                // ### is now started on page-load run_timer()
             }
             pinned_already = true
         }
@@ -336,10 +336,23 @@ define(function (require) {
     function run_timer(seconds) {
         if (typeof seconds === "undefined") 
         setTimeout(function (e) {
-            window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
+            if (view_state.indexOf("pract") !== -1) {
+                window.document.location.href = "/web-exp/pract/" + trialId + "/estimation"
+            } else {
+                window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
+            }
         }, memorize.time)
     
         if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
+    }
+    
+    function set_place_description() {
+        var html = ''
+        if (view_state.indexOf("pract") !== -1) html += '<span class="mode">&Uuml;bungsmodus: </span>'
+        html += 'Pr&auml;ge dir die Karte ein indem du dir vorstellst, bei '
+            + model.getNameOfPlaceToPin()+ ' ausgesetzt zu werden und die Strecken zu '
+            + 'den anderen Orten finden zu m&uuml;ssen.'
+        set_task_description(html)
     }
     
     function set_task_description (message) {
@@ -355,7 +368,7 @@ define(function (require) {
     }
     
     function stop_reaction_interval(intervalId) {
-        console.log(" reaction time was: " + report.reaction_time)
+        if (common.verbose) console.log(" reaction time was: " + report.reaction_time)
         clearInterval(intervalId)
     }
     

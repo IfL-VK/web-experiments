@@ -39,7 +39,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -256,12 +255,21 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
 
     @GET
-    @Path("/pause")
+    @Path("/pause/{trialId}")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getPauseScreen() {
         // ### use templates to preset:
         // setViewParameter(trialId)
         return getStaticResource("web/pause.html");
+    }
+
+    @GET
+    @Path("/start/{trialId}")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getStartScreen() {
+        // ### use templates to preset:
+        // setViewParameter(trialId)
+        return getStaticResource("web/start.html");
     }
 
     
@@ -288,13 +296,18 @@ public class WebExperimentsPlugin extends PluginActivator {
             ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent", 
                     "dm4.core.child", TRIAL_REPORT_URI, 0);
             if (trialReports.getTotalCount() > 0) {
-                log.info("There are overall " + trialReports.getTotalCount() + " written to DB for VP " + vpId);
+                log.info("  Fetched " + trialReports.getTotalCount() + " written to DB for " + vpId);
                 for (RelatedTopic trialReport : trialReports.getItems()) {
-                    if (trialReport.getUri().contains("webexp.config.trial")) {
-                        trialReport.loadChildTopics();
-                        String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
-                                .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+                    trialReport.loadChildTopics();
+                    String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
+                            .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+                    if (trialConfigId.contains("trial")) {
                         Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
+                        if (trialConfig == null) { // system configuration check
+                            throw new WebApplicationException(new RuntimeException("System Trial Configuration changed"
+                                    + " - Fetching Trial Config with URI: " + trialConfigId + " failed - Please "
+                                    + " remove all old trial reports first."), Status.CONFLICT);
+                        }
                         // General Info
                         String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
                                 .getChildTopics().getString(TRIAL_CONDITION_TYPE);
@@ -477,7 +490,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/{trialId}")
     public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
         Topic trial = dms.getTopic(id);
-        log.info("Requested Trial Config \"" + trial.getUri() + "\"");
         return new TrialConfigViewModel(trial.loadChildTopics(), dms);
     }
     
@@ -556,26 +568,30 @@ public class WebExperimentsPlugin extends PluginActivator {
         long trialId = getNextUnseenTrialId();
         if (trialId == FAIL_NR) {
             log.info("Experiment finished, no configured trial left for requesting user");
-            Response.noContent();
+            return Response.seeOther(new URI("/web-exp/finish")).build();
         }
         Topic trialConfig = dms.getTopic(trialId);
         if (!hasSeenTrial(user, trialConfig)) {
             if (trialConfig.getUri().contains("intro")) {
                 // route to intro page
-                log.info(" Redirect to intro ... " + trialConfig.getUri());
+                log.info("REDIRECT to INTRO pages " + trialConfig.getUri());
                 URI location = new URI("/web-exp/intro/" + trialConfig.getId());
                 return Response.seeOther(location).build();
             } else if (trialConfig.getUri().contains("break")) {
-                log.info(" Redirect to practice trial ... " + trialConfig.getUri());
-                URI location = new URI("/web-exp/pause");
+                log.info("REDIRECT to PAUSE page \"" + trialConfig.getUri() + "\"");
+                URI location = new URI("/web-exp/pause/" + trialConfig.getId());
+                return Response.seeOther(location).build();
+            } else if (trialConfig.getUri().contains("start")) {
+                log.info("REDIRECT to START page \"" + trialConfig.getUri() + "\"");
+                URI location = new URI("/web-exp/start/" + trialConfig.getId());
                 return Response.seeOther(location).build();
             } else if (trialConfig.getUri().contains("pract")) {
                 // start practice session
-                log.info(" Redirect to practice trial ... " + trialConfig.getUri());
+                log.info("REDIRECT to PRACTICE trial \"" + trialConfig.getUri() + "\"");
                 URI location = new URI("/web-exp/pract/" + trialConfig.getId() + "/pinning");
                 return Response.seeOther(location).build();
             } else {
-                log.info(" Loading next trial ... " + trialConfig.getUri());
+                log.info("LOADING next TRIAL .. \"" + trialConfig.getUri() + "\"");
                 URI location = new URI("/web-exp/trial/" + trialConfig.getId() + "/pinning");
                 return Response.seeOther(location).build();
             }
@@ -614,7 +630,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         for (RelatedTopic trialReport : trialReports) {
             String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
             if (trialConfigUri.equals(trial)) {
-                log.fine("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
+                log.fine("Re-using Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
                 trialReport.loadChildTopics(ESTIMATION_REPORT_URI);
                 if (trialReport.getChildTopics().has(ESTIMATION_REPORT_URI)) {
                     List<Topic> estimations = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
@@ -624,7 +640,6 @@ public class WebExperimentsPlugin extends PluginActivator {
                 // check if we are now over the maximum number of estimations
                 if (count == MAX_ESTIMATION_COUNT) {
                     count = getNextUnseenTrialId(); // return ID of next unseen trial instead of estimationNR
-                    log.info("Could and should redirect VP directly to her very next trial => " + count);
                 }
                 return Response.ok(count).build();
             } else {
