@@ -107,14 +107,15 @@ define(function (require) {
             + 'Du hast wieder etwa eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
             + 'Stelle dir dazu bitte vor, du wirst an einem der Orte ausgesetzt und sollst nun die Strecken zu den anderen Ortsnamen auswendig wiederfinden.</p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
+        set_task_description('Anleitung zum 2. Block')
+        d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
     }
 
     function render_no_pinning_start() {
         var content = '<p class="textblock">Falls du noch Fragen zu diesem Versuchsblock hast, melde dich bitte bei der Versuchsleitung.<br/>'
             + 'Ansonsten starte bitte nun den zweiten Block.<br/></p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')   
+        d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
     }
 
     function render_filler_intro() {
@@ -157,7 +158,7 @@ define(function (require) {
     function init_welcome_view () {
         set_task_description("Willkommen zu unserem Experiment")
         var content = '<p class="textblock">Das Experiment dauert ca. 2 Stunden und gliedert sich in drei Bl&ouml;cke. '
-            + 'Im ersten und zweite Block wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
+            + 'Im ersten und zweiten Block wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
             + 'um zur abgebildeten Landschaft Fragen zu beantworten. In einem letzten, k&uuml;rzeren Block erh&auml;ltst du'
             + ' einige Frageb&ouml;gen.</p><br/>'
             + '<p class="wichtig">Bitte f&uuml;hre den Versuch konzentriert und gewissenhaft durch!<p><br/>'
@@ -173,7 +174,7 @@ define(function (require) {
             + "bei jeder neuen Karte aufgefordert einen Ort auf der jeweiligen Karte zu markieren. Dazu wird dir ein Pin zur "
             + "Verf&uuml;gung stehen.</p>"
             message += "<p>Wie dieser Pin aussehen soll, kannst du unter den folgenden Alternativen ausw&auml;hlen. "
-                + " Deine Auswahl legt das Aussehen des Pins f&uum;r das gesamte Experiment fest.</p>"
+                + " Deine Auswahl legt das Aussehen des Pins f&uuml;r das gesamte Experiment fest.</p>"
             message += "<p>Klicke dazu bitte den Pin an, mit dem du die Markierungen kennzeichnen m&ouml;chtest.</p>"
         set_page_content(message)
         //
@@ -256,9 +257,9 @@ define(function (require) {
         d3.select("div.content").html(message)
     }
     
-    // --- Run this script when it is called/loaded
-
-    init_page()
+    return {
+        init_page: init_page
+    }
 
 });
 

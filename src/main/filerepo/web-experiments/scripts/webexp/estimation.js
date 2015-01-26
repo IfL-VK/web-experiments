@@ -330,9 +330,9 @@ define(function (require) {
         document.getElementById("title").innerHTML = message 
     }
 
-    // --- Run this script when it is called/loaded
-
-    init_estimation_page()
+    return {
+        init_page: init_estimation_page
+    }
 
 });
 

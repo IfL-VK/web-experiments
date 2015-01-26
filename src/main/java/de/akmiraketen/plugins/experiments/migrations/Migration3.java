@@ -11,7 +11,7 @@ import java.util.logging.Logger;
  * Assign user accounts a trial condition used to determine which trial 
  * condition will they be working through as the first block of trials)
  */
-public class Migration4 extends Migration {
+public class Migration3 extends Migration {
     
     private Logger logger = Logger.getLogger(getClass().getName());
     

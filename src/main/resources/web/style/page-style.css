@@ -36,6 +36,12 @@ body {
     font-size: 16px;
 }
 
+.pinning .filler {
+    margin-top: 120px;
+    display: none;
+    text-align: center;
+}
+
 .main.start .content input.login-btn {
     cursor: pointer;
 }
@@ -84,10 +90,18 @@ body {
     margin-right: auto;
 }
 
+.filler label,
 .certainty-scale .header {
     position: relative;
     color: #898989;
     font-size: 1.2em;
+    font-weight: bold;
+}
+
+.filler input {
+    padding: 6px;
+    padding-left: 10px;
+    font-size: 2em;
     font-weight: bold;
 }
 

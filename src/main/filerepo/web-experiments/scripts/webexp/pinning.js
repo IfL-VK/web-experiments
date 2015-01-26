@@ -69,7 +69,6 @@ define(function (require) {
 
                 } else if (pinning_condition === "webexp.config.pinning") {
 
-
                     initialize_pinning_features()
 
                 } else {
@@ -218,8 +217,44 @@ define(function (require) {
         }
         d3.select('i.place-to-pin').html(model.getNameOfPlaceToPin() + '<br/>')
     }
+    
+    function init_random_calc () {
+        set_task_description('')
+        var a = rand_int(2,20),
+            b = rand_int(2,20)
+        // ### GUI
+        d3.select('#map').attr('style', 'display:none;')
+        d3.select('.filler').attr('style', 'display:block;')
+        d3.select('.filler h1.task').text(a + '*' + b)
+        d3.select('.filler input').on('keyup', function () {
+            if (d3.event.keyCode === 13) handle_input() // on  Enter
+        })
+        if (common.verbose) console.log("Initialized random multiplication ... ")
+        //
+        document.getElementById('ergebnis').focus()
+        set_next_link() // modifiies "next" a href based respecting practice mode
+
+        function handle_input () {
+            var ergebnis= document.getElementById('ergebnis').value
+            if (ergebnis < 0 || ergebnis%1 !== 0 || ergebnis === "") {
+                alert("Bitte ganze Zahl eingeben!");
+            } else { // result is always OK
+                go_next()
+            }
+        }
+    }
 
     // ------ Page Helper Methods
+
+    function rand_int(min, max) {
+        var div = (max - min) + 1
+        var randNum = Math.random()
+        for (var i = 0; i <= div - 1; i++) {
+            if (randNum >= i / div && randNum < (i+1) / div) {
+                return i + min
+            }
+        }
+    }
 
     function initialize_pinning_features () {
         if(common.debug) console.log(" pinning: loaded places", model.getPlaces())
@@ -320,14 +355,25 @@ define(function (require) {
     function run_timer(seconds) {
         if (typeof seconds === "undefined") 
         setTimeout(function (e) {
-            if (view_state.indexOf("pract") !== -1) {
-                window.document.location.href = "/web-exp/pract/" + trialId + "/estimation"
-            } else {
-                window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
-            }
+            init_random_calc() // do so next in any case (both conditions and practice mode)
         }, memorize.time)
-    
         if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
+    }
+
+    function set_next_link () {
+        if (view_state.indexOf("pract") !== -1) {
+            d3.select('.filler a.next').attr('href', '/web-exp/pract/' + trialId + '/estimation')
+        } else {
+            d3.select('.filler a.next').attr('href', '/web-exp/trial/' + trialId + '/estimation')
+        }
+    }
+
+    function go_next() {
+        if (view_state.indexOf("pract") !== -1) {
+            window.document.location.href = "/web-exp/pract/" + trialId + "/estimation"
+        } else {
+            window.document.location.href = "/web-exp/trial/" + trialId + "/estimation"
+        }
     }
     
     function set_memoriziation_page_title() {
@@ -362,9 +408,10 @@ define(function (require) {
         report.geo_coordinates.longitude = object.lng
     }
 
-    // --- Run this script when it is called/loaded
-
-    init_pinning_page()
+    return {
+        init_page: init_pinning_page,
+        init_filler: init_random_calc
+    }
 
 });
 

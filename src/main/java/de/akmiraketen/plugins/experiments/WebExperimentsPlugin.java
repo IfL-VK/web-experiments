@@ -301,115 +301,115 @@ public class WebExperimentsPlugin extends PluginActivator {
                     trialReport.loadChildTopics();
                     String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
                             .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    if (trialConfigId.contains("trial")) {
+                    if (trialConfigId.contains("trial") || trialConfigId.contains("pract")) {
                         Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
-                        if (trialConfig == null) { // system configuration check
-                            throw new WebApplicationException(new RuntimeException("System Trial Configuration changed"
-                                    + " - Fetching Trial Config with URI: " + trialConfigId + " failed - Please "
-                                    + " remove all old trial reports first."), Status.CONFLICT);
-                        }
-                        // General Info
-                        String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
-                                .getChildTopics().getString(TRIAL_CONDITION_TYPE);
-                        String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
-                                .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
-                        // Pinning Data
-                        String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
-                            .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
-                        Topic placeConfig = getConfiguredPlace(placeToPinId);
-                        String placeToPinName = getConfiguredPlaceName(placeConfig);
-                        String placeCoordinates = getConfiguredPlaceCoordinates(placeConfig);
-                        String pinnedCoordinates = "-1;-1";
-                        int pinningRT = -1, pinInactive = -1;
-                        try {
-                            pinnedCoordinates = trialReport.loadChildTopics(COORDINATES_PINNED_URI)
-                                .getChildTopics().getString(COORDINATES_PINNED_URI);
-                            pinningRT = trialReport.loadChildTopics(REACTION_TIME_URI)
-                                    .getChildTopics().getInt(REACTION_TIME_URI);
-                            pinInactive = trialReport.loadChildTopics(COUNT_OUTSIDE_URI)
-                                    .getChildTopics().getInt(COUNT_OUTSIDE_URI);
-                        } catch (Exception e) {
-                            log.warning("No pinning data was recorded during trial: " + trialConfigId + " for " + username.getSimpleValue());
-                        }
-                        // Estimation Report Data
-                        String estimation1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
-                        int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
-                        String estimation2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
-                        int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
-                        String estimation3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
-                        int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
-                        String estimation4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
-                        int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
-                        String estimation5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
-                        int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
-                        try {
-                            List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                            for (Topic estimationReport : estimationReports) {
-                                int estimationNr = -1;
-                                estimationReport.loadChildTopics();
-                                estimationNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
-                                Topic fromPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_FROM_PLACE_URI));
-                                Topic toPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_TO_PLACE_URI));
-                                switch (estimationNr) {
-                                    case 1:
-                                        estFrom1 = getConfiguredPlaceCoordinates(fromPlace);
-                                        estFromName1 = getConfiguredPlaceName(fromPlace);
-                                        estTo1 = getConfiguredPlaceCoordinates(toPlace);;
-                                        estToName1 = getConfiguredPlaceName(toPlace);
-                                        estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
-                                        estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                        estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                        estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                    case 2:
-                                        estFrom2 = getConfiguredPlaceCoordinates(fromPlace);
-                                        estFromName2 = getConfiguredPlaceName(fromPlace);
-                                        estTo2 = getConfiguredPlaceCoordinates(toPlace);;
-                                        estToName2 = getConfiguredPlaceName(toPlace);
-                                        estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
-                                        estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                        estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                        estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                    case 3:
-                                        estFrom3 = getConfiguredPlaceCoordinates(fromPlace);
-                                        estFromName3 = getConfiguredPlaceName(fromPlace);
-                                        estTo3 = getConfiguredPlaceCoordinates(toPlace);;
-                                        estToName3 = getConfiguredPlaceName(toPlace);
-                                        estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
-                                        estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                        estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                        estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                    case 4:
-                                        estFrom4 = getConfiguredPlaceCoordinates(fromPlace);
-                                        estFromName4 = getConfiguredPlaceName(fromPlace);
-                                        estTo4 = getConfiguredPlaceCoordinates(toPlace);;
-                                        estToName4 = getConfiguredPlaceName(toPlace);
-                                        estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
-                                        estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                        estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                        estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                    case 5:
-                                        estFrom5 = getConfiguredPlaceCoordinates(fromPlace);
-                                        estFromName5 = getConfiguredPlaceName(fromPlace);
-                                        estTo5 = getConfiguredPlaceCoordinates(toPlace);;
-                                        estToName5 = getConfiguredPlaceName(toPlace);
-                                        estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
-                                        estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                        estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                        estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);                                    
-                                }
+                        if (trialConfig != null) { // trial configuration could be loaded
+                            // General Info
+                            String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
+                                    .getChildTopics().getString(TRIAL_CONDITION_TYPE);
+                            String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
+                                    .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
+                            // Pinning Data
+                            String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
+                                .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
+                            Topic placeConfig = getConfiguredPlace(placeToPinId);
+                            String placeToPinName = getConfiguredPlaceName(placeConfig);
+                            String placeCoordinates = getConfiguredPlaceCoordinates(placeConfig);
+                            String pinnedCoordinates = "-1;-1";
+                            int pinningRT = -1, pinInactive = -1;
+                            try {
+                                pinnedCoordinates = trialReport.loadChildTopics(COORDINATES_PINNED_URI)
+                                    .getChildTopics().getString(COORDINATES_PINNED_URI);
+                                pinningRT = trialReport.loadChildTopics(REACTION_TIME_URI)
+                                        .getChildTopics().getInt(REACTION_TIME_URI);
+                                pinInactive = trialReport.loadChildTopics(COUNT_OUTSIDE_URI)
+                                        .getChildTopics().getInt(COUNT_OUTSIDE_URI);
+                            } catch (Exception e) {
+                                log.warning("No pinning data was recorded during trial: " + trialConfigId + " for " + username.getSimpleValue());
                             }
-                        } catch (Exception e) {
-                            log.warning("No estimation data was recorded during trial " + trialConfigId + " for " + username.getSimpleValue());
+                            // Estimation Report Data
+                            String estimation1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
+                            int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
+                            String estimation2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
+                            int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
+                            String estimation3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
+                            int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
+                            String estimation4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
+                            int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
+                            String estimation5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
+                            int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
+                            try {
+                                List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                                for (Topic estimationReport : estimationReports) {
+                                    int estimationNr = -1;
+                                    estimationReport.loadChildTopics();
+                                    estimationNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
+                                    Topic fromPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_FROM_PLACE_URI));
+                                    Topic toPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_TO_PLACE_URI));
+                                    switch (estimationNr) {
+                                        case 1:
+                                            estFrom1 = getConfiguredPlaceCoordinates(fromPlace);
+                                            estFromName1 = getConfiguredPlaceName(fromPlace);
+                                            estTo1 = getConfiguredPlaceCoordinates(toPlace);;
+                                            estToName1 = getConfiguredPlaceName(toPlace);
+                                            estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                            estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                            estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                        case 2:
+                                            estFrom2 = getConfiguredPlaceCoordinates(fromPlace);
+                                            estFromName2 = getConfiguredPlaceName(fromPlace);
+                                            estTo2 = getConfiguredPlaceCoordinates(toPlace);;
+                                            estToName2 = getConfiguredPlaceName(toPlace);
+                                            estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                            estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                            estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                        case 3:
+                                            estFrom3 = getConfiguredPlaceCoordinates(fromPlace);
+                                            estFromName3 = getConfiguredPlaceName(fromPlace);
+                                            estTo3 = getConfiguredPlaceCoordinates(toPlace);;
+                                            estToName3 = getConfiguredPlaceName(toPlace);
+                                            estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                            estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                            estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                        case 4:
+                                            estFrom4 = getConfiguredPlaceCoordinates(fromPlace);
+                                            estFromName4 = getConfiguredPlaceName(fromPlace);
+                                            estTo4 = getConfiguredPlaceCoordinates(toPlace);;
+                                            estToName4 = getConfiguredPlaceName(toPlace);
+                                            estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                            estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                            estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                        case 5:
+                                            estFrom5 = getConfiguredPlaceCoordinates(fromPlace);
+                                            estFromName5 = getConfiguredPlaceName(fromPlace);
+                                            estTo5 = getConfiguredPlaceCoordinates(toPlace);;
+                                            estToName5 = getConfiguredPlaceName(toPlace);
+                                            estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
+                                            estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
+                                            estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                log.warning("No estimation data was recorded during trial " + trialConfigId + " for " + username.getSimpleValue());
+                            }
+                            // Write line
+                            report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName
+                                    + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive
+                                    + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
+                                    + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
+                                    + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
+                                    + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
+                                    + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
+                            report.append("\n");
+                        } else { // trial configuration could not be loaded..
+                            log.warning("System Trial Configuration changed"
+                                + " - Fetching Trial Config with URI: " + trialConfigId + " failed --- SKIPPED");
                         }
-                        // Write line
-                        report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName 
-                                + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive 
-                                + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
-                                + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
-                                + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
-                                + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
-                                + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
-                        report.append("\n");
                     }
                 }
             }
@@ -873,10 +873,10 @@ public class WebExperimentsPlugin extends PluginActivator {
         DeepaMehtaTransaction tx = dms.beginTx();
         String conditionValue = TRIAL_CONDITION_A;
         try {
-            for (int i=10; i<=30; i++) {
+            for (int i=1; i<=200; i++) {
                 String username = "VP "+ i;
                 if (isUsernameAvailable(username)) {
-                    if (i > 20) conditionValue = TRIAL_CONDITION_B;
+                    if (i > 100) conditionValue = TRIAL_CONDITION_B;
                     Credentials cred = new Credentials(username, "");
                     ChildTopicsModel userAccount = new ChildTopicsModel()
                         .put(USERNAME_TYPE_URI, cred.username)
