@@ -57,13 +57,13 @@ body {
 }
 
 .estimation .window {
-    width: 1200px;
+    width: 1590px;
 }
 
 .estimation #map {
     border: 1px solid #fff;
-    width: 1200px;
-    height: 750px;
+    width: 1580px;
+    height: 1000px;
     margin: auto;
 }
 
@@ -283,7 +283,7 @@ ul.clicks li {
 
 li.btn img {
     cursor:pointer;
-    padding: 5px;
+    padding-bottom: 15px;
 }
 
 li.btn img.selected,

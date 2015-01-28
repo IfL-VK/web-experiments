@@ -434,8 +434,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         Iterator<FileItem> files = items.getFileItems().iterator();
         while (files.hasNext()) {
             FileItem fileItem = files.next();
-            if (fileItem.getItemKind() != ItemKind.FILE) files.remove();
-            if (fileItem.getMediaType().equals(MediaType.APPLICATION_SVG_XML)) files.remove();
+            if (fileItem.getMediaType() == null && fileItem.getItemKind() != ItemKind.FILE) files.remove();
         }
         // 2) Create file topics (representing the files in our DB)
         Iterator<FileItem> icons = items.getFileItems().iterator();

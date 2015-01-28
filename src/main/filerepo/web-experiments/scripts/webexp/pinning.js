@@ -15,6 +15,9 @@ define(function (require) {
     var trialId = -1
     var icon_path = undefined
     
+    var circleGroup = L.featureGroup()
+    var markerGroup = L.featureGroup()
+
     var timerId = setInterval(count_reaction_time, 500)
     var report = {
         "count_click_outside": 0,
@@ -26,6 +29,8 @@ define(function (require) {
     
     var view_state  = "" // values may be "" or "practice"
     var pinned_already = false
+
+    var MILLISECS_FOR_FILLER_TASK = 30000
 
     // ------ Initialization of client-side data for pinning
 
@@ -65,7 +70,9 @@ define(function (require) {
                 var pinning_condition = model.getTrialConfig()['trial_config']['trial_condition']
                 if (pinning_condition === "webexp.config.no_pinning") {
 
-                    set_memoriziation_page_title()
+                    var new_page_title = 'Pr&auml;ge dir die Karte ein indem du dir vorstellst an einem der Orte '
+                        + 'ausgesetzt zu werden und die Strecken zu den anderen Orten finden zu m&uuml;ssen.'
+                    set_memorization_page_title(new_page_title)
 
                 } else if (pinning_condition === "webexp.config.pinning") {
 
@@ -82,8 +89,8 @@ define(function (require) {
                 init_place_labels()
                 
                 // 5 run time
-                run_timer()
-                
+                run_timer(undefined, init_random_calc)
+
             }, function (error) {
                 console.warn("Error loading participant ..", error)
             }, common.debug)
@@ -157,10 +164,7 @@ define(function (require) {
     }
 
     function init_place_labels () {
-        // 
-        var circleGroup = L.featureGroup()
-        var markerGroup = L.featureGroup()
-        // 
+        // relies on global markerGroup and circleGroup
         for (var i = 0; i < model.getPlaces().length; i++) {
             var place = model.getPlaces()[i]
             var lat = place.childs['de.akmiraketen.webexp.place_latitude'].value
@@ -178,7 +182,7 @@ define(function (require) {
             // 
             active_control.on('mouseover', highlight_marker)
             active_control.on('mouseout', reset_marker_highlight)
-            active_control.on('click', marker_control_clicked)
+            active_control.on('click', active_control_check)
         }
         markerGroup.addTo(map)
         circleGroup.addTo(map)
@@ -194,10 +198,6 @@ define(function (require) {
             e.target.setRadius(75)
         }
         
-        function marker_control_clicked(e) {
-            active_control_check(e)
-        }
-
     }
 
     function init_user_view () {
@@ -219,7 +219,7 @@ define(function (require) {
     }
     
     function init_random_calc () {
-        set_task_description('')
+        set_task_description('Multiplikationsaufgabe')
         var a = rand_int(2,20),
             b = rand_int(2,20)
         // ### GUI
@@ -232,10 +232,13 @@ define(function (require) {
         if (common.verbose) console.log("Initialized random multiplication ... ")
         //
         document.getElementById('ergebnis').focus()
-        set_next_link() // modifiies "next" a href based respecting practice mode
-
+        set_next_link() // modifies "next" a href based respecting practice mode
+        //
+        // go on after a maximum of 30 seconds
+        run_timer(MILLISECS_FOR_FILLER_TASK, go_next)
+        
         function handle_input () {
-            var ergebnis= document.getElementById('ergebnis').value
+            var ergebnis = document.getElementById('ergebnis').value
             if (ergebnis < 0 || ergebnis%1 !== 0 || ergebnis === "") {
                 alert("Bitte ganze Zahl eingeben!");
             } else { // result is always OK
@@ -268,12 +271,17 @@ define(function (require) {
     
     function active_control_check(e) {
         if (is_click_on_place_to_pin(e)) {
+            // remove circle layer
+            circleGroup.removeLayer(e.target)
             // marker equals place_to_pin
             if (!pinned_already) { // make sure that symbole is set just _once_
                 // .. client and server side  data
                 set_geo_coordinates(e.latlng)
                 stop_reaction_interval(timerId)
-                set_memoriziation_page_title()
+                var new_page_title = 'Pr&auml;ge dir die Karte ein indem du dir vorstellst, bei '
+                    + model.getNameOfPlaceToPin()+ ' ausgesetzt zu werden und die Strecken zu '
+                    + 'den anderen Orten finden zu m&uuml;ssen.'
+                set_memorization_page_title(new_page_title)
                 control.postPinningReport(trialId, report, undefined, function (error) {
                     console.warn("FAIL - ", error)
                 }, common.debug)
@@ -282,14 +290,13 @@ define(function (require) {
                 var personalIcon = undefined
                 var marker = undefined
                 if (icon_path) {
-                    personalIcon = L.icon({ iconUrl: '/filerepo/' + icon_path, iconSize: [24, 24] })
+                    personalIcon = L.icon({ iconUrl: '/filerepo/' + icon_path, iconSize: [32, 32], iconAnchor: [18, 30] })
                     marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
                 } else {
                     marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
                 }
                 marker.addTo(featureGroup)
                 featureGroup.addTo(map)
-                // ### is now started on page-load run_timer()
             }
             pinned_already = true
         }
@@ -352,12 +359,13 @@ define(function (require) {
         }
     }
 
-    function run_timer(seconds) {
-        if (typeof seconds === "undefined") 
+    function run_timer(value, action_handler) {
+        var milliseconds = memorize.time
+        if (typeof value !== "undefined") milliseconds = value
         setTimeout(function (e) {
-            init_random_calc() // do so next in any case (both conditions and practice mode)
-        }, memorize.time)
-        if (common.verbose) console.log("  running timer for " +memorize.time / 1000+ " seconds")
+            if (typeof action_handler !== "undefined") action_handler() // run action
+        }, milliseconds)
+        if (common.verbose) console.log("  running timer for " +(milliseconds/1000)+ " seconds, then do: " + typeof action_handler)
     }
 
     function set_next_link () {
@@ -376,12 +384,10 @@ define(function (require) {
         }
     }
     
-    function set_memoriziation_page_title() {
+    function set_memorization_page_title(message) {
         var html = ''
         if (view_state.indexOf("pract") !== -1) html += '<span class="mode">&Uuml;bungsmodus: </span>'
-        html += 'Pr&auml;ge dir die Karte ein indem du dir vorstellst, bei '
-            + model.getNameOfPlaceToPin()+ ' ausgesetzt zu werden und die Strecken zu '
-            + 'den anderen Orten finden zu m&uuml;ssen.'
+        html += message
         set_task_description(html)
     }
     
