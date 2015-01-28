@@ -51,6 +51,11 @@ body {
     margin: 10px;
 }
 
+.intro .content h4.image {
+    margin-bottom: 0px;
+    font-weight: normal;
+}
+
 .main.start .content input {
     padding: 10px;
     margin: 10px;

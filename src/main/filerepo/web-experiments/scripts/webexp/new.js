@@ -96,7 +96,7 @@ define(function (require) {
             + 'du noch etwas Zeit dir die <b>Karte so genau wie m&ouml;glich einzupr&auml;gen</b>.'
             + 'Stelle dir dazu vor, du wirst am markierten Ort ausgesetzt und sollst nun die Strecken zu den anderen Orten auswendig '
             + 'wiederfinden. Du kannst dabei den direkten Weg querfeldein gehen und bist nicht auf Wege angewiesen.'
-            + '<br/><br/><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png">'
+            + '<br/><h4 class="image">Abbildung 1:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png"><br/>'
         set_page_content(content)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_filler_intro() })
@@ -119,9 +119,9 @@ define(function (require) {
     }
 
     function render_filler_intro() {
-        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du Rechenaufgaben, die du bitte so schnell '
+        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du eine Rechenaufgabe, die du bitte so schnell '
             + 'und so genau wie m&ouml;glich beantwortest, indem du die Ergebniszahl eintippst.</p>'
-            + '<p class="textblock">...</p>')
+            + '<br/><h4 class="image">Abbildung 2:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_filler_task_screen.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_estimation_intro() })
     }
@@ -132,14 +132,14 @@ define(function (require) {
             + '<p>Dazu klickst du bitte in den Kreis in der Mitte des Bildschirms und ziehst die entstehende Linie so lange, '
             + 'bis die L&auml;nge mit der Distanz zwischen den beiden Orten &uuml;bereinstimmt. Au&szlig;erdem drehst du die Linie so, dass auch die '
             + 'Richtung zwischen den beiden Orten deiner Erinnerung nach stimmt. Sobald du die Linie losl&auml;sst, ist deine Antwort gespeichert.</p>'
-            + '<br/><br/><img src="/de.akmiraketen.web-experiments/images/web_exp_estimation_screen_blank.png"><br/><br/>')
+            + '<br/><h4 class="image">Abbildung 3:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_estimation_screen_blank.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_certainty_intro() })
     }
 
     function render_certainty_intro() {
         set_page_content('<p class="textblock">Anschlie&szlig;end erscheint eine Seite, auf der du angeben sollst, wie sicher du dir in der Sch&auml;tzung warst.</p>'
-            + '<br/><img src="/de.akmiraketen.web-experiments/images/web_exp_confidence.png"><br/><br/>')
+            + '<br/><h4 class="image">Abbildung 4:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_confidence.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_practice_intro() })
     }
