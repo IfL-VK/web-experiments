@@ -42,6 +42,15 @@ body {
     text-align: center;
 }
 
+#map #reference {
+    position: absolute;
+    z-index: 2001;
+    width: 5px;
+    height: 250px;
+    bottom: 0px; left: 0px;
+    background-color: #a9a9a9;
+}
+
 .main.start .content input.login-btn {
     cursor: pointer;
 }
@@ -70,6 +79,7 @@ body {
     width: 1590px;
     height: 1000px;
     margin: auto;
+    position: relative;
 }
 
 #map .text-labels {

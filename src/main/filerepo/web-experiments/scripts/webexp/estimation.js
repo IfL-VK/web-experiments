@@ -27,6 +27,10 @@ define(function (require) {
         }
     }
     
+    var featureGroup = L.featureGroup()
+    var startPoint = undefined
+    var polyline = undefined
+
     var view_state  = "" // values may be "" or "pract"
     var estimationNr = 1
 
@@ -163,22 +167,22 @@ define(function (require) {
 
         var centerLat = fromPlace['latitude']
         var centerLng = fromPlace['longitude']
-        var startPoint = L.circle([centerLat, centerLng], 100, {
+        startPoint = L.circle([centerLat, centerLng], 100, {
             fill: true, fillColor: 'black', weight: 4, color: 'gray', opacity: 1 })
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)
         // var pointB = L.latLng(centerLat, centerLng)
         var points = [pointA, pointA]
-        var polyline = L.polyline(points, {
+        polyline = L.polyline(points, {
                 color: 'grey', weight: 8, opacity: 1
                 
             })
             // ### external plugin .. polyline.showExtremities('arrowM');
             
-        var featureGroup = L.featureGroup()
-            polyline.addTo(featureGroup)
-            startPoint.addTo(featureGroup)
-            featureGroup.addTo(map)
+        // relies on global var featureGroup
+        polyline.addTo(featureGroup)
+        startPoint.addTo(featureGroup)
+        featureGroup.addTo(map)
 
         // --- estimation interaction handler ---
         
@@ -211,7 +215,11 @@ define(function (require) {
                             control.postEstimationReport(trialId, estimationNr, report, function(done) {
                                 console.log("OK - Load next estimation ")
                                 // redirecting to index page for grabbing next trial
-                                window.document.location.reload() // ### do better
+                                if (view_state.indexOf("pract") !== -1) {
+                                    render_feedback_view()
+                                } else {
+                                    window.document.location.reload()
+                                }
                             }, function (error) {
                                 console.log("FAIL - Estimated coordinates could not be saved!")
                             }, false)
@@ -237,6 +245,39 @@ define(function (require) {
 
     }
     
+    function render_feedback_view () {
+        // 
+        var ortA = model.getNameOfPlace(report.from_place_id)
+        var ortB = model.getNameOfPlace(report.to_place_id)
+        var title = '&Uuml;bungsmodus: Um von ' + ortA + ' nach ' + ortB + ' zu kommen, m&uuml;sstest du folgenderma&szlig;en gehen:'
+        set_task_description(title)
+        // ..
+        d3.select('#map').attr('style', 'display:block;')
+        d3.select('.certainty-scale').attr('style', 'display:none;')
+        // ..
+        remove_line()
+        draw_correct_line()
+        // .. move on after 5secs
+        run_timer(5000, function (e) { window.document.location.reload() })
+
+        function remove_line() {
+            // featureGroup.removeLayer(polyline)
+            polyline.setStyle({opacity: 0.3})
+        }
+
+        function draw_correct_line () {
+            // ..
+            var placeA = model.getCoordinatesOfPlace(report.from_place_id)
+            var placeB = model.getCoordinatesOfPlace(report.to_place_id)
+            polyline = L.polyline(
+                [L.latLng(placeA.latitude, placeA.longitude), L.latLng(placeB.latitude, placeB.longitude)], {
+                color: 'orange', weight: 8, opacity: 1
+            })
+            polyline.addTo(featureGroup)
+        }
+
+    }
+
     function init_certainty_submission (callback) {
         // hide map
         d3.select('#map').attr('style', 'display:none;')
@@ -328,6 +369,15 @@ define(function (require) {
     
     function set_task_description (message) {
         document.getElementById("title").innerHTML = message 
+    }
+
+    function run_timer(value, action_handler) {
+        var milliseconds = 10000
+        if (typeof value !== "undefined") milliseconds = value
+        setTimeout(function (e) {
+            if (typeof action_handler !== "undefined") action_handler() // run action
+        }, milliseconds)
+        if (common.verbose) console.log("  running timer for " +(milliseconds/1000)+ " seconds, then do: " + typeof action_handler)
     }
 
     return {

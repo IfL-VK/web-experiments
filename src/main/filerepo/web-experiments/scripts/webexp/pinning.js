@@ -148,6 +148,7 @@ define(function (require) {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
+        // add reference scale ..
         // uncomment the following linces to use bitmap map-files instead of tiles
         /** if (fileName) {
             var northEast = map.getBounds().getNorthEast()
@@ -164,7 +165,7 @@ define(function (require) {
     }
 
     function init_place_labels () {
-        // relies on global markerGroup and circleGroup
+        // relies on existence of global vars markerGroup and circleGroup
         for (var i = 0; i < model.getPlaces().length; i++) {
             var place = model.getPlaces()[i]
             var lat = place.childs['de.akmiraketen.webexp.place_latitude'].value
@@ -197,7 +198,6 @@ define(function (require) {
             e.target.setStyle({ color: '#a9a9a9', 'fillColor': '#666', fillOpacity: 1, 'stroke-width': 2 });
             e.target.setRadius(75)
         }
-        
     }
 
     function init_user_view () {
@@ -212,7 +212,7 @@ define(function (require) {
     
     function init_task_description () {
         if (view_state.indexOf("pract") !== -1) {
-            if (common.verbose) console.log("Practice Mode.. ")
+            if (common.verbose) console.log(" practice Mode.. ")
             d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
         }
         d3.select('i.place-to-pin').html(model.getNameOfPlaceToPin() + '<br/>')
