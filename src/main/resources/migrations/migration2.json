@@ -91,8 +91,23 @@
             ]
         },
         {
-            "value": "Estimation Report: Coordinates",
-            "uri": "de.akmiraketen.webexp.report_estimated_coordinates",
+            "value": "Estimation Report: Estimated Screen Coordinates",
+            "uri": "de.akmiraketen.webexp.report_estimated_screen_coordinates",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Estimation Report: Real Screen Coordinates",
+            "uri": "de.akmiraketen.webexp.report_real_screen_coordinates",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -234,7 +249,13 @@
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.report_estimated_coordinates",
+                    "child_type_uri": "de.akmiraketen.webexp.report_estimated_screen_coordinates",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "de.akmiraketen.webexp.report_real_screen_coordinates",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"

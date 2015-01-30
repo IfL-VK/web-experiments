@@ -289,11 +289,11 @@ define(function (require) {
                 var featureGroup = L.featureGroup()
                 var personalIcon = undefined
                 var marker = undefined
-                if (icon_path) {
+                if (icon_path !== "leaflet-marker-icon.png") {
                     personalIcon = L.icon({ iconUrl: '/filerepo/' + icon_path, iconSize: [32, 32], iconAnchor: [18, 30] })
                     marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
                 } else {
-                    marker = L.marker([place_to_pin.lat, place_to_pin.lng], {icon: personalIcon})
+                    marker = L.marker([place_to_pin.lat, place_to_pin.lng])
                 }
                 marker.addTo(featureGroup)
                 featureGroup.addTo(map)

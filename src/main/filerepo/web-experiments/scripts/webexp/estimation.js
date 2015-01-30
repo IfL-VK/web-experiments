@@ -22,6 +22,12 @@ define(function (require) {
         "estimation_time": 0,
         "estimated_distance": 0,
         "certainty": -1,
+        "estimated_screen_coordinates": {
+            "x": -1, "y" : -1
+        },
+        "real_screen_coordinates": {
+            "x": -1, "y" : -1
+        },
         "geo_coordinates": {
             "latitude": -1, "longitude" : -1
         }
@@ -168,14 +174,13 @@ define(function (require) {
         var centerLat = fromPlace['latitude']
         var centerLng = fromPlace['longitude']
         startPoint = L.circle([centerLat, centerLng], 100, {
-            fill: true, fillColor: 'black', weight: 4, color: 'gray', opacity: 1 })
+            fill: true, fillColor: 'black', weight: '4px', color: 'gray', opacity: 1 })
         // create a red polyline from an arrays of LatLng points
         var pointA = L.latLng(centerLat, centerLng)
         // var pointB = L.latLng(centerLat, centerLng)
         var points = [pointA, pointA]
         polyline = L.polyline(points, {
-                color: 'grey', weight: 8, opacity: 1
-                
+                color: 'grey', weight: '8px', opacity: 1
             })
             // ### external plugin .. polyline.showExtremities('arrowM');
             
@@ -206,41 +211,36 @@ define(function (require) {
             map.on('mouseup', function(e) {
                 if (isDrawing) { // estimation finished
                     isDrawing = false
-                    stop_reaction_interval(timerId) // stop timer
-                    var estimatedCoordinates = calculateDistance() // gets values
-                        set_geo_coordinates(estimatedCoordinates) // sets values in report object
-                        // get certainty estimation score and set them to report object
-                        init_certainty_submission(function () { // certainty submission done
-                            // save all values in report object to database
-                            control.postEstimationReport(trialId, estimationNr, report, function(done) {
-                                console.log("OK - Load next estimation ")
-                                // redirecting to index page for grabbing next trial
-                                if (view_state.indexOf("pract") !== -1) {
-                                    render_feedback_view()
-                                } else {
-                                    window.document.location.reload()
-                                }
-                            }, function (error) {
-                                console.log("FAIL - Estimated coordinates could not be saved!")
-                            }, false)
-                        })
+                    // stop timer
+                    stop_reaction_interval(timerId)
+                    // create report
+                    var start = polyline._parts[0][0]
+                    var end = polyline._parts[0][1]
+                    var coordinateX = (end.x - start.x)
+                    var coordinateY = (end.y - start.y)
+                    if (common.debug) console.log("   line dropped at X: " + coordinateX + " Y:" + coordinateY)
+                    set_estimated_screen_coordinates(coordinateX, coordinateY)
+                    get_correct_line(true) // ### set_real_screen_coordinates()
+                    // get certainty estimation score and set them to report object
+                    init_certainty_submission(function () { // certainty submission done
+                        // send report to be written to database
+                        control.postEstimationReport(trialId, estimationNr, report, function(done) {
+                            if (common.verbose) console.log("OK - Load next estimation ")
+                            // redirecting to index page for grabbing next trial
+                            if (view_state.indexOf("pract") !== -1) {
+                                render_feedback_view()
+                            } else {
+                                window.document.location.reload()
+                            }
+                        }, function (error) {
+                            console.warn("FAIL - Estimated coordinates could not be saved!", error)
+                        }, false)
+                    })
                 }
             })
             
         function updateEndPointOfPolyline(e) {
             polyline.spliceLatLngs(polyline.getLatLngs().length-1, 1, e.latlng)
-        }
-        
-        function calculateDistance() {
-            // Returns the distance (in meters) to the given LatLng calculated 
-            // .. using the Haversine formula. See description on
-            // http://en.wikipedia.org/wiki/Haversine_formula
-            var els = polyline.getLatLngs()
-            var fromPlace = els[0]
-            var toPlace = els[1]
-     	    var meters = Math.round(fromPlace.distanceTo(toPlace))
-            set_estimated_distance(meters)
-            return toPlace
         }
 
     }
@@ -255,27 +255,26 @@ define(function (require) {
         d3.select('#map').attr('style', 'display:block;')
         d3.select('.certainty-scale').attr('style', 'display:none;')
         // ..
-        remove_line()
-        draw_correct_line()
+        polyline.setStyle({opacity: 0.3})
+        //
+        get_correct_line(true)
         // .. move on after 5secs
         run_timer(5000, function (e) { window.document.location.reload() })
 
-        function remove_line() {
-            // featureGroup.removeLayer(polyline)
-            polyline.setStyle({opacity: 0.3})
-        }
+    }
 
-        function draw_correct_line () {
-            // ..
-            var placeA = model.getCoordinatesOfPlace(report.from_place_id)
-            var placeB = model.getCoordinatesOfPlace(report.to_place_id)
-            polyline = L.polyline(
-                [L.latLng(placeA.latitude, placeA.longitude), L.latLng(placeB.latitude, placeB.longitude)], {
-                color: 'orange', weight: 8, opacity: 1
-            })
-            polyline.addTo(featureGroup)
-        }
-
+    function get_correct_line (render) {
+        // ..
+        var placeA = model.getCoordinatesOfPlace(report.from_place_id)
+        var placeB = model.getCoordinatesOfPlace(report.to_place_id)
+        var otherpolyline = L.polyline(
+            [L.latLng(placeA.latitude, placeA.longitude), L.latLng(placeB.latitude, placeB.longitude)], {
+            color: 'orange', weight: '8px', opacity: 1
+        })
+        if (render) otherpolyline.addTo(featureGroup)
+        var start = otherpolyline._parts[0][0]
+        var end = otherpolyline._parts[0][1]
+        set_real_screen_coordinates((end.x - start.x), (end.y - start.y))
     }
 
     function init_certainty_submission (callback) {
@@ -308,7 +307,7 @@ define(function (require) {
 
     function init_task_description (fromId, toId) {
         if (view_state.indexOf("pract") !== -1) {
-            if (common.verbose) console.log("Practice Mode.. ")
+            if (common.verbose) console.log("  practice Mode.. ")
             d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
         }
         d3.select('i.from-place').text(model.getNameOfPlace(fromId))
@@ -355,11 +354,17 @@ define(function (require) {
     function set_certainty_value(value) {
         report.certainty = value
     }
-    
-    function set_geo_coordinates (object) {
-        if (common.verbose) console.log(" estimated coordinate was: " + object)
-        report.geo_coordinates.latitude = object.lat
-        report.geo_coordinates.longitude = object.lng
+
+    function set_estimated_screen_coordinates (x, y) {
+        if (common.verbose) console.log(" set estimated screen coordinate: " + x + ";" + y)
+        report.estimated_screen_coordinates.x = x
+        report.estimated_screen_coordinates.y = y
+    }
+
+    function set_real_screen_coordinates (x, y) {
+        if (common.verbose) console.log(" set real screen coordinate: " + x + ";" + y)
+        report.real_screen_coordinates.x = x
+        report.real_screen_coordinates.y = y
     }
     
     function set_estimated_distance (value) {

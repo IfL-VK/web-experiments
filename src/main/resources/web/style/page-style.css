@@ -20,6 +20,10 @@ body {
     width: 800px;
 }
 
+.estimation .window {
+    margin-top: 20px;
+}
+
 .main.intro .title,
 .main.intro .content,
 .main.start .title,

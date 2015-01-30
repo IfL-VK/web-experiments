@@ -119,13 +119,16 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String ESTIMATION_REPORT_URI = "de.akmiraketen.webexp.trial_estimation_report";
     private static final String ESTIMATION_NR_URI = "de.akmiraketen.webexp.report_estimation_nr";
-    private static final String ESTIMATED_COORDINATES_URI = "de.akmiraketen.webexp.report_estimated_coordinates";
+    private static final String ESTIMATED_SCREEN_COORDINATES_URI = "de.akmiraketen.webexp.report_estimated_screen_coordinates";
+    private static final String REAL_SCREEN_COORDINATES_URI = "de.akmiraketen.webexp.report_real_screen_coordinates";
     private static final String ESTIMATED_DISTANCE_URI = "de.akmiraketen.webexp.report_estimated_distance";
     private static final String ESTIMATION_CONFIDENCE = "de.akmiraketen.webexp.report_estimation_confidence";
     private static final String ESTIMATION_TO_START_TIME_URI = "de.akmiraketen.webexp.report_estimated_to_start_time";
     private static final String ESTIMATION_TIME_URI = "de.akmiraketen.webexp.report_estimation_time";
     private static final String ESTIMATION_FROM_PLACE_URI = "de.akmiraketen.webexp.report_from_place_id";
     private static final String ESTIMATION_TO_PLACE_URI = "de.akmiraketen.webexp.report_to_place_id";
+    private static final String ESTIMATION_DIFF_IN_DIRECTION = "de.akmiraketen.webexp.report_diff_in_direction";
+    private static final String ESTIMATION_REAL_DISTANCE = "de.akmiraketen.webexp.report_real_distance";
    
     
     private static final String TRIAL_CONDITION_A = "webexp.config.pinning";
@@ -284,11 +287,11 @@ public class WebExperimentsPlugin extends PluginActivator {
         StringBuilder report = new StringBuilder();
         ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
         report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
-        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
-        report.append("Estfrom.2\tEstfromname.2\tEstto.2\tEsttoname.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
-        report.append("Estfrom.3\tEstfromname.3\tEstto.3\tEsttoname.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
-        report.append("Estfrom.4\tEstfromname.4\tEstto.4\tEsttoname.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
-        report.append("Estfrom.5\tEstfromname.5\tEstto.5\tEsttoname.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
+        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEsttoscreen.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
+        report.append("Estfrom.2\tEstfromname.2\tEstto.2\tEsttoname.2\tEsttoscreen.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
+        report.append("Estfrom.3\tEstfromname.3\tEstto.3\tEsttoname.3\tEsttoscreen.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
+        report.append("Estfrom.4\tEstfromname.4\tEstto.4\tEsttoname.4\tEsttoscreen.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
+        report.append("Estfrom.5\tEstfromname.5\tEstto.5\tEsttoname.5\tEsttoscreen.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
         report.append("\n");
         for (RelatedTopic vp : propositi.getItems()) {
             Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
@@ -301,7 +304,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                     trialReport.loadChildTopics();
                     String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
                             .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    if (trialConfigId.contains("trial") || trialConfigId.contains("pract")) {
+                    if (trialConfigId.contains("trial")) {
+                        //  ### we (yet) no differ in report between practice and trial || trialConfigId.contains("pract")
                         Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
                         if (trialConfig != null) { // trial configuration could be loaded
                             // General Info
@@ -328,15 +332,15 @@ public class WebExperimentsPlugin extends PluginActivator {
                                 log.warning("No pinning data was recorded during trial: " + trialConfigId + " for " + username.getSimpleValue());
                             }
                             // Estimation Report Data
-                            String estimation1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
+                            String estimation1 = "", realToScreen1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
                             int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
-                            String estimation2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
+                            String estimation2 = "", realToScreen2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
                             int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
-                            String estimation3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
+                            String estimation3 = "", realToScreen3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
                             int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
-                            String estimation4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
+                            String estimation4 = "", realToScreen4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
                             int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
-                            String estimation5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
+                            String estimation5 = "", realToScreen5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
                             int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
                             try {
                                 List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
@@ -352,7 +356,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estFromName1 = getConfiguredPlaceName(fromPlace);
                                             estTo1 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName1 = getConfiguredPlaceName(toPlace);
-                                            estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            realToScreen1 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
+                                            estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
                                             estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
@@ -361,7 +366,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estFromName2 = getConfiguredPlaceName(fromPlace);
                                             estTo2 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName2 = getConfiguredPlaceName(toPlace);
-                                            estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            realToScreen2 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
+                                            estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
                                             estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
@@ -370,7 +376,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estFromName3 = getConfiguredPlaceName(fromPlace);
                                             estTo3 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName3 = getConfiguredPlaceName(toPlace);
-                                            estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            realToScreen3 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
+                                            estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
                                             estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
@@ -379,7 +386,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estFromName4 = getConfiguredPlaceName(fromPlace);
                                             estTo4 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName4 = getConfiguredPlaceName(toPlace);
-                                            estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            realToScreen4 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
+                                            estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
                                             estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
@@ -388,7 +396,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estFromName5 = getConfiguredPlaceName(fromPlace);
                                             estTo5 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName5 = getConfiguredPlaceName(toPlace);
-                                            estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_COORDINATES_URI);
+                                            realToScreen5 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
+                                            estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
                                             estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
@@ -400,11 +409,11 @@ public class WebExperimentsPlugin extends PluginActivator {
                             // Write line
                             report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName
                                     + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive
-                                    + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
-                                    + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
-                                    + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
-                                    + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
-                                    + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
+                                    + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + realToScreen1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
+                                    + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + realToScreen2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
+                                    + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + realToScreen3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
+                                    + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + realToScreen4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
+                                    + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + realToScreen5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
                             report.append("\n");
                         } else { // trial configuration could not be loaded..
                             log.warning("System Trial Configuration changed"
@@ -660,17 +669,23 @@ public class WebExperimentsPlugin extends PluginActivator {
             log.info("POST Estimation: " + payload);
             JSONObject data = new JSONObject(payload);
             Topic trialConfig = getTrialConfigTopic(trialId);
-            JSONObject coordinates = data.getJSONObject("geo_coordinates");
-            String latitude = coordinates.getString("latitude");
-            String longitude = coordinates.getString("longitude");
+            // estimated screen coords
+            JSONObject estimated_screen_cords = data.getJSONObject("estimated_screen_coordinates");
+            String estimatedX = estimated_screen_cords.getString("x");
+            String estimatedY = estimated_screen_cords.getString("y");
+            // real screen coordinates
+            JSONObject real_screen_coords = data.getJSONObject("real_screen_coordinates");
+            String realX = real_screen_coords.getString("x");
+            String realY = real_screen_coords.getString("y");
+            //
             String fromPlaceId = data.getString("from_place_id");
             String toPlaceId = data.getString("to_place_id");
             int estimatedDistance = data.getInt("estimated_distance");
             int confidenceValue = data.getInt("certainty");
             int toStartTime = data.getInt("to_start_time");
             int estimationTime = data.getInt("estimation_time");
-            log.fine("ESTIMATED Coordinates for " + estimation + " are \"" + latitude + "," 
-                    + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+            log.fine("ESTIMATED Coordinates for " + estimation + " are \"" + estimatedX + ","
+                    + estimatedY + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
             // 2 Check consistency of this request for reporting
             Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
             List<Topic> estimations = null;
@@ -689,13 +704,16 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
             // 3 Start to build up new trial estimation report
             ChildTopicsModel values = new ChildTopicsModel()
-                .put(ESTIMATED_COORDINATES_URI, latitude + ";" + longitude)
+                .put(ESTIMATED_SCREEN_COORDINATES_URI, estimatedX + ";" + estimatedY)
+                .put(REAL_SCREEN_COORDINATES_URI, realX + ";" + realY)
                 .put(ESTIMATION_FROM_PLACE_URI, fromPlaceId)
                 .put(ESTIMATION_TO_PLACE_URI, toPlaceId)
                 .put(ESTIMATION_TO_START_TIME_URI, toStartTime)
                 .put(ESTIMATION_TIME_URI, estimationTime)
                 .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
                 .put(ESTIMATION_NR_URI, estimation)
+                .put(ESTIMATION_DIFF_IN_DIRECTION, 0) // stored as dm4.core.text
+                .put(ESTIMATION_REAL_DISTANCE, 0) // stored as dm4.core.text
                 .put(ESTIMATION_CONFIDENCE, confidenceValue);
             TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
             // 4 assign new trial estimation report to trial report
