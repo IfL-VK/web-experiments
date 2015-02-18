@@ -6,8 +6,9 @@ For installation, please follow the instructions to:
 * Install DeepaMehta **4.4.3** from source like<br/>
   <pre>git clone https://github.com/jri/deepamehta.git
   cd deepamehta
-  git checkout 4.4.3</pre><br/>
-  [or use this (linux-based) guide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide)
+  git checkout 4.4.3
+  mvn clean install -P all</pre>
+  Or[use this (linux-based) guide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide) to build dm4 from source.
 * Download a release of the `dm44-deepamehta-csv` [from here](http://download.deepamehta.de/dm44-deepamehta-csv-0.0.4.jar), place it on your hard-disk and register its  folder in the main deepamehta `pom.xml` (the one in your DeepaMehta home directory)
 * Clone this `web-experiments` repository (which is a dm4-plugin) onto your computer
 * Bild the `web-experiments` plugin through using `cd web-experiments` and `mvn clean package`<br/>
