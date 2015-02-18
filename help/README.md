@@ -3,29 +3,19 @@
 
 For installation, please follow the instructions to:
 
-* Install DeepaMehta 4.4.x from source
-* Download and unzip the binary release of DeepaMehta 4.4.x
-* Download and place a binary release of `dm44-deepamehta-csv` in the `bundle` directory
-* Download and install a binary release of the `web-experiments` in the `bundle` directory
-* Choosd and run the corresponding `deepamehta-start` script for your operating system
-
-## Download
-
-wget http://download.deepamehta.de/deepamehta-4.4.2.zip
-wget http://download.deepamehta.de/dm44-deepamehta-csv-0.0.4.jar
-
-If these fail, probably due to a new dm release, the following addresses should resolve:
-
-wget http://download.deepamehta.de/archive/4.4/deepamehta-4.4.2.zip
-wget http://download.deepamehta.de/archive/4.4/dm44-deepamehta-csv-0.0.4.jar
+* Install DeepaMehta 4.4.x [from source](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide)
+* Download a release of the `dm44-deepamehta-csv` [from here](http://download.deepamehta.de/dm44-deepamehta-csv-0.0.4.jar), place it on your hard-disk and register its folder in the main deepamehta `pom.xml` (the one in your DeepaMehta home directory under )
+* Clone and build the `web-experiments` plugin and register it in the main deepamehta `pom.xml`, too.
+* Edit/configure in the main deepamehta `pom.xml` the option`dm4.filerepo.path` to point to your folder of `web-experiments/src/main/filerepo`
+* Now you can start the platform with these two plugins
 
 ## Config
 
 * Ensure to set installation properties in `<DeepaMehta4-Directory>/conf/conf.properties`:
   `dm4.filerepo.path` to a writeable folder destination
-  `dm4.security.subnet_filter` resp. to your networked audience, e.g. 0.0.0.0/0 for ALL
+   optional: `dm4.security.subnet_filter` resp. to your networked audience, e.g. 0.0.0.0/0 for ALL
   
-* Switch to file-logging in `<DeepaMehta4-Directory>/conf/logging.properties`
+* Switch to file-logging in as desrcibed in `<DeepaMehta4-Directory>/conf/logging.properties`
 
 * Make FilesPlugin less verbose through adding the following line to `<DeepaMehta4-Directory>/conf/logging.properties`
   de.deepamehta.plugins.files.FilesPlugin.level=WARNING
