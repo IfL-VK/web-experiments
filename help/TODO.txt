@@ -1,0 +1,15 @@
+- individuelle Session-Files für die Versuchspersonen
+- Definitionen des Aussehens der Session-Files
+- Spiegelung: moegliches Testen? (bevor wir alles machen...)
+- Instruktionen je nach Bedingung unterschiedlich
+- Texte anpassen, Logo einfuegen (siehe Mail von Julia 06.02.1014: PDF "150206_Instruktion_Exp1.pdf")
+- Karte zentriert auf dem Bildschirm darbieten (Aufloesung 1680 x 1050 Pixel)
+- Schaetzscreen bildschirmgroß darbieten, auch im Hintergrund der Instruktionsschrift
+- Klarheit über die Groeße der Kartenausschnitte
+- Rechenaufgabe: 30 Sekunden Timer
+- Pinwahl forcieren
+- Balken auf volle Kartenhoehe
+- Schriftart anpassen (serifenlos, schwarz, nicht kursiv, nicht fett)
+- Schrift groeßer
+- Bilder aus Mapbox exportieren und spiegeln
+
