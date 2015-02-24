@@ -39,11 +39,11 @@
             <artifactId>deepamehta-files</artifactId>
             <version>4.4</version>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>dm44-deepamehta-csv</artifactId>
             <version>0.0.5-SNAPSHOT</version>
-        </dependency>
+        </dependency-->
         <!-- dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>dm44-webactivator</artifactId>
