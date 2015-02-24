@@ -67,9 +67,9 @@ define(function (require) {
                     
                 } else if (view_state === "finish") {
 
-                    set_task_description('Das war\' am PC')
+                    set_task_description('Das war\'s am PC')
                     set_page_content('<p class="textblock">Die Aufgaben am PC hast du nun erfolgreich beendet.<br/>'
-                        + 'Bitte f&uuml;lle nun die Fragebogen der Reihe nach aus.<br/>'
+                        + 'Bitte f&uuml;lle nun den Fragebogen auf deinem Tisch aus.<br/>'
                         + 'Wende dich danach bitte leise an die Versuchsleitung.</p>')
 
                 } else if (view_state.indexOf("pause") !== -1) {
@@ -90,12 +90,12 @@ define(function (require) {
     // --- Intro 1 View
 
     function render_pinning_intro() {
-        var content = 'In den folgenden &Uuml;bungen wirst du eine Karte sehen und gebeten werden, <b>einen Ort zu markieren</b>.'
-            + 'Klicke dazu mit der Maus in den kleinen Kreis beim Ortsnamen.<br/>'
-            + 'Welchen der dargestellten Orte du markieren sollst, wird dir oberhalb der Karte angezeigt.</p><p>Nach dem Markieren hast '
-            + 'du noch etwas Zeit dir die <b>Karte so genau wie m&ouml;glich einzupr&auml;gen</b>.'
+        var content = 'In dem folgendem Block wirst du eine Karte sehen und gebeten werden, <b>einen Ort zu markieren</b>.'
+            + 'Klicke dazu mit der Maus in den kleinen Kreis beim Ortsnamen. <br/>'
+            + 'Welchen der dargestellten Orte du markieren sollst, wird dir oberhalb der Karte angezeigt.</p><p> Nach dem Markieren hast '
+            + 'du ca. eine Minute Zeit, dir die <b>Karte so genau wie m&ouml;glich einzupr&auml;gen</b>. '
             + 'Stelle dir dazu vor, du wirst am markierten Ort ausgesetzt und sollst nun die Strecken zu den anderen Orten auswendig '
-            + 'wiederfinden. Du kannst dabei den direkten Weg querfeldein gehen und bist nicht auf Wege angewiesen.'
+            + 'wiederfinden. Du kannst dabei den <b>direkten Weg </b> querfeldein gehen und bist nicht auf Wege angewiesen.'
             + '<br/><h4 class="image">Abbildung 1:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png"><br/>'
         set_page_content(content)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
@@ -103,9 +103,13 @@ define(function (require) {
     }
 
     function render_no_pinning_intro() {
-        var content = '<p class="textblock">In den folgenden &Uuml;bungen wirst du wieder eine Karte sehen, dieses mal jedoch ohne die Aufgabe, einen Ort zu markieren.<br/>'
-            + 'Du hast wieder etwa eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
-            + 'Stelle dir dazu bitte vor, du wirst an einem der Orte ausgesetzt und sollst nun die Strecken zu den anderen Ortsnamen auswendig wiederfinden.</p>'
+		//set_task_description("Anleitung zum 2. Block")
+        var content = '<p class="textblock">In diesem Block wirst du wieder in jedem Durchgng eine Karte sehen. Dieses Mal jedoch ohne die Aufgabe, einen Ort zu markieren.<br/>'
+            + 'Du hast wieder ca. eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
+            + 'Stelle dir dazu bitte vor, du wirst in der abgebildeten Region ausgesetzt und sollst nun die Strecken zwischen den Orten auswendig wiederfinden. Du kannst dabei den <b> direkten Weg </b>'
+			+ 'querfeldein gehen und bist nicht auf Wege angewiesen.</p>'
+			+ '<p class="textblock">Danach wirst du auch wieder Rechenaufgaben gestellt bekommen und Sch&auml;tzungen hinsichtlich Richtung und Entfernung der Orte machen. '
+			+ 'Auch hier wirst du wieder dazu gefragt, wie sicher du dir bei der Sch&auml;tzung warst.</p>'
         set_page_content(content)
         set_task_description('Anleitung zum 2. Block')
         d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
@@ -119,8 +123,8 @@ define(function (require) {
     }
 
     function render_filler_intro() {
-        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du eine Rechenaufgabe, die du bitte so schnell '
-            + 'und so genau wie m&ouml;glich beantwortest, indem du die Ergebniszahl eintippst.</p>'
+        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du Rechenaufgaben, die du bitte </b> so schnell</b> '
+            + '<b> und so korrekt wie m&ouml;glich</b> beantwortest, indem du die Ergebniszahl eintippst.</p>'
             + '<br/><h4 class="image">Abbildung 2:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_filler_task_screen.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_estimation_intro() })
@@ -128,28 +132,30 @@ define(function (require) {
 
     function render_estimation_intro() {
         set_page_content('<p>Nach den Rechenaufgaben werden dir zwei Orte genannt, die du bereits auf der Karte zuvor kennen gelernt hast.</p>'
-            + '<p class="wichtig">Bitte sch&auml;tze, wie weit der eine vom anderen genannten Ort entfernt liegt.</p>'
+            + '<p class="wichtig"> <b>Bitte sch&auml;tze, wie weit der eine vom anderen genannten Ort entfernt liegt. </b> </p>'
             + '<p>Dazu klickst du bitte in den Kreis in der Mitte des Bildschirms und ziehst die entstehende Linie so lange, '
             + 'bis die L&auml;nge mit der Distanz zwischen den beiden Orten &uuml;bereinstimmt. Au&szlig;erdem drehst du die Linie so, dass auch die '
-            + 'Richtung zwischen den beiden Orten deiner Erinnerung nach stimmt. Sobald du die Linie losl&auml;sst, ist deine Antwort gespeichert.</p>'
+            + 'Richtung zwischen den beiden Orten deiner Erinnerung nach stimmt. Sobald du die Maustaste losl&auml;sst, ist deine Antwort gespeichert.</p>'
+			+ '<p>Um ein Gef&uuml;hl f&uuml;r die Distanzen zu bekommen, haben wird dir die H&ouml;he der vorher gezeigten Karte in der Ecke unten links abgebildet. </p>'
             + '<br/><h4 class="image">Abbildung 3:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_estimation_screen_blank.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_certainty_intro() })
     }
 
     function render_certainty_intro() {
-        set_page_content('<p class="textblock">Anschlie&szlig;end erscheint eine Seite, auf der du angeben sollst, wie sicher du dir in der Sch&auml;tzung warst.</p>'
+        set_page_content('<p class="textblock">Anschlie&szlig;end erscheint eine Seite, auf der du angeben sollst, wie sicher du dir bei deiner Sch&auml;tzung warst.</p>'
             + '<br/><h4 class="image">Abbildung 4:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_confidence.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_practice_intro() })
     }
 
+	//ANLEITUNG 5/6 "In den zwei Übungsdurchgängen vor den beiden Blöcken, erhälst du Rückmeldung darüber, in welche Richtung ... " fehlt noch
     function render_practice_intro() {
-        set_page_content('<p class="textblock">Du f&uuml;hrst f&uuml;nf Sch&auml;tzungen zu jeder Karte durch, bevor du die n&auml;chste Karte pr&auml;sentiert bekommst.</p>'
+        set_page_content('<p class="textblock">Du f&uuml;hrst zu jeder Karte f&uuml;nf Sch&auml;tzungen durch, bevor du die n&auml;chste Karte pr&auml;sentiert bekommst.</p>'
             + '<p class="textblock">Insgesamt bekommst du zwei Bl&ouml;cke mit je 15 Karten pr&auml;sentiert.<br/>Zum Abschluss bitten wir dich, noch einen Fragebogen auszuf&uuml;llen.</p>'
-            + '<p class="textblock">Um mit den &Uuml;bungen beginnen zu k&ouml;nnen, klicke auf weiter</p>'
+            + '<p class="textblock">Bevor das eigentliche Experiment startet, bekommst du zun&auml;chst zwei &Uuml;bungsdurchg&auml;nge pr&auml;sentiert.</p>'
             + '<br/><br/><br/><br/>')
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('Zur %Uuml;bung')
             // next.on('click', function (e) { render_practice_intro() })
     }
 
@@ -157,11 +163,10 @@ define(function (require) {
 
     function init_welcome_view () {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock">Das Experiment dauert ca. 2 Stunden und gliedert sich in drei Bl&ouml;cke. '
-            + 'Im ersten und zweiten Block wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
-            + 'um zur abgebildeten Landschaft Fragen zu beantworten. In einem letzten, k&uuml;rzeren Block erh&auml;ltst du'
-            + ' einige Frageb&ouml;gen.</p><br/>'
-            + '<p class="wichtig">Bitte f&uuml;hre den Versuch konzentriert und gewissenhaft durch!<p><br/>'
+        var content = '<p class="textblock">Das Experiment dauert ca. 2 Stunden und gliedert sich in zwei Bl&ouml;cke. '
+            + 'In beiden Bl&ouml;cken wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
+            + 'um danach zur abgebildeten Landschaft Fragen zu beantworten. </p><br/>'
+            + '<p class="wichtig">Bitte f&uuml;hre das Experiment konzentriert und gewissenhaft durch!<p><br/>'
 	    + '<p class="welcome"><a href="/web-exp/icon" class="button">Los geht\'s</a></p>'
         set_page_content(content)
     }
@@ -170,9 +175,8 @@ define(function (require) {
 
     function init_marker_selection_view (selected_marker_id) {
         set_task_description('')
-        var message = "<p>In einem der beiden Bl&ouml;cke, in denen du dir Karten einpr&auml;gen sollst, wirst du "
-            + "bei jeder neuen Karte aufgefordert einen Ort auf der jeweiligen Karte zu markieren. Dazu wird dir ein Pin zur "
-            + "Verf&uuml;gung stehen.</p>"
+        var message = "<p>Im folgenden Block wirst du bei jeder neuen Karte aufgefordert, "
+            + " einen Ort auf der jeweiligen Karte zu markieren. Dazu wird dir ein Pin zur Verf&uuml;gung stehen.</p>"
             message += "<p>Wie dieser Pin aussehen soll, kannst du unter den folgenden Alternativen ausw&auml;hlen. "
                 + " Deine Auswahl legt das Aussehen des Pins f&uuml;r das gesamte Experiment fest.</p>"
             message += "<p>Klicke dazu bitte den Pin an, mit dem du die Markierungen kennzeichnen m&ouml;chtest.</p>"
@@ -228,7 +232,7 @@ define(function (require) {
         d3.select('.title .username').text('!')
         d3.select('.trials').remove()
         var content = d3.select('.content')
-            content.html('<p>Zum starten des Experiments bitte eine ID f&uuml;r die Versuchsperson ' 
+            content.html('<p>Zum Starten des Experiments bitte eine ID f&uuml;r die Versuchsperson ' 
                 + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><input class="vp-id" type="text" '
                 + 'name="username" placeholder="VP <Nr>"><input type="button" value="OK" class="login-btn" '
                 + 'name="submit"></p>')
