@@ -1,12 +1,14 @@
 package de.akmiraketen.plugins.experiments.model;
 
 import de.deepamehta.core.JSONEnabled;
-import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
+import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.service.DeepaMehtaService;
-import de.deepamehta.core.service.ResultList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -54,12 +56,30 @@ public class TrialConfigViewModel implements JSONEnabled {
     }
 
     public JSONObject getRelatedPlaceConfigs() throws JSONException {
-        Topic mapFileTopicId = getTrialMapIdTopic();
-        ResultList<RelatedTopic> places = mapFileTopicId.getRelatedTopics("dm4.core.aggregation", 
-                "dm4.core.child", "dm4.core.parent", PLACE_CONFIG, 0); // load list all places related to this map-id
-        // ArrayList<TopicModel> places = new ArrayList<TopicModel>();
-        places.loadChildTopics();
-        return places.toJSON();
+        // collect all five place ids manually
+        Set<String> placeIds = new HashSet<String>();
+        if (!placeIds.contains(getFromPlaceOneId())) placeIds.add(getFromPlaceOneId());
+        if (!placeIds.contains(getToPlaceOneId())) placeIds.add(getToPlaceOneId());
+        if (!placeIds.contains(getFromPlaceTwoId())) placeIds.add(getFromPlaceTwoId());
+        if (!placeIds.contains(getToPlaceTwoId())) placeIds.add(getToPlaceTwoId());
+        if (!placeIds.contains(getFromPlaceThreeId())) placeIds.add(getFromPlaceThreeId());
+        if (!placeIds.contains(getToPlaceThreeId())) placeIds.add(getToPlaceThreeId());
+        if (!placeIds.contains(getFromPlaceFourId())) placeIds.add(getFromPlaceFourId());
+        if (!placeIds.contains(getToPlaceFourId())) placeIds.add(getToPlaceFourId());
+        if (!placeIds.contains(getFromPlaceFiveId())) placeIds.add(getFromPlaceFiveId());
+        if (!placeIds.contains(getToPlaceFiveId())) placeIds.add(getToPlaceFiveId());
+        JSONObject places = new JSONObject();
+        JSONArray placeItems = new JSONArray();
+        for (String placeId : placeIds) {
+            Topic placeConfig = getPlaceConfigByPlaceId(placeId);
+            if (placeConfig != null) {
+                placeItems.put(placeConfig.toJSON());
+            } else {
+                log.warning("No place config loaded");
+            }
+        }
+        places.put("items", placeItems);
+        return places;
     }
     
     public JSONObject getRelatedMapFileConfig() throws JSONException {
@@ -76,6 +96,20 @@ public class TrialConfigViewModel implements JSONEnabled {
         return trialConfig.getChildTopics().getString(TRIAL_PLACE_TO_PIN);
     }
     
+    public Topic getPlaceConfigByPlaceId(String placeId) {
+        Topic placeIdTopic = dms.getTopic("de.akmiraketen.webexp.place_id", new SimpleValue(placeId));
+        if (placeIdTopic != null) {
+            Topic placeConfig = placeIdTopic.getRelatedTopic("dm4.core.composition", null, null, "de.akmiraketen.webexp.place_config");
+            if (placeConfig != null) {
+                return placeConfig.loadChildTopics();
+            } else {
+                log.warning("TrialConfig is missing a valid \"Place ID\" "
+                    + "- system could not load a place configured with id: " + placeId);
+            }
+        }
+        return null;
+    }
+
     // --- Places involved in the trial
     
     public String getFromPlaceOneId () throws JSONException {
