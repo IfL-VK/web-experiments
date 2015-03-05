@@ -7,7 +7,7 @@
 - Magda: Spiegelung: moegliches Testen? (bevor wir alles machen...) - ERLEDIGT
 - Malte: Instruktionen je nach Bedingung unterschiedlich => Geht schon. - ERLEDIGT
 - Magda: Texte anpassen (siehe Mail von Julia 06.02.1014: PDF "150206_Instruktion_Exp1.pdf") - 
-- Magda: Logo einfuegen (siehe Mail von Julia 06.02.1014: PDF "150206_Instruktion_Exp1.pdf") - Wirklich?
+- Magda: Logo einfuegen (siehe Mail von Julia 06.02.1014: PDF "150206_Instruktion_Exp1.pdf") - Logo nur bei Willkommens-Screen
 - Magda/Malte: Karte zentriert auf dem Bildschirm darbieten (Aufloesung 1680 x 1050 Pixel)
 - Malte: Schaetzscreen bildschirmgroß darbieten, auch im Hintergrund der Instruktionsschrift - TODO
 - Julia: Klarheit über die Groeße der Kartenausschnitte - ERLEDIGT
