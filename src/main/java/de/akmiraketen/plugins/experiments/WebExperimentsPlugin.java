@@ -29,9 +29,13 @@ import de.deepamehta.plugins.files.ItemKind;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,8 +43,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -68,7 +74,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     private Logger log = Logger.getLogger(getClass().getName());
 
     private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4";
-    private final String WEB_EXPERIMENTS_VERSION = "0.0.1-SNAPSHOT";
+    private final String WEB_EXPERIMENTS_VERSION = "0.2-SNAPSHOT";
     private final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
@@ -91,8 +97,10 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TRIAL_CONDITION_BLOCKS_SIZE_TYPE = "de.akmiraketen.webexp.trial_condition_block_size";
     private static final String TRIAL_SEEN_EDGE_TYPE = "de.akmiraketen.webexp.trial_seen_edge";
     private static final String MARKER_CONFIG_EDGE_TYPE = "de.akmiraketen.webexp.config_marker_symbol";
-    
-    // -- Trial Report & Config 
+
+    // -- Trial Report & Config
+
+    private static final String ACTIVE_CONFIGURATION_EDGE = "dm4.core.association";
     
     private static final String TRIAL_REPORT_URI = "de.akmiraketen.webexp.trial_report";
     
@@ -100,6 +108,15 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TRIAL_CONFIG_PLACE_TO_PIN = "de.akmiraketen.webexp.trial_place_to_pin";
     private static final String TRIAL_CONFIG_PLACE_FROM1 = "de.akmiraketen.webexp.trial_place_from_1";
     private static final String TRIAL_CONFIG_PLACE_TO1 = "de.akmiraketen.webexp.trial_place_to_1";
+    private static final String TRIAL_CONFIG_PLACE_FROM2 = "de.akmiraketen.webexp.trial_place_from_2";
+    private static final String TRIAL_CONFIG_PLACE_TO2 = "de.akmiraketen.webexp.trial_place_to_2";
+    private static final String TRIAL_CONFIG_PLACE_FROM3 = "de.akmiraketen.webexp.trial_place_from_3";
+    private static final String TRIAL_CONFIG_PLACE_TO3 = "de.akmiraketen.webexp.trial_place_to_3";
+    private static final String TRIAL_CONFIG_PLACE_FROM4 = "de.akmiraketen.webexp.trial_place_from_4";
+    private static final String TRIAL_CONFIG_PLACE_TO4 = "de.akmiraketen.webexp.trial_place_to_4";
+    private static final String TRIAL_CONFIG_PLACE_FROM5 = "de.akmiraketen.webexp.trial_place_from_5";
+    private static final String TRIAL_CONFIG_PLACE_TO5 = "de.akmiraketen.webexp.trial_place_to_5";
+    private static final String TRIAL_CONFIG_MEMO_SEC = "de.akmiraketen.webexp.trial_memo_sec";
     
     // ----- Place Config
     
@@ -275,10 +292,373 @@ public class WebExperimentsPlugin extends PluginActivator {
         return getStaticResource("web/start.html");
     }
 
-    
+
+
     // --- REST Resources / API Endpoints
     
+    /** 
+     * 
+     * @return  List of FileItems in JSON
+     */
     
+    @GET
+    @Path("/symbol/all")
+    @Transactional
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getAllSymbolFileTopics() {
+        DirectoryListing items = fileService.getDirectoryListing(SYMBOL_FOLDER);
+        // ArrayList<Topic> symbols = new ArrayList<Topic>(); 
+        ArrayList<JSONObject> symbolFiles = new ArrayList<JSONObject>();
+        // 1) Gather svg-icon files from our symbols directory
+        Iterator<FileItem> files = items.getFileItems().iterator();
+        while (files.hasNext()) {
+            FileItem fileItem = files.next();
+            if (fileItem.getMediaType() == null && fileItem.getItemKind() != ItemKind.FILE) files.remove();
+        }
+        // 2) Create file topics (representing the files in our DB)
+        Iterator<FileItem> icons = items.getFileItems().iterator();
+        while (icons.hasNext()) {
+            FileItem file = icons.next();
+            Topic fileTopic = fileService.createFileTopic(file.getPath()); // fetches topic if existing
+            JSONObject responseObject = new JSONObject();
+            try {
+                responseObject.put("path", file.getPath()).put("topic_id", fileTopic.getId());
+            } catch (JSONException ex) {
+                log.severe("Could not build up icon response list");
+            }
+            symbolFiles.add(responseObject);
+        }
+        return symbolFiles.toString();
+    }
+
+    /** 
+     * 
+     * @param topicId   long value id of file topic
+     * @return  related File topic
+     */
+    
+    @GET
+    @Path("/symbol/choose/{topicId}")
+    @Transactional
+    public Topic chooseSymbolFile(@PathParam("topicId") long topicId) {
+        log.info("Setting Marker for User: " + acService.getUsername() + " topicId: " + topicId);
+        Topic relatedIconTopic = dms.getTopic(topicId);
+        Topic username = getRequestingUsername();
+        try {
+            log.info("Icon topic to be related is " + relatedIconTopic.getId());
+            assignNewMarkerSymbolToUsername(relatedIconTopic, username);
+        } catch(RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+        return relatedIconTopic.loadChildTopics(FILE_PATH_TYPE);
+    }
+    
+    /** 
+     * Fetches all Trial Configs currently in database.
+     * @return 
+     */
+    
+    @GET
+    @Path("/trial/all")
+    public ResultList<RelatedTopic> getAllTrialConfigs() {
+        return dms.getTopics(TRIAL_CONFIG_TYPE, 0);
+    }
+
+    @GET
+    @Path("/trial/{trialId}")
+    public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
+        Topic trial = dms.getTopic(id);
+        return new TrialConfigViewModel(trial.loadChildTopics(), dms);
+    }
+    
+    @GET
+    @Path("/trial/config/import")
+    @Transactional
+    public Response doImportUserTrialConfig() {
+        try {
+            Topic username = acService.getUsername(acService.getUsername());
+            Topic fileTopic = username.getRelatedTopic("dm4.core.association", "dm4.core.default",
+                    "dm4.core.default", "dm4.files.file");
+            log.info("Loading Trial Config File Topic: " + fileTopic.getId()
+                    + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username);
+            File trialConfig = fileService.getFile(fileTopic.getId());
+            java.nio.file.Path path = Paths.get(trialConfig.getPath());
+            List<String> configuration = Files.readAllLines(path, Charset.forName("UTF-8"));
+            // delete and create trial config topic
+            ResultList<RelatedTopic> usersTrialConfigs = getAllUserTrialConfigs(username);
+            Iterator<RelatedTopic> i = usersTrialConfigs.iterator();
+            while (i.hasNext()) {
+                Topic topic = i.next();
+                if (topic.getTypeUri().equals(TRIAL_CONFIG_TYPE)) {
+                    log.info("\t>>>> Deleting former Trial Config Topic " + topic.getUri() + " <<<<");
+                    i.remove();
+                    topic.delete();
+                }
+            }
+            int nr = 1;
+            for (String line : configuration) {
+                log.info("Line: " + line);
+                if (!line.startsWith("webexp.config")) {
+                    createNewTrialConfig(nr, line, username);
+                    nr++;
+                }
+            }
+            return Response.ok().build();
+        } catch (IOException ex) {
+            log.log(Level.SEVERE, null, ex);
+            return Response.serverError().build();
+        }
+    }
+    
+    private ResultList<RelatedTopic> getAllUserTrialConfigs(Topic username) {
+        return username.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE,
+            "dm4.core.default", "dm4.core.default", TRIAL_CONFIG_TYPE, 0);
+    }
+    
+    private void createNewTrialConfig(int lineNr, String config_line, Topic username) {
+        // split csv-config file line
+        String[] values = Pattern.compile("|", Pattern.LITERAL).split(config_line);
+        String conditionUri = (values[3].trim().equals("Pinning")) ? TRIAL_CONDITION_A : ((values[3].trim().equals("No Pinning")) ? TRIAL_CONDITION_B : "");
+        String trialMapId = values[2].trim();
+        Topic map = dms.getTopic(TRIAL_CONFIG_MAP_ID, new SimpleValue(trialMapId));
+        if (conditionUri.isEmpty()) log.severe("Trial Conditition URI could not be detected...!");
+        if (map == null) log.severe("Map ID could not be detected...!");
+        // build up topic model
+        String configUri = "webexp.config." + username.getSimpleValue() + "_" + lineNr + "_" + values[0].trim();
+        TopicModel trialConfig = new TopicModel(configUri, TRIAL_CONFIG_TYPE, new ChildTopicsModel()
+                .putRef(TRIAL_CONFIG_MAP_ID, map.getId())
+                .putRef(TRIAL_CONDITION_TYPE, conditionUri)
+                .put(TRIAL_CONFIG_PLACE_TO_PIN, values[4].trim())
+                .put(TRIAL_CONFIG_PLACE_FROM1, values[5].trim())
+                .put(TRIAL_CONFIG_PLACE_TO1, values[6].trim())
+                .put(TRIAL_CONFIG_PLACE_FROM2, values[7].trim())
+                .put(TRIAL_CONFIG_PLACE_TO2, values[8].trim())
+                .put(TRIAL_CONFIG_PLACE_FROM3, values[9].trim())
+                .put(TRIAL_CONFIG_PLACE_TO3, values[10].trim())
+                .put(TRIAL_CONFIG_PLACE_FROM4, values[11].trim())
+                .put(TRIAL_CONFIG_PLACE_TO4, values[12].trim())
+                .put(TRIAL_CONFIG_PLACE_FROM5, values[13].trim())
+                .put(TRIAL_CONFIG_PLACE_TO5, values[14].trim())
+                .put(TRIAL_CONFIG_MEMO_SEC, values[15].trim()));
+        // create topic
+        Topic trialConfigTopic = dms.createTopic(trialConfig);
+        log.info("\t>>>>> Created new Trial Configuration: " + configUri + " <<<! ");
+        createTrialConfigUserAssignment(trialConfigTopic, username);
+    }
+
+    @GET
+    @Path("/participant")
+    public ParticipantViewModel getParticipantViewModel() {
+        Topic username = getRequestingUsername();
+        return new ParticipantViewModel(username, dms);
+    }
+
+    @GET
+    @Path("/nextpage")
+    public Response getNextPage() throws URISyntaxException {
+        Topic user = getRequestingUsername();
+        long trialId = getNextUnseenTrialId(user);
+        if (trialId == FAIL_NR) {
+            log.info("Experiment finished, no configured trial left for requesting user");
+            return Response.seeOther(new URI("/web-exp/finish")).build();
+        }
+        Topic trialConfig = dms.getTopic(trialId);
+        if (trialConfig.getUri().contains("intro")) {
+            // route to intro page
+            log.info("REDIRECT to INTRO pages " + trialConfig.getUri());
+            URI location = new URI("/web-exp/intro/" + trialConfig.getId());
+            return Response.seeOther(location).build();
+        } else if (trialConfig.getUri().contains("break")) {
+            log.info("REDIRECT to PAUSE page \"" + trialConfig.getUri() + "\"");
+            URI location = new URI("/web-exp/pause/" + trialConfig.getId());
+            return Response.seeOther(location).build();
+        } else if (trialConfig.getUri().contains("start")) {
+            log.info("REDIRECT to START page \"" + trialConfig.getUri() + "\"");
+            URI location = new URI("/web-exp/start/" + trialConfig.getId());
+            return Response.seeOther(location).build();
+        } else if (trialConfig.getUri().contains("pract")) {
+            // start practice session
+            log.info("REDIRECT to PRACTICE trial \"" + trialConfig.getUri() + "\"");
+            URI location = new URI("/web-exp/pract/" + trialConfig.getId() + "/pinning");
+            return Response.seeOther(location).build();
+        } else if (trialConfig.getUri().contains("trial")) {
+            log.info("LOADING next TRIAL .. \"" + trialConfig.getUri() + "\"");
+            URI location = new URI("/web-exp/trial/" + trialConfig.getId() + "/pinning");
+            return Response.seeOther(location).build();
+        } else {
+            return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
+        }
+    }
+
+    @GET
+    @Path("/trial/{trialId}/seen")
+    @Transactional
+    public Response doMarkTrialAsSeen(@PathParam("trialId") long trialId) {
+        Topic user = getRequestingUsername();
+        Association trial_seen = user.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
+                ROLE_DEFAULT, ROLE_DEFAULT, trialId);
+        if (trial_seen != null) {
+            long nextTrialId = getNextUnseenTrialId(user);
+            log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
+            // throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
+            return Response.ok(nextTrialId).build();
+        }
+        dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE, 
+                new TopicRoleModel(user.getId(), "dm4.core.default"), 
+                new TopicRoleModel(trialId, "dm4.core.default")));
+        return Response.ok(OK_NR).build();
+    }
+
+    @GET
+    @Path("/estimation/next/{trialId}")
+    public Response getNextTrialEstimationNr(@PathParam("trialId") long id) {
+        Topic user = getRequestingUsername();
+        String trialConfigUri = dms.getTopic(id).getUri();
+        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
+        ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
+                "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
+        long count = 1; // default estimation is first
+        for (RelatedTopic trialReport : trialReports) {
+            String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+            if (trialConfigUri.equals(trial)) {
+                log.fine("Re-using Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
+                trialReport.loadChildTopics(ESTIMATION_REPORT_URI);
+                if (trialReport.getChildTopics().has(ESTIMATION_REPORT_URI)) {
+                    List<Topic> estimations = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                    log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                    count = estimations.size() + 1; // number of next estimation for this user and this trial
+                }
+                // check if we are now over the maximum number of estimations
+                if (count == MAX_ESTIMATION_COUNT) {
+                    count = getNextUnseenTrialId(user); // return ID of next unseen trial instead of estimationNR
+                }
+                return Response.ok(count).build();
+            } else {
+                log.fine("> Next Estimation: " + trialConfigUri + " === " + trial);
+            }
+        }
+        return Response.ok(count).build();
+    }
+
+    @POST
+    @Path("/estimation/{trialId}/{estimationNr}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public void storeEstimationReport(String payload, @PathParam("trialId") long trialId, 
+            @PathParam("estimationNr") int estimation) {
+        Topic user = getRequestingUsername();
+        try {
+            // 1 Parse POST Request
+            log.info("POST Estimation: " + payload);
+            JSONObject data = new JSONObject(payload);
+            Topic trialConfig = getTrialConfigTopic(trialId);
+            // estimated screen coords
+            JSONObject estimated_screen_cords = data.getJSONObject("estimated_screen_coordinates");
+            String estimatedX = estimated_screen_cords.getString("x");
+            String estimatedY = estimated_screen_cords.getString("y");
+            // real screen coordinates
+            JSONObject real_screen_coords = data.getJSONObject("real_screen_coordinates");
+            String realX = real_screen_coords.getString("x");
+            String realY = real_screen_coords.getString("y");
+            //
+            String fromPlaceId = data.getString("from_place_id");
+            String toPlaceId = data.getString("to_place_id");
+            int estimatedDistance = data.getInt("estimated_distance");
+            int confidenceValue = data.getInt("certainty");
+            int toStartTime = data.getInt("to_start_time");
+            int estimationTime = data.getInt("estimation_time");
+            log.fine("ESTIMATED Coordinates for " + estimation + " are \"" + estimatedX + ","
+                    + estimatedY + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+            // 2 Check consistency of this request for reporting
+            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
+            List<Topic> estimations = null;
+            report.loadChildTopics(ESTIMATION_REPORT_URI);
+            if (report.getChildTopics().has(ESTIMATION_REPORT_URI)) {
+                estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+                log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
+                for (Topic estimationReport : estimations) {
+                    estimationReport.loadChildTopics(ESTIMATION_NR_URI);
+                    int eNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
+                    if (eNr == estimation) throw new InvalidParameterException("A trial estimation report "
+                            + "already exists for this user, trial and estimation nr!");
+                }
+            } else {
+                log.info("Trial report has NO  estimation reports associated.. ");
+            }
+            // 3 Start to build up new trial estimation report
+            ChildTopicsModel values = new ChildTopicsModel()
+                .put(ESTIMATED_SCREEN_COORDINATES_URI, estimatedX + ";" + estimatedY)
+                .put(REAL_SCREEN_COORDINATES_URI, realX + ";" + realY)
+                .put(ESTIMATION_FROM_PLACE_URI, fromPlaceId)
+                .put(ESTIMATION_TO_PLACE_URI, toPlaceId)
+                .put(ESTIMATION_TO_START_TIME_URI, toStartTime)
+                .put(ESTIMATION_TIME_URI, estimationTime)
+                .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
+                .put(ESTIMATION_NR_URI, estimation)
+                .put(ESTIMATION_DIFF_IN_DIRECTION, 0) // stored as dm4.core.text
+                .put(ESTIMATION_REAL_DISTANCE, 0) // stored as dm4.core.text
+                .put(ESTIMATION_CONFIDENCE, confidenceValue);
+            TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
+            // 4 assign new trial estimation report to trial report
+            report.setChildTopics(new ChildTopicsModel()
+                .add(ESTIMATION_REPORT_URI, estimationModel));
+            // sanity check for the log s
+            estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
+            log.info("NOW Trial report has " + estimations.size()+ " estimation reports associated.. ");
+            /** ChildTopicsModel reportModel = report.getChildTopics().getModel();
+                reportModel.add(ESTIMATION_REPORT_URI, estimationModel);
+            report.setChildTopics(reportModel); **/
+        } catch (JSONException e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to parse estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
+               500);
+        } catch (InvalidParameterException ipe) {
+            throw new WebApplicationException(ipe, Response.Status.BAD_REQUEST);
+        } catch (Exception e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(e, 500);
+        }
+    }
+
+    @POST
+    @Path("/pinning/{trialId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public void storePinningData(String payload, @PathParam("trialId") long trialId) {
+        Topic user = getRequestingUsername();
+        try {
+            // 1 Parse data of POST request
+            log.fine("POST Pinning: " + payload);
+            JSONObject data = new JSONObject(payload);
+            Topic trialConfig = getTrialConfigTopic(trialId);
+            JSONObject coordinates = data.getJSONObject("geo_coordinates");
+            int countClickOutside = data.getInt("count_click_outside");
+            int reactionTime = data.getInt("reaction_time");
+            String latitude = coordinates.getString("latitude");
+            String longitude = coordinates.getString("longitude");
+            log.fine("Pinned Coordinates are \"" + latitude + "," 
+                    + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
+            // 2 Start new trial report
+            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
+            ChildTopicsModel values = new ChildTopicsModel()
+                .put(COORDINATES_PINNED_URI, latitude + ";" + longitude)
+                .put(REACTION_TIME_URI, reactionTime)
+                .put(COUNT_OUTSIDE_URI, countClickOutside);
+            report.setChildTopics(values);
+        } catch (JSONException e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to parse pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
+               500);
+        } catch (Exception e) {
+            // ### store estimation in trial report for user
+            log.warning("Failed to store pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
+            throw new WebApplicationException(e, 500);
+        }
+    }
+
     @GET
     @Path("/report/generate")
     @Transactional
@@ -296,7 +676,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         for (RelatedTopic vp : propositi.getItems()) {
             Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
             String vpId = username.getSimpleValue().toString();
-            ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent", 
+            ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent",
                     "dm4.core.child", TRIAL_REPORT_URI, 0);
             if (trialReports.getTotalCount() > 0) {
                 log.info("  Fetched " + trialReports.getTotalCount() + " written to DB for " + vpId);
@@ -425,356 +805,8 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
         return report.toString();
     }
-    
-    /** 
-     * 
-     * @return  List of FileItems in JSON
-     */
-    
-    @GET
-    @Path("/symbol/all")
-    @Transactional
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getAllSymbolFileTopics() {
-        DirectoryListing items = fileService.getDirectoryListing(SYMBOL_FOLDER);
-        // ArrayList<Topic> symbols = new ArrayList<Topic>(); 
-        ArrayList<JSONObject> symbolFiles = new ArrayList<JSONObject>();
-        // 1) Gather svg-icon files from our symbols directory
-        Iterator<FileItem> files = items.getFileItems().iterator();
-        while (files.hasNext()) {
-            FileItem fileItem = files.next();
-            if (fileItem.getMediaType() == null && fileItem.getItemKind() != ItemKind.FILE) files.remove();
-        }
-        // 2) Create file topics (representing the files in our DB)
-        Iterator<FileItem> icons = items.getFileItems().iterator();
-        while (icons.hasNext()) {
-            FileItem file = icons.next();
-            Topic fileTopic = fileService.createFileTopic(file.getPath()); // fetches topic if existing
-            JSONObject responseObject = new JSONObject();
-            try {
-                responseObject.put("path", file.getPath()).put("topic_id", fileTopic.getId());
-            } catch (JSONException ex) {
-                log.severe("Could not build up icon response list");
-            }
-            symbolFiles.add(responseObject);
-        }
-        return symbolFiles.toString();
-    }
-    
-    /** 
-     * 
-     * @param topicId   long value id of file topic
-     * @return  related File topic
-     */
-    
-    @GET
-    @Path("/symbol/choose/{topicId}")
-    @Transactional
-    public Topic chooseSymbolFile(@PathParam("topicId") long topicId) {
-        log.info("Setting Marker for User: " + acService.getUsername() + " topicId: " + topicId);
-        Topic relatedIconTopic = dms.getTopic(topicId);
-        Topic username = getRequestingUser();
-        try {
-            log.info("Icon topic to be related is " + relatedIconTopic.getId());
-            assignNewMarkerSymbolToUsername(relatedIconTopic, username);
-        } catch(RuntimeException e) {
-            throw new RuntimeException(e);
-        }
-        return relatedIconTopic.loadChildTopics(FILE_PATH_TYPE);
-    }
-    
-    /** 
-     * Fetches all Trial Configs currently in database.
-     * @return 
-     */
-    
-    @GET
-    @Path("/trial/all")
-    public ResultList<RelatedTopic> getAllTrialConfigs() {
-        return dms.getTopics(TRIAL_CONFIG_TYPE, 0);
-    }
 
-    @GET
-    @Path("/trial/{trialId}")
-    public TrialConfigViewModel getTrialConfigViewModel(@PathParam("trialId") long id) {
-        Topic trial = dms.getTopic(id);
-        return new TrialConfigViewModel(trial.loadChildTopics(), dms);
-    }
-    
-    @GET
-    @Path("/participant")
-    public ParticipantViewModel getParticipantViewModel() {
-        Topic username = getRequestingUser();
-        return new ParticipantViewModel(username, dms);
-    }
-    
-    /** 
-     * Fetches all Trial Configs of a certain condition currently in database.
-     * @parameter   condition   String containing an URI of an instance of "de.akmiraketen.webexp.trial_condition"
-     * @return 
-     */
-    
-    @GET
-    @Path("/trial/by_condition/{instanceUri}")
-    public ResultList<RelatedTopic> getAllTrialConfigsByCondition(@PathParam("instanceUri") String givenUri) {
-        ResultList<RelatedTopic> trials = dms.getTopics(TRIAL_CONFIG_TYPE, 0);
-        // 
-        Iterator<RelatedTopic> i = trials.iterator();
-        while (i.hasNext()) {
-            RelatedTopic trial = i.next();
-            Topic trial_condition = trial.getChildTopics().getTopic(TRIAL_CONDITION_TYPE);
-            if (!trial_condition.getUri().equals(givenUri)) {
-                i.remove();
-            }
-        }
-        return trials;
-    }
-    
-    /** 
-     * Fetches all unseen Trial Configs of a certain condition for a certain user.
-     * @parameter   condition   String containing an URI of an instance of "de.akmiraketen.webexp.trial_condition"
-     * @return 
-     */
-    
-    @GET
-    @Path("/trial/unseen/{instanceUri}")
-    public ResultList<RelatedTopic> getUnseenTrialConfigsByCondition(@PathParam("instanceUri") String givenUri) {
-        Topic user = getRequestingUser();
-        ResultList<RelatedTopic> trials = getAllTrialConfigsByCondition(givenUri);
-        // Check if trial_seen_edge exists between trial and user
-        Iterator<RelatedTopic> k = trials.iterator();
-        while (k.hasNext()) {
-            if (hasSeenTrial(user, k.next())) k.remove();
-        }
-        return trials;
-    }
-    
-    @GET
-    @Path("/trial/unseen/random/next")
-    public long getNextUnseenRandomTrialId() {
-        Topic user = getRequestingUser();
-        ParticipantViewModel vp = new ParticipantViewModel(user, dms);
-        ResultList<RelatedTopic> unseen_trials = getUnseenTrialConfigsByCondition(vp.getFirstTrialConditionURI());
-        // if no more trials for requesting user under her default condition
-        if (unseen_trials.getSize() == 0) { // > check the other condition for unseen trials
-            // now we should redirect to a "Pause"-screen but just once for each VP!
-            if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_A)) {
-                unseen_trials = getUnseenTrialConfigsByCondition(TRIAL_CONDITION_B);
-            } else if (vp.getFirstTrialConditionURI().equals(TRIAL_CONDITION_B)) {
-                unseen_trials = getUnseenTrialConfigsByCondition(TRIAL_CONDITION_A);
-            }
-        }
-        if (unseen_trials.getItems().isEmpty()) return FAIL_NR; // experiment finished > no unseen trial left
-        int index = random.nextInt(unseen_trials.getItems().size());
-        return unseen_trials.getItems().get(index).getId();
-    }
-    
-    @GET
-    @Path("/nextpage")
-    public Response getNextPage() throws URISyntaxException {
-        Topic user = getRequestingUser();
-        long trialId = getNextUnseenTrialId();
-        if (trialId == FAIL_NR) {
-            log.info("Experiment finished, no configured trial left for requesting user");
-            return Response.seeOther(new URI("/web-exp/finish")).build();
-        }
-        Topic trialConfig = dms.getTopic(trialId);
-        if (!hasSeenTrial(user, trialConfig)) {
-            if (trialConfig.getUri().contains("intro")) {
-                // route to intro page
-                log.info("REDIRECT to INTRO pages " + trialConfig.getUri());
-                URI location = new URI("/web-exp/intro/" + trialConfig.getId());
-                return Response.seeOther(location).build();
-            } else if (trialConfig.getUri().contains("break")) {
-                log.info("REDIRECT to PAUSE page \"" + trialConfig.getUri() + "\"");
-                URI location = new URI("/web-exp/pause/" + trialConfig.getId());
-                return Response.seeOther(location).build();
-            } else if (trialConfig.getUri().contains("start")) {
-                log.info("REDIRECT to START page \"" + trialConfig.getUri() + "\"");
-                URI location = new URI("/web-exp/start/" + trialConfig.getId());
-                return Response.seeOther(location).build();
-            } else if (trialConfig.getUri().contains("pract")) {
-                // start practice session
-                log.info("REDIRECT to PRACTICE trial \"" + trialConfig.getUri() + "\"");
-                URI location = new URI("/web-exp/pract/" + trialConfig.getId() + "/pinning");
-                return Response.seeOther(location).build();
-            } else {
-                log.info("LOADING next TRIAL .. \"" + trialConfig.getUri() + "\"");
-                URI location = new URI("/web-exp/trial/" + trialConfig.getId() + "/pinning");
-                return Response.seeOther(location).build();
-            }
-        }
-        return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
-    }
-    
-    @GET
-    @Path("/trial/{trialId}/seen")
-    @Transactional
-    public Response doMarkTrialAsSeen(@PathParam("trialId") long trialId) {
-        Topic user = getRequestingUser();
-        Association trial_seen = user.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
-                ROLE_DEFAULT, ROLE_DEFAULT, trialId);
-        if (trial_seen != null) {
-            long nextTrialId = getNextUnseenTrialId();
-            log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
-            // throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
-            return Response.ok(nextTrialId).build();
-        }
-        dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE, 
-                new TopicRoleModel(user.getId(), "dm4.core.default"), 
-                new TopicRoleModel(trialId, "dm4.core.default")));
-        return Response.ok(OK_NR).build();
-    }
-    
-    @GET
-    @Path("/estimation/next/{trialId}")
-    public Response getNextTrialEstimationNr(@PathParam("trialId") long id) {
-        Topic user = getRequestingUser();
-        String trialConfigUri = dms.getTopic(id).getUri();
-        log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
-        ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
-                "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
-        long count = 1; // default estimation is first
-        for (RelatedTopic trialReport : trialReports) {
-            String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-            if (trialConfigUri.equals(trial)) {
-                log.fine("Re-using Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
-                trialReport.loadChildTopics(ESTIMATION_REPORT_URI);
-                if (trialReport.getChildTopics().has(ESTIMATION_REPORT_URI)) {
-                    List<Topic> estimations = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                    log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
-                    count = estimations.size() + 1; // number of next estimation for this user and this trial
-                }
-                // check if we are now over the maximum number of estimations
-                if (count == MAX_ESTIMATION_COUNT) {
-                    count = getNextUnseenTrialId(); // return ID of next unseen trial instead of estimationNR
-                }
-                return Response.ok(count).build();
-            } else {
-                log.fine("> Next Estimation: " + trialConfigUri + " === " + trial);
-            }
-        }
-        return Response.ok(count).build();
-    }
-    
-    @POST
-    @Path("/estimation/{trialId}/{estimationNr}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
-    public void storeEstimationReport(String payload, @PathParam("trialId") long trialId, 
-            @PathParam("estimationNr") int estimation) {
-        Topic user = getRequestingUser();
-        try {
-            // 1 Parse POST Request
-            log.info("POST Estimation: " + payload);
-            JSONObject data = new JSONObject(payload);
-            Topic trialConfig = getTrialConfigTopic(trialId);
-            // estimated screen coords
-            JSONObject estimated_screen_cords = data.getJSONObject("estimated_screen_coordinates");
-            String estimatedX = estimated_screen_cords.getString("x");
-            String estimatedY = estimated_screen_cords.getString("y");
-            // real screen coordinates
-            JSONObject real_screen_coords = data.getJSONObject("real_screen_coordinates");
-            String realX = real_screen_coords.getString("x");
-            String realY = real_screen_coords.getString("y");
-            //
-            String fromPlaceId = data.getString("from_place_id");
-            String toPlaceId = data.getString("to_place_id");
-            int estimatedDistance = data.getInt("estimated_distance");
-            int confidenceValue = data.getInt("certainty");
-            int toStartTime = data.getInt("to_start_time");
-            int estimationTime = data.getInt("estimation_time");
-            log.fine("ESTIMATED Coordinates for " + estimation + " are \"" + estimatedX + ","
-                    + estimatedY + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
-            // 2 Check consistency of this request for reporting
-            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
-            List<Topic> estimations = null;
-            report.loadChildTopics(ESTIMATION_REPORT_URI);
-            if (report.getChildTopics().has(ESTIMATION_REPORT_URI)) {
-                estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                log.fine("Trial report has " + estimations.size()+ " estimation reports associated.. ");
-                for (Topic estimationReport : estimations) {
-                    estimationReport.loadChildTopics(ESTIMATION_NR_URI);
-                    int eNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
-                    if (eNr == estimation) throw new InvalidParameterException("A trial estimation report "
-                            + "already exists for this user, trial and estimation nr!");
-                }
-            } else {
-                log.info("Trial report has NO  estimation reports associated.. ");
-            }
-            // 3 Start to build up new trial estimation report
-            ChildTopicsModel values = new ChildTopicsModel()
-                .put(ESTIMATED_SCREEN_COORDINATES_URI, estimatedX + ";" + estimatedY)
-                .put(REAL_SCREEN_COORDINATES_URI, realX + ";" + realY)
-                .put(ESTIMATION_FROM_PLACE_URI, fromPlaceId)
-                .put(ESTIMATION_TO_PLACE_URI, toPlaceId)
-                .put(ESTIMATION_TO_START_TIME_URI, toStartTime)
-                .put(ESTIMATION_TIME_URI, estimationTime)
-                .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
-                .put(ESTIMATION_NR_URI, estimation)
-                .put(ESTIMATION_DIFF_IN_DIRECTION, 0) // stored as dm4.core.text
-                .put(ESTIMATION_REAL_DISTANCE, 0) // stored as dm4.core.text
-                .put(ESTIMATION_CONFIDENCE, confidenceValue);
-            TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
-            // 4 assign new trial estimation report to trial report
-            report.setChildTopics(new ChildTopicsModel()
-                .add(ESTIMATION_REPORT_URI, estimationModel));
-            // sanity check for the log s
-            estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-            log.info("NOW Trial report has " + estimations.size()+ " estimation reports associated.. ");
-            /** ChildTopicsModel reportModel = report.getChildTopics().getModel();
-                reportModel.add(ESTIMATION_REPORT_URI, estimationModel);
-            report.setChildTopics(reportModel); **/
-        } catch (JSONException e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to parse estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
-               500);
-        } catch (InvalidParameterException ipe) {
-            throw new WebApplicationException(ipe, Response.Status.BAD_REQUEST);
-        } catch (Exception e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(e, 500);
-        }
-    }
-    
-    @POST
-    @Path("/pinning/{trialId}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
-    public void storePinningData(String payload, @PathParam("trialId") long trialId) {
-        Topic user = getRequestingUser();
-        try {
-            // 1 Parse data of POST request
-            log.fine("POST Pinning: " + payload);
-            JSONObject data = new JSONObject(payload);
-            Topic trialConfig = getTrialConfigTopic(trialId);
-            JSONObject coordinates = data.getJSONObject("geo_coordinates");
-            int countClickOutside = data.getInt("count_click_outside");
-            int reactionTime = data.getInt("reaction_time");
-            String latitude = coordinates.getString("latitude");
-            String longitude = coordinates.getString("longitude");
-            log.fine("Pinned Coordinates are \"" + latitude + "," 
-                    + longitude + "\" - by " + user.getSimpleValue() + " on " + trialConfig.getSimpleValue());
-            // 2 Start new trial report
-            Topic report = getOrCreateTrialPinningReportTopic(trialId, user);
-            ChildTopicsModel values = new ChildTopicsModel()
-                .put(COORDINATES_PINNED_URI, latitude + ";" + longitude)
-                .put(REACTION_TIME_URI, reactionTime)
-                .put(COUNT_OUTSIDE_URI, countClickOutside);
-            report.setChildTopics(values);
-        } catch (JSONException e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to parse pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
-               500);
-        } catch (Exception e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to store pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(e, 500);
-        }
-    }
+
     
     // --- Helper Methods
     
@@ -788,14 +820,15 @@ public class WebExperimentsPlugin extends PluginActivator {
         Collections.sort(in_memory, new Comparator<RelatedTopic>() {
             public int compare(RelatedTopic t1, RelatedTopic t2) {
                 try { // ### webexp.config.intro + webexp.config.pract
-                    int index = "webexp.config.trial".length();
-                    String one = t1.getUri().substring(index);
-                    String two = t2.getUri().substring(index);
-                    if ( Long.parseLong(one.toString()) < Long.parseLong(two.toString()) ) return -1;
-                    if ( Long.parseLong(one.toString()) > Long.parseLong(two.toString()) ) return 1;
+                    if (t1.getUri().contains("_") && t2.getUri().contains("_")) {
+                        String one = t1.getUri().substring(t1.getUri().lastIndexOf("_") + 6);
+                        String two = t2.getUri().substring(t2.getUri().lastIndexOf("_") + 6);
+                        if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
+                        if ( Long.parseLong(one) > Long.parseLong(two)) return 1;
+                    }
                 } catch (Exception nfe) {
-                    log.warning("Error while accessing URI of Topic 1: " + t1.getId() + " Topic2: "
-                            + t2.getId() + " nfe: " + nfe.getMessage());
+                    log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
+                            + t2.getUri() + " nfe: " + nfe.getMessage());
                     return 0;
                 }
                 return 0;
@@ -804,14 +837,13 @@ public class WebExperimentsPlugin extends PluginActivator {
         return in_memory;
     }
     
-    private long getNextUnseenTrialId() {
-        Topic user = getRequestingUser();
-        ResultList<RelatedTopic> all_trials = dms.getTopics(TRIAL_CONFIG_TYPE, 0);
+    private long getNextUnseenTrialId(Topic username) {
+        ResultList<RelatedTopic> all_trials = getAllUserTrialConfigs(username);
         ArrayList<RelatedTopic> sorted_trial_config_lines = getAllTrialsSortedByURI(all_trials);
         Iterator<RelatedTopic> iterator = sorted_trial_config_lines.iterator();
         while (iterator.hasNext()) {
             RelatedTopic trialConfig = iterator.next();
-            if (!hasSeenTrial(user, trialConfig)) {
+            if (!hasSeenTrial(username, trialConfig)) {
                 return trialConfig.getId();
             }
         }
@@ -876,7 +908,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         return dms.getTopic(id).loadChildTopics();
     }
     
-    private Topic getRequestingUser() {
+    private Topic getRequestingUsername() {
         String username = acService.getUsername();
         if (username == null || username.isEmpty()) {
             throw new WebApplicationException(Status.UNAUTHORIZED);
@@ -964,7 +996,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic userName = dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
         return (userName == null);
     }
-        
+
     private void assignNewMarkerSymbolToUsername(Topic relatedIconTopic, Topic username) {
         // deleting former marker config for given username
         Topic account = username.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
@@ -989,4 +1021,10 @@ public class WebExperimentsPlugin extends PluginActivator {
             new TopicRoleModel(relatedIconTopic.getId(), ROLE_DEFAULT)));
     }
     
+    private Association createTrialConfigUserAssignment(Topic trialConfig, Topic username) {
+        return dms.createAssociation(new AssociationModel(ACTIVE_CONFIGURATION_EDGE,
+            new TopicRoleModel(username.getId(), ROLE_DEFAULT),
+            new TopicRoleModel(trialConfig.getId(), ROLE_DEFAULT)));
+    }
+
 }
