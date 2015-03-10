@@ -28,17 +28,14 @@ import de.deepamehta.plugins.files.DirectoryListing.FileItem;
 import de.deepamehta.plugins.files.ItemKind;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.InvalidParameterException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -385,15 +382,14 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Transactional
     public Topic doImportUserTrialConfig(@PathParam("username") String name) {
         try {
+            // 1) fetch related file topic
             Topic username = acService.getUsername(name);
             Topic fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, "dm4.core.default",
                     "dm4.core.default", "dm4.files.file");
             log.info("Loading Trial Config File Topic: " + fileTopic.getId()
                     + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username);
             File trialConfig = fileService.getFile(fileTopic.getId());
-            java.nio.file.Path path = Paths.get(trialConfig.getPath());
-            List<String> configuration = Files.readAllLines(path, Charset.forName("UTF-8"));
-            // delete and create trial config topic
+            // 2) delete and create trial config topic
             ResultList<RelatedTopic> usersTrialConfigs = getAllUserTrialConfigs(username);
             Iterator<RelatedTopic> i = usersTrialConfigs.iterator();
             while (i.hasNext()) {
@@ -404,13 +400,21 @@ public class WebExperimentsPlugin extends PluginActivator {
                     topic.delete();
                 }
             }
+            // 3) read in file topic's lines
             int nr = 1;
-            for (String line : configuration) {
-                if (!line.startsWith("webexp.config")) {
-                    log.fine("Line: " + line);
-                    createNewTrialConfig(nr, line, username);
-                    nr++;
+            BufferedReader br = new BufferedReader(new FileReader(trialConfig.getAbsolutePath()));
+            try {
+                String line = br.readLine();
+                while (line != null) {
+                    if (!line.startsWith("webexp.config")) {
+                        log.fine("Line: " + line);
+                        createNewTrialConfig(nr, line, username);
+                        nr++;
+                    }
+                    line = br.readLine();
                 }
+            } finally {
+                br.close();
             }
             return username;
         } catch (IOException ex) {
