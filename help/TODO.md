@@ -19,13 +19,10 @@
 - Julia (via Natalia) : Bilder aus Mapbox exportieren und spiegeln - TODO
 - Malte: "Übungsmodus"-Text aus dem Übungsmodus entfernen - ERLEDIGT
 - Malte: Reporting überareiten - ERLEDIGT
+- - Magde/Malte: Umorientierung des "Pin Auswahl" Blocks an den Anleitungstext zum Pinning anhängen (weg mit der Pin-Auswahl vom Willkommens-/Login-Screen) - TODO
+- Magda/Malte: Die unspezifische Anleitung zum Experiment an die jetzige Stelle des "Pin Auswahl"-Blocks (direkt an den Wilkommens-/Login-Screen) anhängen - TODO
 
 ### Unkritische, sonstige Aufgaben
 
 - ..: "Sicherheitsrating: Die Kreise, die die Skala darstellen, sind auf dem endgültigen Setup sehr verpixelt sichtbar."
 - ..: In Übungen mit der Kondition "No Pinning" sollte sich die Active Control ja nicht bei einem MouseOver blau einfärben (da Nutzer_In diese ja nicht anwählen kann).
-
-
-
-
-
