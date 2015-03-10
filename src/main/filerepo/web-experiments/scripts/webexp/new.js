@@ -155,7 +155,7 @@ define(function (require) {
             + '<p class="textblock">Insgesamt bekommst du zwei Bl&ouml;cke mit je 15 Karten pr&auml;sentiert.<br/>Zum Abschluss bitten wir dich, noch einen Fragebogen auszuf&uuml;llen.</p>'
             + '<p class="textblock">Bevor das eigentliche Experiment startet, bekommst du zun&auml;chst zwei &Uuml;bungsdurchg&auml;nge pr&auml;sentiert.</p>'
             + '<br/><br/><br/><br/>')
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('Zur %Uuml;bung')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').html('Zur &Uuml;bung')
             // next.on('click', function (e) { render_practice_intro() })
     }
 
@@ -183,6 +183,7 @@ define(function (require) {
         set_page_content(message)
         //
         newCtrl.fetchAllMarker(function (data) {
+
             if (data.length === 0) d3.select('.content').html('<p class="warning">To enable personalization, ' 
                     + 'please copy some icons into the symbols folder of the file repository.</p>')
             var iconPaths = data
@@ -199,15 +200,18 @@ define(function (require) {
                             .attr('src', iconPath).attr('id', topicId)
                 }
             }
+
             // Render OK GUI
             d3.select('.content').append('br')
-            d3.select('.content').append('a').attr('href', '#goto').attr('class', 'button').text('Ok!')
-                    .on('click', function (e){ render_go_to_intro() })
+            d3.select('.content').append('a').attr('href', '#goto').attr('class', 'button disabled').text('Ok!')
+
             d3.selectAll('li.symbol img').on('click', function () {
                 // Implement OK Button Next Handler
                 var iconId = this.id
                 newCtrl.doMarkIconPreference(iconId, function () {
                     if (common.debug) console.log("OK - Icon set", iconId) // ### render icon as silected
+                    d3.select('.content a.button').attr('class', 'button')
+                        .on('click', function (e){ render_go_to_intro() })
                 }, function (error) {
                     console.warn("Fail - Icon preference could not be set!")
                 })

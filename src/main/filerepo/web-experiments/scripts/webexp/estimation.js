@@ -249,7 +249,7 @@ define(function (require) {
         // 
         var ortA = model.getNameOfPlace(report.from_place_id)
         var ortB = model.getNameOfPlace(report.to_place_id)
-        var title = '&Uuml;bungsmodus: Um von ' + ortA + ' nach ' + ortB + ' zu kommen, m&uuml;sstest du folgenderma&szlig;en gehen:'
+        var title = 'Um von ' + ortA + ' nach ' + ortB + ' zu kommen, m&uuml;sstest du folgenderma&szlig;en gehen:'
         set_task_description(title)
         // ..
         d3.select('#map').attr('style', 'display:block;')
@@ -281,9 +281,7 @@ define(function (require) {
         // hide map
         d3.select('#map').attr('style', 'display:none;')
         // change page title
-        var html = ''
-        if (view_state.indexOf("pract") !== -1) html += '<span class="mode">&Uuml;bungsmodus: </span>'
-        html += 'Wie sicher warst du dir bei deiner Schätzung?'
+        var html = 'Wie sicher warst du dir bei deiner Schätzung?'
         set_task_description(html)
         // show certainty scale
         var element = d3.select('.certainty-scale')
@@ -306,10 +304,6 @@ define(function (require) {
     }
 
     function init_task_description (fromId, toId) {
-        if (view_state.indexOf("pract") !== -1) {
-            if (common.verbose) console.log("  practice Mode.. ")
-            d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
-        }
         d3.select('i.from-place').text(model.getNameOfPlace(fromId))
         d3.select('i.to-place').text(model.getNameOfPlace(toId))
     }

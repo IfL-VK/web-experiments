@@ -211,10 +211,6 @@ define(function (require) {
     }
     
     function init_task_description () {
-        if (view_state.indexOf("pract") !== -1) {
-            if (common.verbose) console.log(" practice Mode.. ")
-            d3.select('.title .mode').html("&Uuml;bungsmodus:&nbsp;")
-        }
         d3.select('i.place-to-pin').html(model.getNameOfPlaceToPin() + '<br/>')
     }
     
@@ -386,7 +382,6 @@ define(function (require) {
     
     function set_memorization_page_title(message) {
         var html = ''
-        if (view_state.indexOf("pract") !== -1) html += '<span class="mode">&Uuml;bungsmodus: </span>'
         html += message
         set_task_description(html)
     }
