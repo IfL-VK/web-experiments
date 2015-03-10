@@ -100,7 +100,7 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     // -- Trial Report & Config
 
-    private static final String ACTIVE_CONFIGURATION_EDGE = "dm4.core.association";
+    private static final String ACTIVE_CONFIGURATION_EDGE = "de.akmiraketen.webexp.config_loaded_edge";
     
     private static final String TRIAL_REPORT_URI = "de.akmiraketen.webexp.trial_report";
     
@@ -375,9 +375,16 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/config/import")
     @Transactional
     public Response doImportUserTrialConfig() {
+        return doImportUserTrialConfig(acService.getUsername());
+    }
+
+    @GET
+    @Path("/trial/config/import/{username}")
+    @Transactional
+    public Response doImportUserTrialConfig(@PathParam("username") String name) {
         try {
-            Topic username = acService.getUsername(acService.getUsername());
-            Topic fileTopic = username.getRelatedTopic("dm4.core.association", "dm4.core.default",
+            Topic username = acService.getUsername(name);
+            Topic fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, "dm4.core.default",
                     "dm4.core.default", "dm4.files.file");
             log.info("Loading Trial Config File Topic: " + fileTopic.getId()
                     + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username);
@@ -390,15 +397,15 @@ public class WebExperimentsPlugin extends PluginActivator {
             while (i.hasNext()) {
                 Topic topic = i.next();
                 if (topic.getTypeUri().equals(TRIAL_CONFIG_TYPE)) {
-                    log.info("\t>>>> Deleting former Trial Config Topic " + topic.getUri() + " <<<<");
+                    log.fine(">>> Deleting former Trial Config Topic " + topic.getUri());
                     i.remove();
                     topic.delete();
                 }
             }
             int nr = 1;
             for (String line : configuration) {
-                log.info("Line: " + line);
                 if (!line.startsWith("webexp.config")) {
+                    log.fine("Line: " + line);
                     createNewTrialConfig(nr, line, username);
                     nr++;
                 }
@@ -442,7 +449,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(TRIAL_CONFIG_MEMO_SEC, values[15].trim()));
         // create topic
         Topic trialConfigTopic = dms.createTopic(trialConfig);
-        log.info("\t>>>>> Created new Trial Configuration: " + configUri + " <<<! ");
+        log.info(">>> Created new Trial Configuration: " + configUri + "(" + trialConfigTopic.getId() + ")");
         createTrialConfigUserAssignment(trialConfigTopic, username);
     }
 
