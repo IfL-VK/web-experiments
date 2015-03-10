@@ -31,12 +31,14 @@ import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -674,11 +676,11 @@ public class WebExperimentsPlugin extends PluginActivator {
         StringBuilder report = new StringBuilder();
         ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
         report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
-        report.append("Estfrom.1\tEstfromname.1\tEstto.1\tEsttoname.1\tEsttoscreen.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
-        report.append("Estfrom.2\tEstfromname.2\tEstto.2\tEsttoname.2\tEsttoscreen.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
-        report.append("Estfrom.3\tEstfromname.3\tEstto.3\tEsttoname.3\tEsttoscreen.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
-        report.append("Estfrom.4\tEstfromname.4\tEstto.4\tEsttoname.4\tEsttoscreen.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
-        report.append("Estfrom.5\tEstfromname.5\tEstto.5\tEsttoname.5\tEsttoscreen.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
+        report.append("Estfromname.1\tEsttoname.1\tEsttoscreen.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
+        report.append("Estfromname.2\tEsttoname.2\tEsttoscreen.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
+        report.append("Estfromname.3\tEsttoname.3\tEsttoscreen.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
+        report.append("Estfromname.4\tEsttoname.4\tEsttoscreen.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
+        report.append("Estfromname.5\tEsttoname.5\tEsttoscreen.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
         report.append("\n");
         for (RelatedTopic vp : propositi.getItems()) {
             Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
@@ -716,18 +718,19 @@ public class WebExperimentsPlugin extends PluginActivator {
                                 pinInactive = trialReport.loadChildTopics(COUNT_OUTSIDE_URI)
                                         .getChildTopics().getInt(COUNT_OUTSIDE_URI);
                             } catch (Exception e) {
-                                log.warning("No pinning data was recorded during trial: " + trialConfigId + " for " + username.getSimpleValue());
+                                log.warning("No pinning data was recorded / could be accessed for trial config: "
+                                        + trialConfigId + " for " + username.getSimpleValue());
                             }
                             // Estimation Report Data
-                            String estimation1 = "", realToScreen1 = "", estFrom1 = "", estFromName1 = "", estTo1 = "", estToName1 = "";
+                            String estimation1 = "", realToScreen1 = "", estFromName1 = "", estToName1 = "";
                             int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
-                            String estimation2 = "", realToScreen2 = "", estFrom2 = "", estFromName2 = "", estTo2 = "", estToName2 = "";
+                            String estimation2 = "", realToScreen2 = "", estFromName2 = "", estToName2 = "";
                             int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
-                            String estimation3 = "", realToScreen3 = "", estFrom3 = "", estFromName3 = "", estTo3 = "", estToName3 = "";
+                            String estimation3 = "", realToScreen3 = "", estFromName3 = "", estToName3 = "";
                             int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
-                            String estimation4 = "", realToScreen4 = "", estFrom4 = "", estFromName4 = "", estTo4 = "", estToName4 = "";
+                            String estimation4 = "", realToScreen4 = "", estFromName4 = "", estToName4 = "";
                             int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
-                            String estimation5 = "", realToScreen5 = "", estFrom5 = "", estFromName5 = "", estTo5 = "", estToName5 = "";
+                            String estimation5 = "", realToScreen5 = "", estFromName5 = "", estToName5 = "";
                             int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
                             try {
                                 List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
@@ -739,9 +742,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                     Topic toPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_TO_PLACE_URI));
                                     switch (estimationNr) {
                                         case 1:
-                                            estFrom1 = getConfiguredPlaceCoordinates(fromPlace);
                                             estFromName1 = getConfiguredPlaceName(fromPlace);
-                                            estTo1 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName1 = getConfiguredPlaceName(toPlace);
                                             realToScreen1 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
                                             estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
@@ -749,9 +750,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
                                         case 2:
-                                            estFrom2 = getConfiguredPlaceCoordinates(fromPlace);
                                             estFromName2 = getConfiguredPlaceName(fromPlace);
-                                            estTo2 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName2 = getConfiguredPlaceName(toPlace);
                                             realToScreen2 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
                                             estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
@@ -759,9 +758,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
                                         case 3:
-                                            estFrom3 = getConfiguredPlaceCoordinates(fromPlace);
                                             estFromName3 = getConfiguredPlaceName(fromPlace);
-                                            estTo3 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName3 = getConfiguredPlaceName(toPlace);
                                             realToScreen3 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
                                             estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
@@ -769,9 +766,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
                                         case 4:
-                                            estFrom4 = getConfiguredPlaceCoordinates(fromPlace);
                                             estFromName4 = getConfiguredPlaceName(fromPlace);
-                                            estTo4 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName4 = getConfiguredPlaceName(toPlace);
                                             realToScreen4 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
                                             estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
@@ -779,9 +774,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
                                         case 5:
-                                            estFrom5 = getConfiguredPlaceCoordinates(fromPlace);
                                             estFromName5 = getConfiguredPlaceName(fromPlace);
-                                            estTo5 = getConfiguredPlaceCoordinates(toPlace);;
                                             estToName5 = getConfiguredPlaceName(toPlace);
                                             realToScreen5 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
                                             estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
@@ -796,11 +789,11 @@ public class WebExperimentsPlugin extends PluginActivator {
                             // Write line
                             report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName
                                     + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive
-                                    + "\t" + estFrom1 + "\t" + estFromName1 + "\t" + estTo1 + "\t" + estToName1 + "\t" + realToScreen1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
-                                    + "\t" + estFrom2 + "\t" + estFromName2 + "\t" + estTo2 + "\t" + estToName2 + "\t" + realToScreen2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
-                                    + "\t" + estFrom3 + "\t" + estFromName3 + "\t" + estTo3 + "\t" + estToName3 + "\t" + realToScreen3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
-                                    + "\t" + estFrom4 + "\t" + estFromName4 + "\t" + estTo4 + "\t" + estToName4 + "\t" + realToScreen4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
-                                    + "\t" + estFrom5 + "\t" + estFromName5 + "\t" + estTo5 + "\t" + estToName5 + "\t" + realToScreen5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
+                                    + "\t" + estFromName1 + "\t" + estToName1 + "\t" + realToScreen1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
+                                    + "\t" + estFromName2 + "\t" + estToName2 + "\t" + realToScreen2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
+                                    + "\t" + estFromName3 + "\t" + estToName3 + "\t" + realToScreen3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
+                                    + "\t" + estFromName4 + "\t" + estToName4 + "\t" + realToScreen4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
+                                    + "\t" + estFromName5 + "\t" + estToName5 + "\t" + realToScreen5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
                             report.append("\n");
                         } else { // trial configuration could not be loaded..
                             log.warning("System Trial Configuration changed"
