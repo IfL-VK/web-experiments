@@ -374,14 +374,14 @@ public class WebExperimentsPlugin extends PluginActivator {
     @GET
     @Path("/trial/config/import")
     @Transactional
-    public Response doImportUserTrialConfig() {
+    public Topic doImportUserTrialConfig() {
         return doImportUserTrialConfig(acService.getUsername());
     }
 
     @GET
     @Path("/trial/config/import/{username}")
     @Transactional
-    public Response doImportUserTrialConfig(@PathParam("username") String name) {
+    public Topic doImportUserTrialConfig(@PathParam("username") String name) {
         try {
             Topic username = acService.getUsername(name);
             Topic fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, "dm4.core.default",
@@ -410,10 +410,10 @@ public class WebExperimentsPlugin extends PluginActivator {
                     nr++;
                 }
             }
-            return Response.ok().build();
+            return username;
         } catch (IOException ex) {
             log.log(Level.SEVERE, null, ex);
-            return Response.serverError().build();
+            return null;
         }
     }
     
@@ -449,7 +449,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(TRIAL_CONFIG_MEMO_SEC, values[15].trim()));
         // create topic
         Topic trialConfigTopic = dms.createTopic(trialConfig);
-        log.info(">>> Created new Trial Configuration: " + configUri + "(" + trialConfigTopic.getId() + ")");
+        log.info(">>> Created new Trial Configuration: " + configUri + " (" + trialConfigTopic.getId() + ")");
         createTrialConfigUserAssignment(trialConfigTopic, username);
     }
 
