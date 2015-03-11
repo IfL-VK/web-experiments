@@ -16,7 +16,7 @@
 - Malte: Balken auf volle Kartenhoehe - ERLEDIGT
 - Magda: Schriftart anpassen (serifenlos, schwarz, nicht kursiv, nicht fett) - TODO
 - Magda: Schrift groeßer - TODO
-- Julia (via Natalia) : Bilder aus Mapbox exportieren und spiegeln - TODO
+- Magda : Bilder aus Mapbox exportieren und spiegeln - ERLEDIGT
 - Malte: "Übungsmodus"-Text aus dem Übungsmodus entfernen - ERLEDIGT
 - Malte: Reporting überareiten - ERLEDIGT
 - - Magde/Malte: Umorientierung des "Pin Auswahl" Blocks an den Anleitungstext zum Pinning anhängen (weg mit der Pin-Auswahl vom Willkommens-/Login-Screen) - TODO
