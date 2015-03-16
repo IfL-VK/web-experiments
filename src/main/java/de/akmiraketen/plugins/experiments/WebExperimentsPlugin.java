@@ -103,6 +103,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String TRIAL_REPORT_URI = "de.akmiraketen.webexp.trial_report";
     
+    private static final String TRIAL_CONFIG_NAME = "de.akmiraketen.webexp.trial_name";
     private static final String TRIAL_CONFIG_MAP_ID = "de.akmiraketen.webexp.trial_map_id";
     private static final String TRIAL_CONFIG_PLACE_TO_PIN = "de.akmiraketen.webexp.trial_place_to_pin";
     private static final String TRIAL_CONFIG_PLACE_FROM1 = "de.akmiraketen.webexp.trial_place_from_1";
@@ -218,14 +219,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Produces(MediaType.TEXT_HTML)
     public InputStream getNewFinishView() {
         return getStaticResource("web/new.html");
-    }
-    
-    @GET
-    @Path("/start")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getWelcomeScreen() {
-        // ###
-        return getStaticResource("web/index.html");
     }
     
     @GET    
@@ -439,6 +432,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         // build up topic model
         String configUri = "webexp.config." + username.getSimpleValue() + "_" + lineNr + "_" + values[0].trim();
         TopicModel trialConfig = new TopicModel(configUri, TRIAL_CONFIG_TYPE, new ChildTopicsModel()
+                .put(TRIAL_CONFIG_NAME, values[1].trim())
                 .putRef(TRIAL_CONFIG_MAP_ID, map.getId())
                 .putRef(TRIAL_CONDITION_TYPE, conditionUri)
                 .put(TRIAL_CONFIG_PLACE_TO_PIN, values[4].trim())
@@ -516,7 +510,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             // throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
             return Response.ok(nextTrialId).build();
         }
-        dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE, 
+        dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE,
                 new TopicRoleModel(user.getId(), "dm4.core.default"), 
                 new TopicRoleModel(trialId, "dm4.core.default")));
         return Response.ok(OK_NR).build();

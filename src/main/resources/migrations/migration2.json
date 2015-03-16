@@ -386,7 +386,7 @@
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
-                        "dm4.webclient.color": "#E59037;"
+                        "dm4.webclient.color": "#E59037"
                     }
                 }
             ]
@@ -399,7 +399,7 @@
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
-                        "dm4.webclient.color": "#00ffCC;"
+                        "dm4.webclient.color": "#00ffCC"
                     }
                 }
             ]

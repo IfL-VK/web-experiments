@@ -89,7 +89,7 @@ define(function (require) {
                 init_place_labels()
                 
                 // 5 run time
-                run_timer(undefined, init_random_calc)
+                run_timer(undefined, run_filler_task)
 
             }, function (error) {
                 console.warn("Error loading participant ..", error)
@@ -213,6 +213,12 @@ define(function (require) {
     function init_task_description () {
         d3.select('i.place-to-pin').html(model.getNameOfPlaceToPin() + '<br/>')
     }
+
+    function run_filler_task () {
+        // go on after a maximum of 30 seconds
+        run_timer(MILLISECS_FOR_FILLER_TASK, go_next)
+        init_random_calc()
+    }
     
     function init_random_calc () {
         set_task_description('Multiplikationsaufgabe')
@@ -230,15 +236,13 @@ define(function (require) {
         document.getElementById('ergebnis').focus()
         set_next_link() // modifies "next" a href based respecting practice mode
         //
-        // go on after a maximum of 30 seconds
-        run_timer(MILLISECS_FOR_FILLER_TASK, go_next)
-        
         function handle_input () {
             var ergebnis = document.getElementById('ergebnis').value
             if (ergebnis < 0 || ergebnis%1 !== 0 || ergebnis === "") {
                 alert("Bitte ganze Zahl eingeben!");
-            } else { // result is always OK
-                go_next()
+            } else {
+                document.getElementById('ergebnis').value = ""
+                init_random_calc()
             }
         }
     }
@@ -411,7 +415,7 @@ define(function (require) {
 
     return {
         init_page: init_pinning_page,
-        init_filler: init_random_calc
+        init_filler: run_filler_task
     }
 
 });

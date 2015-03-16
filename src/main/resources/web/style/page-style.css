@@ -64,6 +64,10 @@ body {
     margin: 10px;
 }
 
+.intro .content .symbol.btn img {
+    border: 0px solid transparent;
+}
+
 .intro .content h4.image {
     margin-bottom: 0px;
     font-weight: normal;
@@ -243,6 +247,7 @@ p.wichtig,
     font-weight: bold;
 }
 
+p.wichtig,
 p.textblock {
     line-height: 2em;
     font-size: 20px;

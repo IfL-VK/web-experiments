@@ -27,20 +27,16 @@ define(function (require) {
                 if (view_state.indexOf("intro") !== -1) { // intro page per condition
 
                     if (page_condition === "webexp.config.pinning") {
-                        console.log(" Render intro view for block with pinning ", page_condition)
-                        render_pinning_intro()
+                        render_pinning_intro() // now: rendering icon view at the end of this intro
                     } else {
-                        console.log(" Render intro view for block without pinning ", page_condition)
                         render_no_pinning_intro()
                     }
 
                 } else if (view_state.indexOf("start") !== -1) { // start page per condition
 
-                    console.log(" Render per condition for start views", page_condition)
-                    // render
-                    if (page_condition === "webexp.config.no_pinning") {
-                        console.log(" Render start view for block without pinning ", page_condition)
-                        render_no_pinning_start()   
+                    if (page_condition === "webexp.config.pinning") {
+                        var next = d3.select('.content .button').attr('href', '#icon')
+                            next.on('click', function (e) { init_marker_selection_view() })
                     }
 
                 }
@@ -50,18 +46,11 @@ define(function (require) {
             }, false)
             
         } else {
-        // --- Render icon, welcome View or static page (namely finish + pause)
+        // --- Render welcome View or static page (namely finish + pause)
 
             newCtrl.fetchParticipant(function (data) {
             
-                var marker_id = data.selected_marker_id
-                var username = data.value
-
-                if (view_state === "icon") {
-                    
-                    init_marker_selection_view(marker_id)
-
-                } else if (view_state === "welcome" || view_state === "") {
+                if (view_state === "welcome" || view_state === "") {
                     
                     init_welcome_view()
                     
@@ -89,54 +78,55 @@ define(function (require) {
 
     // --- Intro 1 View
 
+    function render_go_to_intro() {
+        set_page_content('<p class="textblock">Bevor du den ersten Block startest, zeigen wir dir auf den folgenden Seiten, '
+            + 'welche Aufgaben du bekommst und wie du diese l&ouml;sen kannst. Bitte lese diese Anleitung '
+            + 'aufmerksam durch!</p>')
+        d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
+    }
+
     function render_pinning_intro() {
-        var content = 'In dem folgendem Block wirst du eine Karte sehen und gebeten werden, <b>einen Ort zu markieren</b>.'
-            + 'Klicke dazu mit der Maus in den kleinen Kreis beim Ortsnamen. <br/>'
-            + 'Welchen der dargestellten Orte du markieren sollst, wird dir oberhalb der Karte angezeigt.</p><p> Nach dem Markieren hast '
-            + 'du ca. eine Minute Zeit, dir die <b>Karte so genau wie m&ouml;glich einzupr&auml;gen</b>. '
+        var content = '<p class="textblock">In dem folgendem Block wirst du eine Karte sehen und gebeten werden, einen Ort zu markieren. '
+            + 'Klicke dazu mit der Maus in den kleinen Kreis beim Ortsnamen.'
+            + 'Welchen der dargestellten Orte du markieren sollst, wird dir oberhalb der Karte angezeigt.</p>'
+            + '<p class="textblock">Nach dem Markieren hast du ca. eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen. '
             + 'Stelle dir dazu vor, du wirst am markierten Ort ausgesetzt und sollst nun die Strecken zu den anderen Orten auswendig '
-            + 'wiederfinden. Du kannst dabei den <b>direkten Weg </b> querfeldein gehen und bist nicht auf Wege angewiesen.'
-            + '<br/><h4 class="image">Abbildung 1:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png"><br/>'
+            + 'wiederfinden. Du kannst dabei den direkten Weg querfeldein gehen und bist nicht auf Wege angewiesen.'
+            + '<h4 class="image">Abbildung 1:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png"></p>'
+            // + '<p class="textblock">Vor den zwei &Uuml;bungsdurchg&auml;ngen w&auml;hle bitte ein Icon aus welches du in den folgenden Aufgaben als Markierer einsetzen m&ouml;chtest.</p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#icon').html('weiter')
             next.on('click', function (e) { render_filler_intro() })
     }
 
     function render_no_pinning_intro() {
-		//set_task_description("Anleitung zum 2. Block")
-        var content = '<p class="textblock">In diesem Block wirst du wieder in jedem Durchgng eine Karte sehen. Dieses Mal jedoch ohne die Aufgabe, einen Ort zu markieren.<br/>'
-            + 'Du hast wieder ca. eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
-            + 'Stelle dir dazu bitte vor, du wirst in der abgebildeten Region ausgesetzt und sollst nun die Strecken zwischen den Orten auswendig wiederfinden. Du kannst dabei den <b> direkten Weg </b>'
-			+ 'querfeldein gehen und bist nicht auf Wege angewiesen.</p>'
-			+ '<p class="textblock">Danach wirst du auch wieder Rechenaufgaben gestellt bekommen und Sch&auml;tzungen hinsichtlich Richtung und Entfernung der Orte machen. '
-			+ 'Auch hier wirst du wieder dazu gefragt, wie sicher du dir bei der Sch&auml;tzung warst.</p>'
+        set_task_description('Anleitung')
+        var content = '<p class="textblock">In diesem Block wirst du in jedem Durchgang eine Karte sehen.<br/>'
+            + 'Du hast ca. eine Minute Zeit, dir die Karte so genau wie m&ouml;glich einzupr&auml;gen.<br/>'
+            + 'Stelle dir dazu bitte vor, du wirst in der abgebildeten Region ausgesetzt und sollst nun die Strecken zwischen den Orten auswendig wiederfinden. Du kannst dabei den direkten Weg '
+            + 'querfeldein gehen und bist nicht auf Wege angewiesen.</p>'
+            + '<p class="textblock">Danach wirst du Rechenaufgaben gestellt bekommen und Sch&auml;tzungen hinsichtlich Richtung und Entfernung der Orte machen. '
+            + 'Dazu wirst du gefragt, wie sicher du dir bei der Sch&auml;tzung warst.</p>'
         set_page_content(content)
-        set_task_description('Anleitung zum 2. Block')
-        d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
-    }
-
-    function render_no_pinning_start() {
-        var content = '<p class="textblock">Falls du noch Fragen zu diesem Versuchsblock hast, melde dich bitte bei der Versuchsleitung.<br/>'
-            + 'Ansonsten starte bitte nun den zweiten Block.<br/></p>'
-        set_page_content(content)
-        d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#icon').html('weiter')
+            next.on('click', function (e) { render_filler_intro() })
     }
 
     function render_filler_intro() {
-        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du Rechenaufgaben, die du bitte </b> so schnell</b> '
-            + '<b> und so korrekt wie m&ouml;glich</b> beantwortest, indem du die Ergebniszahl eintippst.</p>'
+        set_page_content('<p class="textblock">Nachdem du dir die Karte eingepr&auml;gt hast, erh&auml;ltst du Rechenaufgaben, die du bitte so schnell '
+            + 'und so korrekt wie m&ouml;glich beantwortest, indem du die Ergebniszahl eintippst.</p>'
             + '<br/><h4 class="image">Abbildung 2:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_filler_task_screen.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_estimation_intro() })
     }
 
     function render_estimation_intro() {
-        set_page_content('<p>Nach den Rechenaufgaben werden dir zwei Orte genannt, die du bereits auf der Karte zuvor kennen gelernt hast.</p>'
-            + '<p class="wichtig"> <b>Bitte sch&auml;tze, wie weit der eine vom anderen genannten Ort entfernt liegt. </b> </p>'
-            + '<p>Dazu klickst du bitte in den Kreis in der Mitte des Bildschirms und ziehst die entstehende Linie so lange, '
+        set_page_content('<p class="textblock">Nach den Rechenaufgaben werden dir zwei Orte genannt, die du bereits auf der Karte zuvor kennen gelernt hast.</p>'
+            + '<p class="wichtig"><b>Bitte sch&auml;tze, wie weit der eine vom anderen genannten Ort entfernt liegt.</b></p>'
+            + '<p class="textblock">Dazu klickst du bitte in den Kreis in der Mitte des Bildschirms und ziehst die entstehende Linie so lange, '
             + 'bis die L&auml;nge mit der Distanz zwischen den beiden Orten &uuml;bereinstimmt. Au&szlig;erdem drehst du die Linie so, dass auch die '
             + 'Richtung zwischen den beiden Orten deiner Erinnerung nach stimmt. Sobald du die Maustaste losl&auml;sst, ist deine Antwort gespeichert.</p>'
-			+ '<p>Um ein Gef&uuml;hl f&uuml;r die Distanzen zu bekommen, haben wird dir die H&ouml;he der vorher gezeigten Karte in der Ecke unten links abgebildet. </p>'
+			+ '<p class="textblock">Um ein Gef&uuml;hl f&uuml;r die Distanzen zu bekommen, haben wird dir die H&ouml;he der vorher gezeigten Karte in der Ecke unten links abgebildet.</p>'
             + '<br/><h4 class="image">Abbildung 3:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_estimation_screen_blank.png"><br/><br/>')
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_certainty_intro() })
@@ -149,14 +139,13 @@ define(function (require) {
             next.on('click', function (e) { render_practice_intro() })
     }
 
-	//ANLEITUNG 5/6 "In den zwei Übungsdurchgängen vor den beiden Blöcken, erhälst du Rückmeldung darüber, in welche Richtung ... " fehlt noch
     function render_practice_intro() {
         set_page_content('<p class="textblock">Du f&uuml;hrst zu jeder Karte f&uuml;nf Sch&auml;tzungen durch, bevor du die n&auml;chste Karte pr&auml;sentiert bekommst.</p>'
             + '<p class="textblock">Insgesamt bekommst du zwei Bl&ouml;cke mit je 15 Karten pr&auml;sentiert.<br/>Zum Abschluss bitten wir dich, noch einen Fragebogen auszuf&uuml;llen.</p>'
-            + '<p class="textblock">Bevor das eigentliche Experiment startet, bekommst du zun&auml;chst zwei &Uuml;bungsdurchg&auml;nge pr&auml;sentiert.</p>'
+            + '<p class="textblock">Bevor das eigentliche Experiment startet, bekommst du zun&auml;chst zwei &Uuml;bungsdurchg&auml;nge pr&auml;sentiert. '
+            + 'In den zwei &Uuml;bungsdurchg&auml;ngen vor den beiden Bl&ouml;cken, erh&auml;lst du R&uuml;ckmeldung dar&uuml;ber, wie genau deine Sch&auml;tzung war.</p>'
             + '<br/><br/><br/><br/>')
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').html('Zur &Uuml;bung')
-            // next.on('click', function (e) { render_practice_intro() })
+            d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('Ok')
     }
 
     // --- Welcome View
@@ -167,69 +156,72 @@ define(function (require) {
             + 'In beiden Bl&ouml;cken wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
             + 'um danach zur abgebildeten Landschaft Fragen zu beantworten. </p><br/>'
             + '<p class="wichtig">Bitte f&uuml;hre das Experiment konzentriert und gewissenhaft durch!<p><br/>'
-	    + '<p class="welcome"><a href="/web-exp/icon" class="button">Los geht\'s</a></p>'
         set_page_content(content)
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
+            next.on('click', function (e) { render_go_to_intro() })
     }
 
     // --- Icon View
 
-    function init_marker_selection_view (selected_marker_id) {
-        set_task_description('')
-        var message = "<p>Im folgenden Block wirst du bei jeder neuen Karte aufgefordert, "
-            + " einen Ort auf der jeweiligen Karte zu markieren. Dazu wird dir ein Pin zur Verf&uuml;gung stehen.</p>"
-            message += "<p>Wie dieser Pin aussehen soll, kannst du unter den folgenden Alternativen ausw&auml;hlen. "
-                + " Deine Auswahl legt das Aussehen des Pins f&uuml;r das gesamte Experiment fest.</p>"
-            message += "<p>Klicke dazu bitte den Pin an, mit dem du die Markierungen kennzeichnen m&ouml;chtest.</p>"
-        set_page_content(message)
-        //
-        newCtrl.fetchAllMarker(function (data) {
+    function init_marker_selection_view () {
 
-            if (data.length === 0) d3.select('.content').html('<p class="warning">To enable personalization, ' 
-                    + 'please copy some icons into the symbols folder of the file repository.</p>')
-            var iconPaths = data
-            var $list = d3.select('.content')
-                .append('ul').attr('class', 'marker-selection').attr('id', 'icons')
-            for (var idx in iconPaths) {
-                var iconPath = '/filerepo/' + iconPaths[idx]['path']
-                var topicId = iconPaths[idx]['topic_id']
-                if (topicId === selected_marker_id) {
-                    $list.append('li').attr('class', 'symbol btn').append('img')
-                            .attr('src', iconPath).attr('id', topicId).attr('class', 'selected')
-                } else {
-                    $list.append('li').attr('class', 'symbol btn').append('img')
-                            .attr('src', iconPath).attr('id', topicId)
+        newCtrl.fetchParticipant(function (data) {
+
+            var selected_marker_id = data.selected_marker_id
+
+            set_task_description('Bitte w&auml;hle einen Markierer aus')
+            var message = '<p class="textblock">Im folgenden Block wirst du bei jeder neuen Karte aufgefordert, '
+                + ' einen Ort auf der jeweiligen Karte zu markieren. Dazu wird dir ein Pin zur Verf&uuml;gung stehen.</p>'
+                message += '<p class="textblock">Wie dieser Pin aussehen soll, kannst du unter den folgenden Alternativen ausw&auml;hlen. '
+                    + ' Deine Auswahl legt das Aussehen des Pins f&uuml;r das gesamte Experiment fest.</p>'
+                message += '<p class="textblock">Klicke dazu bitte den Pin an, mit dem du die Markierungen kennzeichnen m&ouml;chtest.</p>'
+            set_page_content(message)
+            //
+            newCtrl.fetchAllMarker(function (data) {
+
+                if (data.length === 0) d3.select('.content').html('<p class="warning">To enable personalization, '
+                        + 'please copy some icons into the symbols folder of the file repository.</p>')
+                var iconPaths = data
+                var $list = d3.select('.content')
+                    .append('ul').attr('class', 'marker-selection').attr('id', 'icons')
+                for (var idx in iconPaths) {
+                    var iconPath = '/filerepo/' + iconPaths[idx]['path']
+                    var topicId = iconPaths[idx]['topic_id']
+                    if (topicId === selected_marker_id) {
+                        $list.append('li').attr('class', 'symbol btn').append('img')
+                                .attr('src', iconPath).attr('id', topicId).attr('class', 'selected')
+                    } else {
+                        $list.append('li').attr('class', 'symbol btn').append('img')
+                                .attr('src', iconPath).attr('id', topicId)
+                    }
                 }
-            }
 
-            // Render OK GUI
-            d3.select('.content').append('br')
-            d3.select('.content').append('a').attr('href', '#goto').attr('class', 'button disabled').text('Ok!')
+                // Render OK GUI
+                d3.select('.content').append('br')
+                d3.select('.content').append('a').attr('href', '#goto').attr('class', 'button disabled').html('weiter')
 
-            d3.selectAll('li.symbol img').on('click', function () {
-                // Implement OK Button Next Handler
-                var iconId = this.id
-                newCtrl.doMarkIconPreference(iconId, function () {
-                    if (common.debug) console.log("OK - Icon set", iconId) // ### render icon as silected
-                    d3.select('.content a.button').attr('class', 'button')
-                        .on('click', function (e){ render_go_to_intro() })
-                }, function (error) {
-                    console.warn("Fail - Icon preference could not be set!")
+                d3.selectAll('li.symbol img').on('click', function () {
+                    // Implement OK Button Next Handler
+                    var iconId = this.id
+                    newCtrl.doMarkIconPreference(iconId, function () {
+                        if (common.debug) console.log("OK - Icon set", iconId) // ### render icon as silected
+                        d3.select('.content a.button').attr('class', 'button')
+                            .on('click', function (e) {
+                               window.location.href = '/web-exp/nextpage'
+                            })
+                    }, function (error) {
+                        console.warn("Fail - Icon preference could not be set!")
+                    })
+                    // GUI
+                    d3.selectAll('img').attr('class', '')
+                    this.className = "selected"
                 })
-                // GUI
-                d3.selectAll('img').attr('class', '')
-                this.className = "selected"
-            })
-            // Cache in app-model
-            newModel.setIcons(data)
-        }, false)
+                // Cache in app-model
+                newModel.setIcons(data)
+            }, false)
+        })
     }
     
-    function render_go_to_intro() {
-        set_page_content('<p class="textblock">Bevor du den ersten Block startest, zeigen wir dir auf den folgenden Seiten, '
-            + 'welche Aufgaben du bekommst und wie du diese l&ouml;sen kannst. Bitte lese diese Anleitung '
-            + 'aufmerksam durch!</p><a href="/web-exp/nextpage" class="button">zur Anleitung</a>')
-    }
-
     // Login View
 
     function render_start_session_dialog() {
