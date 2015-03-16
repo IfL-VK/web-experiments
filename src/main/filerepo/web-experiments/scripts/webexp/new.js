@@ -27,7 +27,7 @@ define(function (require) {
                 if (view_state.indexOf("intro") !== -1) { // intro page per condition
 
                     if (page_condition === "webexp.config.pinning") {
-                        render_pinning_intro() // now: rendering icon view at the end of this intro
+                        render_pinning_intro()
                     } else {
                         render_no_pinning_intro()
                     }
@@ -93,9 +93,8 @@ define(function (require) {
             + 'Stelle dir dazu vor, du wirst am markierten Ort ausgesetzt und sollst nun die Strecken zu den anderen Orten auswendig '
             + 'wiederfinden. Du kannst dabei den direkten Weg querfeldein gehen und bist nicht auf Wege angewiesen.'
             + '<h4 class="image">Abbildung 1:</h4><img src="/de.akmiraketen.web-experiments/images/web_exp_pinning_badingen.png"></p>'
-            // + '<p class="textblock">Vor den zwei &Uuml;bungsdurchg&auml;ngen w&auml;hle bitte ein Icon aus welches du in den folgenden Aufgaben als Markierer einsetzen m&ouml;chtest.</p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#icon').html('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_filler_intro() })
     }
 
@@ -108,7 +107,7 @@ define(function (require) {
             + '<p class="textblock">Danach wirst du Rechenaufgaben gestellt bekommen und Sch&auml;tzungen hinsichtlich Richtung und Entfernung der Orte machen. '
             + 'Dazu wirst du gefragt, wie sicher du dir bei der Sch&auml;tzung warst.</p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#icon').html('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
             next.on('click', function (e) { render_filler_intro() })
     }
 

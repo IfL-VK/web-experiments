@@ -228,13 +228,15 @@ define(function (require) {
         d3.select('#map').attr('style', 'display:none;')
         d3.select('.filler').attr('style', 'display:block;')
         d3.select('.filler h1.task').text(a + '*' + b)
+        d3.select('.filler .button.next').on('click', function () {
+            handle_input()
+        })
         d3.select('.filler input').on('keyup', function () {
             if (d3.event.keyCode === 13) handle_input() // on  Enter
         })
         if (common.verbose) console.log("Initialized random multiplication ... ")
         //
         document.getElementById('ergebnis').focus()
-        set_next_link() // modifies "next" a href based respecting practice mode
         //
         function handle_input () {
             var ergebnis = document.getElementById('ergebnis').value
@@ -366,14 +368,6 @@ define(function (require) {
             if (typeof action_handler !== "undefined") action_handler() // run action
         }, milliseconds)
         if (common.verbose) console.log("  running timer for " +(milliseconds/1000)+ " seconds, then do: " + typeof action_handler)
-    }
-
-    function set_next_link () {
-        if (view_state.indexOf("pract") !== -1) {
-            d3.select('.filler a.next').attr('href', '/web-exp/pract/' + trialId + '/estimation')
-        } else {
-            d3.select('.filler a.next').attr('href', '/web-exp/trial/' + trialId + '/estimation')
-        }
     }
 
     function go_next() {
