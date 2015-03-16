@@ -148,9 +148,8 @@ define(function (require) {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
             tileLayer.addTo(map)
-        // add reference scale ..
         // uncomment the following linces to use bitmap map-files instead of tiles
-        /** if (fileName) {
+        if (fileName) {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
@@ -160,7 +159,7 @@ define(function (require) {
                 // imageBounds = [[map.getBounds().getNorth(), map.getBounds().getEast()], [map.getBounds().getSouth(), map.getBounds().getEast()]] // ###
                 imageBounds = L.latLngBounds(northEast, southWest)
             L.imageOverlay(imageUrl, imageBounds).addTo(map)
-        } **/
+        }
         if (common.debug) console.log("   init " + mapId + " config, viewport: " + map.getBounds(), mapConfig)
     }
 

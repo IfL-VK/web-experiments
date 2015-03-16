@@ -120,11 +120,11 @@ define(function (require) {
         })
         // .. set viewport by the corresponding map file configuration for this trial
         map.setView([centerLat, centerLng], zoomLevel)
-        var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.58740102/{z}/{x}/{y}.png?'
+        /** var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.58740102/{z}/{x}/{y}.png?'
                 + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
             })
-            tileLayer.addTo(map)
+            tileLayer.addTo(map) **/
         // ..
         if (blank_image_path) {
             var northEast = map.getBounds().getNorthEast()
