@@ -149,7 +149,7 @@ define(function (require) {
             })
             tileLayer.addTo(map)
         // uncomment the following linces to use bitmap map-files instead of tiles
-        if (fileName) {
+        if (fileName && fileName !== "") {
             var northEast = map.getBounds().getNorthEast()
             var southWest = map.getBounds().getSouthWest()
                 northEast.lat += 0.001
