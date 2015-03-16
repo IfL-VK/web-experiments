@@ -11,16 +11,16 @@
 - Magda/Malte: Karte zentriert auf dem Bildschirm darbieten (Aufloesung 1680 x 1050 Pixel) - ERLEDIGT (bitte prüfen ob richtig so)
 - Malte: Schaetzscreen bildschirmgroß darbieten, auch im Hintergrund der Instruktionsschrift - ERLEDIGT
 - Julia: Klarheit über die Groeße der Kartenausschnitte - ERLEDIGT
-- Magda/Malte: Rechenaufgabe: 30 Sekunden Timer (und bis Ablauf des Timers neue Rechenaufgaben anzeigen) - TODO
+- Magda/Malte: Rechenaufgabe: 30 Sekunden Timer (und bis Ablauf des Timers neue Rechenaufgaben anzeigen) - ERLEDIGT
 - Magda/Malte: Pinwahl forcieren - ERLEDIGT
 - Malte: Balken auf volle Kartenhoehe - ERLEDIGT
-- Magda: Schriftart anpassen (serifenlos, schwarz, nicht kursiv, nicht fett) - TODO
-- Magda: Schrift groeßer - TODO
+- Magda: Schriftart anpassen (serifenlos, schwarz, nicht kursiv, nicht fett) - ERLEDIGT (bitte nochmal überprüfen)
+- Magda: Schrift groeßer - IN PROGRESS (bitte nochmal überprüfen)
 - Magda : Bilder aus Mapbox exportieren und spiegeln - ERLEDIGT
 - Malte: "Übungsmodus"-Text aus dem Übungsmodus entfernen - ERLEDIGT
 - Malte: Reporting überareiten - ERLEDIGT
-- - Magde/Malte: Umorientierung des "Pin Auswahl" Blocks an den Anleitungstext zum Pinning anhängen (weg mit der Pin-Auswahl vom Willkommens-/Login-Screen) - TODO
-- Magda/Malte: Die unspezifische Anleitung zum Experiment an die jetzige Stelle des "Pin Auswahl"-Blocks (direkt an den Wilkommens-/Login-Screen) anhängen - TODO
+- - Magde/Malte: Umorientierung des "Pin Auswahl" Blocks an den Anleitungstext zum Pinning anhängen (weg mit der Pin-Auswahl vom Willkommens-/Login-Screen) - ERLEDIGT (an den Start-Button zum Pinning-Block angehängt)
+- Magda/Malte: Die unspezifische Anleitung zum Experiment an die jetzige Stelle des "Pin Auswahl"-Blocks (direkt an den Wilkommens-/Login-Screen) anhängen - ERLEDIGT (es gab leider keine "unspezifische Anleitung")
 
 ### Unkritische, sonstige Aufgaben
 
