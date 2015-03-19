@@ -362,7 +362,7 @@
             "uri": "de.akmiraketen.webexp.trial_seen_edge",
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
-                {
+                { ### as of version 0.2 this composite is never used
                     "child_type_uri": "de.akmiraketen.webexp.trial_report",
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",

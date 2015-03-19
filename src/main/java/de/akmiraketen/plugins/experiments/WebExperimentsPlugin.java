@@ -196,37 +196,28 @@ public class WebExperimentsPlugin extends PluginActivator {
     @GET
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
-    public InputStream getNewScreen() {
-        return getStaticResource("web/new.html");
+    public InputStream getWelcomeScreen() {
+        return getStaticResource("web/welcome.html");
     }
     
     @GET
     @Path("/icon")
     @Produces(MediaType.TEXT_HTML)
-    public InputStream getNewIconView() {
-        return getStaticResource("web/new.html");
-    }
-    
-    @GET
-    @Path("/welcome")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getNewWelcomeView() {
-        return getStaticResource("web/new.html");
+    public InputStream getMarkerView() {
+        return getStaticResource("web/welcome.html");
     }
     
     @GET
     @Path("/finish")
     @Produces(MediaType.TEXT_HTML)
-    public InputStream getNewFinishView() {
-        return getStaticResource("web/new.html");
+    public InputStream getFinishView() {
+        return getStaticResource("web/welcome.html");
     }
     
     @GET    
     @Path("/trial/{trialId}/pinning")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getTrialPinningScreen(@PathParam("trialId") String trialId) {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/pinning.html");
     }
     
@@ -234,8 +225,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/{trialId}/estimation")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getTrialEstimationScreen(@PathParam("trialId") String trialId) {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/estimation.html");
     }
 
@@ -243,8 +232,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/pract/{trialId}/pinning")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getPracticeTrialPinningScreen(@PathParam("trialId") String trialId) {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/pinning.html");
     }
 
@@ -252,8 +239,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/pract/{trialId}/estimation")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getPracticeTrialEstimationScreen(@PathParam("trialId") String trialId) {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/estimation.html");
     }
 
@@ -261,8 +246,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/intro/{trialId}")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getIntroductionScreen(@PathParam("trialId") String trialId) {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/introduction.html");
     }
 
@@ -270,8 +253,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/pause/{trialId}")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getPauseScreen() {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/pause.html");
     }
 
@@ -279,8 +260,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/start/{trialId}")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getStartScreen() {
-        // ### use templates to preset:
-        // setViewParameter(trialId)
         return getStaticResource("web/start.html");
     }
 
@@ -918,19 +897,14 @@ public class WebExperimentsPlugin extends PluginActivator {
         // for 1000 do acService.createUser()
         log.info("Setting up some new users for Web Experiments");
         DeepaMehtaTransaction tx = dms.beginTx();
-        String conditionValue = TRIAL_CONDITION_A;
         try {
             for (int i=1; i<=200; i++) {
                 String username = "VP "+ i;
                 if (isUsernameAvailable(username)) {
-                    if (i > 100) conditionValue = TRIAL_CONDITION_B;
                     Credentials cred = new Credentials(username, "");
                     ChildTopicsModel userAccount = new ChildTopicsModel()
                         .put(USERNAME_TYPE_URI, cred.username)
-                        .put(USER_PASSWORD_TYPE_URI, cred.password)
-                        .putRef(TRIAL_CONDITION_TYPE, conditionValue)
-                        .put(TRIAL_CONDITION_BLOCKS_SIZE_TYPE, 15);
-                    // ### set user account to "Blocked" until verified (introduce this in a new migration)
+                        .put(USER_PASSWORD_TYPE_URI, cred.password);
                     TopicModel userModel = new TopicModel(USER_ACCOUNT_TYPE_URI, userAccount);
                     Topic vpAccount = dms.createTopic(userModel);
                     Topic usernameTopic = vpAccount.loadChildTopics(USERNAME_TYPE_URI)
@@ -990,7 +964,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
     
     private boolean isUsernameAvailable(String username) {
-        // fixme: framework should also allow us to query case insensitve for a username
         Topic userName = dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
         return (userName == null);
     }
@@ -1009,7 +982,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 assoc.delete();
             }
         }
-        // before setting a new one (and make sure there is always just one)
+        // creating new marker selection for given username
         createSymbolUserAssignment(relatedIconTopic, account);
     }
     

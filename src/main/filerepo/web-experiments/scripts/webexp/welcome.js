@@ -1,10 +1,10 @@
 
-// The main module called by/for the "new" page.
+// The main module called by/for the "welcome" page.
 
 define(function (require) {
 
-    var newCtrl     = require('./controller/newCtrl')
-    var newModel    = require('./model/newModel')
+    var newCtrl     = require('./controller/welcomeCtrl')
+    var newModel    = require('./model/welcomeModel')
     var common      = require('common')
 
     var view_state  = "" // values may be "", "finish", "welcome", "pause" or "icon", "intro"
@@ -143,7 +143,7 @@ define(function (require) {
             + '<p class="textblock">Insgesamt bekommst du zwei Bl&ouml;cke mit je 15 Karten pr&auml;sentiert.<br/>Zum Abschluss bitten wir dich, noch einen Fragebogen auszuf&uuml;llen.</p>'
             + '<p class="textblock">Bevor das eigentliche Experiment startet, bekommst du zun&auml;chst zwei &Uuml;bungsdurchg&auml;nge pr&auml;sentiert. '
             + 'In den zwei &Uuml;bungsdurchg&auml;ngen vor den beiden Bl&ouml;cken, erh&auml;lst du R&uuml;ckmeldung dar&uuml;ber, wie genau deine Sch&auml;tzung war.</p>'
-            + '<br/><br/><br/><br/>')
+            + '<br/><br/>')
             d3.select('.content').append('a').attr('class', 'button').attr('href', '/web-exp/nextpage').text('Ok')
     }
 
@@ -153,7 +153,7 @@ define(function (require) {
         set_task_description("Willkommen zu unserem Experiment")
         var content = '<p class="textblock">Das Experiment dauert ca. 2 Stunden und gliedert sich in zwei Bl&ouml;cke. '
             + 'In beiden Bl&ouml;cken wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
-            + 'um danach zur abgebildeten Landschaft Fragen zu beantworten. </p><br/>'
+            + 'um danach zur abgebildeten Landschaft Fragen zu beantworten.</p>'
             + '<p class="wichtig">Bitte f&uuml;hre das Experiment konzentriert und gewissenhaft durch!<p><br/>'
         set_page_content(content)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
@@ -224,11 +224,11 @@ define(function (require) {
     // Login View
 
     function render_start_session_dialog() {
-        d3.select('.title .username').text('!')
-        d3.select('.trials').remove()
+        d3.select('.title .username').text('')
+        d3.select('.title').text('')
         var content = d3.select('.content')
-            content.html('<p>Zum Starten des Experiments bitte eine ID f&uuml;r die Versuchsperson ' 
-                + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><input class="vp-id" type="text" '
+            content.html('<p class="textblock">Zum Starten des Experiments bitte eine ID f&uuml;r die Versuchsperson '
+                + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><br/><input class="vp-id" type="text" '
                 + 'name="username" placeholder="VP <Nr>"><input type="button" value="OK" class="login-btn" '
                 + 'name="submit"></p>')
         content.select('.login-btn').on('click', do_auth)
@@ -241,7 +241,7 @@ define(function (require) {
         function do_auth() {
             var element = d3.select('input.vp-id')[0][0]
             newCtrl.startSession(element.value, function (){
-                window.location.href = '/web-exp/welcome'
+                window.location.reload()
             }, common.debug)
         }
     }

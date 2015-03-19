@@ -3,8 +3,8 @@
  *
  * DvEW Web Experiments DM 4 JavaScript Plugin
  * @author Malte Reißig (<m_reissig@ifl-leipzig.de>)
- * @website https://github.com/ifl-vk/web-exp
- * @version 0.0.1-SNAPSHOT
+ * @website https://github.com/mukil/web-experiments
+ * @version 0.0.2-SNAPSHOT
  *
  */
 
@@ -33,8 +33,16 @@
     function loadTrialConfig() {
 
         // Start to import the content of the just uploaded file
-        var status = dm4c.restc.request('GET', '/web-exp/trial/config/import/' + dm4c.selected_object.value)
-        console.log(status)
+        var status = dm4c.restc.request('GET', '/web-exp/trial/config/import/' + dm4c.selected_object.value, undefined, function (response){
+            console.log(status)
+            dm4c.show_topic(dm4c.selected_object, "show")
+        })
+        showSpinningWheel()
+        
+        function showSpinningWheel () {
+            $('#page-content').html('<img src="/de.akmiraketen.web-experiments/images/ajax-loader.gif" '
+                + ' class="webexp-loading" style="margin-top: 35%; margin-left: 45%;" />')
+        }
 
     }
 
@@ -47,11 +55,6 @@
         dm4c.add_listener("init", function() {
             console.log("Hello World! says our web-experiments plugin!")
         })
-
-        function showSpinningWheel () {
-            $('#page-content').html('<img src="/de.akmiraketen.web-experiments/images/ajax-loader.gif" '
-                + ' class="wikidata-loading" />')
-        }
 
     })
 
