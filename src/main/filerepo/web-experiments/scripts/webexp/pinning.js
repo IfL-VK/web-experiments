@@ -366,7 +366,7 @@ define(function (require) {
         setTimeout(function (e) {
             if (typeof action_handler !== "undefined") action_handler() // run action
         }, milliseconds)
-        if (common.verbose) console.log("  running timer for " +(milliseconds/1000)+ " seconds, then do: " + typeof action_handler)
+        if (common.verbose) console.log("  running timer for " +(milliseconds/1000)+ " seconds")
     }
 
     function go_next() {
@@ -396,7 +396,7 @@ define(function (require) {
     }
     
     function stop_reaction_interval(intervalId) {
-        if (common.verbose) console.log(" reaction time was: " + report.reaction_time)
+        if (common.debug) console.log(" reaction time was: " + report.reaction_time)
         clearInterval(intervalId)
     }
     

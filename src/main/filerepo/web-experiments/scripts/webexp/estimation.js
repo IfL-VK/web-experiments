@@ -246,7 +246,6 @@ define(function (require) {
     }
     
     function render_feedback_view () {
-        // 
         var ortA = model.getNameOfPlace(report.from_place_id)
         var ortB = model.getNameOfPlace(report.to_place_id)
         var title = 'Um von ' + ortA + ' nach ' + ortB + ' zu kommen, m&uuml;sstest du folgenderma&szlig;en gehen:'
