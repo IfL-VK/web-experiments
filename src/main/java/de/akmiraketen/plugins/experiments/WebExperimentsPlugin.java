@@ -428,7 +428,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(TRIAL_CONFIG_MEMO_SEC, values[15].trim()));
         // create topic
         Topic trialConfigTopic = dms.createTopic(trialConfig);
-        log.info(">>> Created new Trial Configuration: " + configUri + " (" + trialConfigTopic.getId() + ")");
+        log.info(">>> Created new Trial Configuration: " + configUri + " (" + trialConfigTopic.getId() + ") for \"" + trialMapId + "\" (Topic: "+map.getId()+")");
         createTrialConfigUserAssignment(trialConfigTopic, username);
     }
 
@@ -664,12 +664,12 @@ public class WebExperimentsPlugin extends PluginActivator {
             String vpId = username.getSimpleValue().toString();
             ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent",
                     "dm4.core.child", TRIAL_REPORT_URI, 0);
-            if (trialReports.getTotalCount() > 0) {
-                log.info("  Fetched " + trialReports.getTotalCount() + " written to DB for " + vpId);
-                for (RelatedTopic trialReport : trialReports.getItems()) {
+            ArrayList<RelatedTopic> sortedTrialReports = getAllTrialReportsSortedByURI(trialReports);
+            if (sortedTrialReports.size()> 0) {
+                log.info("  Fetched " + sortedTrialReports.size() + " written to DB for " + vpId);
+                for (RelatedTopic trialReport : sortedTrialReports) {
                     trialReport.loadChildTopics();
-                    String trialConfigId = trialReport.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id")
-                            .getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+                    String trialConfigId = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
                     if (trialConfigId.contains("trial")) {
                         //  ### we (yet) no differ in report between practice and trial || trialConfigId.contains("pract")
                         Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
@@ -814,6 +814,37 @@ public class WebExperimentsPlugin extends PluginActivator {
         return in_memory;
     }
     
+    private ArrayList<RelatedTopic> getAllTrialReportsSortedByURI(ResultList<RelatedTopic> all) {
+        // build up sortable collection of all result-items
+        ArrayList<RelatedTopic> in_memory = new ArrayList<RelatedTopic>();
+        for (RelatedTopic obj : all) {
+            in_memory.add(obj);
+        }
+        // sort all result-items
+        Collections.sort(in_memory, new Comparator<RelatedTopic>() {
+            public int compare(RelatedTopic t1, RelatedTopic t2) {
+                try {
+                    t1.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id");
+                    t2.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id");
+                    String trialConfigIdOne = t1.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+                    String trialConfigIdTwo = t2.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
+                    if (trialConfigIdOne.contains("trial") && trialConfigIdTwo.contains("trial")) {
+                        String one = trialConfigIdOne.substring(trialConfigIdOne.lastIndexOf("_") + 6);
+                        String two = trialConfigIdTwo.substring(trialConfigIdTwo.lastIndexOf("_") + 6);
+                        if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
+                        if ( Long.parseLong(one) > Long.parseLong(two)) return 1;
+                    }
+                } catch (Exception nfe) {
+                    log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
+                            + t2.getUri() + " nfe: " + nfe.getMessage());
+                    return 1;
+                }
+                return 1;
+            }
+        });
+        return in_memory;
+    }
+
     private long getNextUnseenTrialId(Topic username) {
         ResultList<RelatedTopic> all_trials = getAllUserTrialConfigs(username);
         ArrayList<RelatedTopic> sorted_trial_config_lines = getAllTrialsSortedByURI(all_trials);

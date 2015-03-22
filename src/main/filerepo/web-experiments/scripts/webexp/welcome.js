@@ -36,10 +36,7 @@ define(function (require) {
 
                 } else if (view_state.indexOf("start") !== -1) { // start page per condition
 
-                    if (page_condition === "webexp.config.pinning") {
-                        var next = d3.select('.content .button').attr('href', '#icon')
-                            next.on('click', function (e) { init_marker_selection_view() })
-                    }
+                    // do nothing here
 
                 }
 
