@@ -726,6 +726,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                            break;
                                         case 2:
                                             estFromName2 = getConfiguredPlaceName(fromPlace);
                                             estToName2 = getConfiguredPlaceName(toPlace);
@@ -734,6 +735,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                            break;
                                         case 3:
                                             estFromName3 = getConfiguredPlaceName(fromPlace);
                                             estToName3 = getConfiguredPlaceName(toPlace);
@@ -742,6 +744,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                            break;
                                         case 4:
                                             estFromName4 = getConfiguredPlaceName(fromPlace);
                                             estToName4 = getConfiguredPlaceName(toPlace);
@@ -750,6 +753,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                            break;
                                         case 5:
                                             estFromName5 = getConfiguredPlaceName(fromPlace);
                                             estToName5 = getConfiguredPlaceName(toPlace);
@@ -758,6 +762,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                             estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
                                             estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
                                             estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
+                                            break;
                                     }
                                 }
                             } catch (Exception e) {
