@@ -1,4 +1,3 @@
-
 package de.akmiraketen.plugins.experiments.model;
 
 import de.deepamehta.core.JSONEnabled;
@@ -8,8 +7,12 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 /**
+ * A simple and flexible web-application to conduct experiments on the
+ * perception and the processing of web-cartographies.
  *
- * @author malte
+ * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
+ * @website https://github.com/ifl-vk/web-exp
+ * @version 0.2-SNAPSHOT
  */
 public class ParticipantViewModel implements JSONEnabled {
     
@@ -77,6 +80,5 @@ public class ParticipantViewModel implements JSONEnabled {
             throw new RuntimeException(e);
         }
     }
-    
     
 }

@@ -12,7 +12,8 @@ For installation, please follow the instructions to:
 * Download a release of the `dm44-deepamehta-csv` [from here](http://download.deepamehta.de/dm44-deepamehta-csv-0.0.4.jar), place it on your hard-disk and register its  folder in the main deepamehta `pom.xml` (the one in your DeepaMehta home directory)
 * Clone this `web-experiments` repository (which is a dm4-plugin) onto your computer
 * Bild the `web-experiments` plugin through using `cd web-experiments` and `mvn clean package`<br/>
-* Register plugin: Enter the path to your newly created `target` folder (inside of your web-experiments folder) into the main deepamehta `pom.xml`, too (this time just append `/target` to your web-experiments path)
+* Register the `web-experiments` plugin:<br/>
+  Enter the path to your newly created `target` folder (inside of your web-experiments folder) into the main deepamehta `pom.xml`, too (this time just append `/target` to your web-experiments path)
 * Further change in the main deepamehta `pom.xml` the option/line called `dm4.filerepo.path` so that it points to our javascript source folder under `web-experiments/src/main/filerepo`
 * Now you are ready to start the platform with these two plugins
 
@@ -52,5 +53,7 @@ If no error dialog is shown your experiment configuration was loaded successfull
 At any given time there can be just one specific set of configuration files loaded into the application and the report depends on the settings configured. This means: Always generate a report before loading a new set of configuration files into the system.
 
 
-Author: Malte Reißig, 2014
+Author: Malte Reißig, 2014-2015
+Leibniz-Institut für L&auml;nderkunde e. V.
+
 

@@ -1,4 +1,3 @@
-
 package de.akmiraketen.plugins.experiments;
 
 import de.akmiraketen.plugins.experiments.model.ParticipantViewModel;
@@ -41,7 +40,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 
 import java.util.logging.Logger;
@@ -57,14 +55,13 @@ import org.codehaus.jettison.json.JSONObject;
 
 
 /**
- * A simple but flexible browser application to conduct experiments on the 
- * perception and the processing of media items.
+ * A simple and flexible web-application to conduct experiments on the
+ * perception and the processing of web-cartographies.
  *
- * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014
+ * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
  * @website https://github.com/ifl-vk/web-exp
  * @version 0.2-SNAPSHOT
  */
-
 @Path("/web-exp")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -93,7 +90,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String TRIAL_CONFIG_TYPE = "de.akmiraketen.webexp.trial_config";
     private static final String TRIAL_CONDITION_TYPE = "de.akmiraketen.webexp.trial_condition";
-    private static final String TRIAL_CONDITION_BLOCKS_SIZE_TYPE = "de.akmiraketen.webexp.trial_condition_block_size";
+    // private static final String TRIAL_CONDITION_BLOCKS_SIZE_TYPE = "de.akmiraketen.webexp.trial_condition_block_size";
     private static final String TRIAL_SEEN_EDGE_TYPE = "de.akmiraketen.webexp.trial_seen_edge";
     private static final String MARKER_CONFIG_EDGE_TYPE = "de.akmiraketen.webexp.config_marker_symbol";
 
@@ -156,10 +153,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
-
-    // ###
-    
-    private Random random = null;
     
     // --- Plugin Services
     
@@ -175,14 +168,13 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Override
     public void init() {
         log.info("INIT: Thanks for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
-        random = new Random();
     }
     
     @Override
     public void postInstall() {
-        log.info("POST-INSTALL: Initially creating some users for experiments " + WEB_EXPERIMENTS_VERSION);
+        log.info(" --- Initially creating some users for web-experiments " + WEB_EXPERIMENTS_VERSION);
         generateSomeUsers();
-        log.info("POST-INSTALL: Initially creating some folders for web-app " + WEB_EXPERIMENTS_VERSION);
+        log.info(" --- Initially creating the folders in the filerepo for web-experiments " + WEB_EXPERIMENTS_VERSION);
         String parentFolderName = "web-experiments";
         createFolderWithName(parentFolderName, null);
         createFolderWithName("symbols", parentFolderName);
@@ -390,7 +382,7 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
             return username;
         } catch (IOException ex) {
-            log.log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, "Could not import trial configuration fo user " + name, ex);
             return null;
         }
     }
@@ -486,7 +478,6 @@ public class WebExperimentsPlugin extends PluginActivator {
         if (trial_seen != null) {
             long nextTrialId = getNextUnseenTrialId(user);
             log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
-            // throw new WebApplicationException(new InvalidParameterException(), Status.BAD_REQUEST);
             return Response.ok(nextTrialId).build();
         }
         dms.createAssociation(new AssociationModel(TRIAL_SEEN_EDGE_TYPE,
@@ -581,8 +572,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(ESTIMATION_TIME_URI, estimationTime)
                 .put(ESTIMATED_DISTANCE_URI, "" + estimatedDistance) // stored as dm4.core.text
                 .put(ESTIMATION_NR_URI, estimation)
-                .put(ESTIMATION_DIFF_IN_DIRECTION, 0) // stored as dm4.core.text
-                .put(ESTIMATION_REAL_DISTANCE, 0) // stored as dm4.core.text
+                .put(ESTIMATION_DIFF_IN_DIRECTION, "0") // store as dm4.core.text
+                .put(ESTIMATION_REAL_DISTANCE, "0") // store as dm4.core.text
                 .put(ESTIMATION_CONFIDENCE, confidenceValue);
             TopicModel estimationModel = new TopicModel(ESTIMATION_REPORT_URI, values);
             // 4 assign new trial estimation report to trial report
@@ -591,20 +582,13 @@ public class WebExperimentsPlugin extends PluginActivator {
             // sanity check for the log s
             estimations = report.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
             log.info("NOW Trial report has " + estimations.size()+ " estimation reports associated.. ");
-            /** ChildTopicsModel reportModel = report.getChildTopics().getModel();
-                reportModel.add(ESTIMATION_REPORT_URI, estimationModel);
-            report.setChildTopics(reportModel); **/
+            // ### possible add reference to the report to the "TRIAL_SEEN_EDGE"
         } catch (JSONException e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to parse estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
-               500);
+            log.log(Level.SEVERE, "Failed to parse (and thus store) estimation data", e);
+            throw new RuntimeException("Parsing " + payload + " failed");
         } catch (InvalidParameterException ipe) {
-            throw new WebApplicationException(ipe, Response.Status.BAD_REQUEST);
-        } catch (Exception e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(e, 500);
+            log.log(Level.SEVERE, "Invalid Parameter", ipe);
+            throw new RuntimeException("Invalid Parameter");
         }
     }
 
@@ -634,14 +618,8 @@ public class WebExperimentsPlugin extends PluginActivator {
                 .put(COUNT_OUTSIDE_URI, countClickOutside);
             report.setChildTopics(values);
         } catch (JSONException e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to parse pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(new RuntimeException("Parsing " + payload + " failed"), 
-               500);
-        } catch (Exception e) {
-            // ### store estimation in trial report for user
-            log.warning("Failed to store pinning data: " +  e.getClass().toString() + ", " + e.getMessage());
-            throw new WebApplicationException(e, 500);
+            log.log(Level.SEVERE, "Failed to store estimation data: " +  e.getClass().toString() + ", " + e.getMessage(), e);
+            throw new RuntimeException("Parsing " + payload + " failed");
         }
     }
 
@@ -670,16 +648,15 @@ public class WebExperimentsPlugin extends PluginActivator {
                 for (RelatedTopic trialReport : sortedTrialReports) {
                     trialReport.loadChildTopics();
                     String trialConfigId = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    if (trialConfigId.contains("trial")) {
-                        //  ### we (yet) no differ in report between practice and trial || trialConfigId.contains("pract")
+                    if (trialConfigId.contains("trial")) { //  exluding from report the practice || trialConfigId.contains("pract")
                         Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
                         if (trialConfig != null) { // trial configuration could be loaded
-                            // General Info
+                            // Collect General Info on Trial
                             String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
                                     .getChildTopics().getString(TRIAL_CONDITION_TYPE);
                             String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
                                     .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
-                            // Pinning Data
+                            // Collect Pinning Data
                             String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
                                 .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
                             Topic placeConfig = getConfiguredPlace(placeToPinId);
@@ -698,7 +675,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                                 log.warning("No pinning data was recorded / could be accessed for trial config: "
                                         + trialConfigId + " for " + username.getSimpleValue());
                             }
-                            // Estimation Report Data
+                            // Collect Estimation Report Data
                             String estimation1 = "", realToScreen1 = "", estFromName1 = "", estToName1 = "";
                             int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
                             String estimation2 = "", realToScreen2 = "", estFromName2 = "", estToName2 = "";

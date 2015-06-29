@@ -13,8 +13,12 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 /**
+ * A simple and flexible web-application to conduct experiments on the
+ * perception and the processing of web-cartographies.
  *
- * @author malte
+ * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
+ * @website https://github.com/ifl-vk/web-exp
+ * @version 0.2-SNAPSHOT
  */
 public class TrialConfigViewModel implements JSONEnabled {
     
@@ -41,8 +45,8 @@ public class TrialConfigViewModel implements JSONEnabled {
     
     private final String TRIAL_MAP_CONFIG_ID = "de.akmiraketen.webexp.mapfile_config";
     
-    private final String PLACE_CONFIG = "de.akmiraketen.webexp.place_config";
-    private final String PLACE_ID = "de.akmiraketen.webexp.place_id";
+    // private final String PLACE_CONFIG = "de.akmiraketen.webexp.place_config";
+    // private final String PLACE_ID = "de.akmiraketen.webexp.place_id";
     
     public TrialConfigViewModel (Topic trialConfig, DeepaMehtaService dms) {
         this.dms = dms;
