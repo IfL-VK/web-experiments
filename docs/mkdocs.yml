@@ -1,0 +1,13 @@
+site_name: Web Exp Docs
+docs_dir: 'content'
+repo_url: https://github.com/mukil/web-experiments/
+repo_name: GitHub
+site_description: Web Experiments is a DeepaMehta 4 Plugin to conduct interactive experiments with web-based cartographies.
+site_author: Malte Reißig
+copyright: Leibniz Institute for Regional Geography, 2015
+pages:
+-  Usage: index.md
+-  Develop: development.md
+-  Screens: screens.md
+-  About: about.md
+## theme: readthedocs

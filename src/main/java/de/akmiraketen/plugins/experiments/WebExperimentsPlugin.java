@@ -179,7 +179,6 @@ public class WebExperimentsPlugin extends PluginActivator {
         createFolderWithName(parentFolderName, null);
         createFolderWithName("symbols", parentFolderName);
         createFolderWithName("maps", parentFolderName);
-        createFolderWithName("sessions", parentFolderName);
         createFolderWithName("scripts", parentFolderName);
     }
     
