@@ -5,7 +5,7 @@ This page describes how to setup the 'web-experiments' plugin as used by the IWM
 
 Here you can [download some slides](/examples/20150703-DvEW-Web-Experiments-Kurzvorstellung-Files-German.zip) presenting the basics of the application model and (in some graphics) the coherences between a _Trial configuration_ and an experiments _Timeline/Flow_.
 
-It's core functionality regarding a **trial/participant** is to provide (in the following order):<br/>
+Its core functionality regarding a **trial/participant** is to provide (in the following order):<br/>
 
 * load arbitrary web-maps/web-cartographies (bitmap, tile map service)
 * engage users to either _personalize_ or _not personalize_ a certain place during *memorization* of each map
@@ -13,8 +13,7 @@ It's core functionality regarding a **trial/participant** is to provide (in the 
 * record one-click *distance* and *direction estimations*
 * allow submission of a users *confidence* about each estimation
 
-
-It's feature set from the **experiment designer** perspective includes:
+Its feature set from the **experiment designer** perspective includes:
 
 * Loading and customizing all map media items through writing one _Map_ and one _Place_ configuration
 * Configuring various composition of trials and trial blocks *per-user* through writing a number of _Trial_ configurations
@@ -35,7 +34,28 @@ This web-application realizes a client-server architecture with all database-ope
 
 Please see this [standard installation guide](https://github.com/jri/deepamehta#3-install-deepamehta) for details on how to 
 * unzip and start the platform and 
-* install the two bundles/plugins.
+* install the two bundles/plugins
+
+**Alternatively**: You can download the whole platform and application **pre-configured with a demo experiment**. This [demo setup](https://github.com/mukil/web-experiments/tree/master/help) (download `web-exp-bundled-demo-0.2-SNAPSHOT.zip` from there) lets you run through an experiment as a participant. Doing the experiment gives you a great overview about our basic introductions, practice-trials, default markers and so on. This is the perfect choice if you just want to test drive the installation or need to replicate the research-environment.
+
+To start the preconfigured bundled you need to complete the following steps, after the [download](https://github.com/mukil/web-experiments/tree/master/help).
+
+* if not already installed, install **Java 6** or **7** on your operating system
+* unzip the bundle/-ziparchive
+* adjust the `dm4.filerepo.path` to the dm4-filerepo folder on your hard disk (which you just unzipped)
+* start it with the start-script named afer your operating system, e.g. `./deepamehta-linux.sh` on ubuntu
+* Open [http://localhost:8080/web-exp/] in your web-browser
+* Login as "VP 102", "VP 103", "VP 104" or "VP 105" to work through the experiment
+* Go to [http://localhost:8080/web-exp/report/generate](http://localhost:8080/web-exp/report/generate) to generate a full report
+
+#### Vital
+
+It is vital for the system to boot that you set a writeable `dm4.filerepo.path` if you install the system.
+
+* From source: The filerepo path is set in the main `pom.xml` of DeepaMehta
+* From binaries: The filerepo path is set in the `conf/config.properties` file
+
+If you choose to test-drive our pre-bundled application make sure to adapt the `dm4.filerepo.path` in conf/config.properties` to point to the directory (within the folder you just extracted) before you start the engine.
 
 ### Usage
 

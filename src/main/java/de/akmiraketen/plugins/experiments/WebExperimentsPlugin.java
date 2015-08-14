@@ -961,6 +961,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 try {
                     log.info("Folder does not exist!..");
                     fileService.createFolder(folderName, parent); // might throw permission denied error
+                    tx.success();
                 } catch (RuntimeException re) {
                     log.severe("Most probably DeepaMehta cant write to your filerepo, "
                             + "please check the filrepo configuration in the pom.xml");

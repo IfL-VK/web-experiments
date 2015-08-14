@@ -1,21 +1,21 @@
 webexp.config|de.akmiraketen.webexp.trial_map_id|de.akmiraketen.webexp.trial_map_filename|de.akmiraketen.webexp.trial_map_scale|de.akmiraketen.webexp.trial_map_center_lat|de.akmiraketen.webexp.trial_map_center_lng
-map1|#Map1| map1-export-1501-1666.png 	|13|52.620934|11.664503
-map2|#Map2| map2-export-1501-1666.png	|13|52.606592|11.739922
-map3|#Map3| map3-export-1501-1666.png 	|13|52.607158|11.541947
-map4|#Map4| map4-export-1501-1666.png 	|13|52.580314|11.451531
-map5|#Map5| map5-export-1501-1666.png	|13|52.424347|11.392086
-map6|#Map6| map1-export-1501-1666.png 	|13|52.620934|11.664503
-map7|#Map7| map2-export-1501-1666.png	|13|52.606592|11.739922
-map8|#Map8| map3-export-1501-1666.png 	|13|52.607158|11.541947
-map9|#Map9| map4-export-1501-1666.png 	|13|52.580314|11.451531
-map10|#Map10| map5-export-1501-1666.png	|13|52.424347|11.392086
-map11|#Map11| map1-invert-1501-1666.png 	|13|52.620934|11.664503
-map12|#Map12| map2-invert-1501-1666.png	|13|52.606592|11.739922
-map13|#Map13| map3-invert-1501-1666.png 	|13|52.607158|11.541947
-map14|#Map14| map4-invert-1501-1666.png 	|13|52.580314|11.451531
-map15|#Map15| map5-invert-1501-1666.png	|13|52.424347|11.392086
-map16|#Map16| map1-invert-1501-1666.png 	|13|52.620934|11.664503
-map17|#Map17| map2-invert-1501-1666.png	|13|52.606592|11.739922
-map18|#Map18| map3-invert-1501-1666.png 	|13|52.607158|11.541947
-map19|#Map19| map4-invert-1501-1666.png 	|13|52.580314|11.451531
-map20|#Map20| map5-invert-1501-1666.png	|13|52.424347|11.392086
+map1|#Map1|     |13|52.620934|11.664503
+map2|#Map2|     |13|52.606592|11.739922
+map3|#Map3|     |13|52.607158|11.541947
+map4|#Map4|     |13|52.580314|11.451531
+map5|#Map5|     |13|52.424347|11.392086
+map6|#Map6|     |13|52.620934|11.664503
+map7|#Map7|     |13|52.606592|11.739922
+map8|#Map8|     |13|52.607158|11.541947
+map9|#Map9|     |13|52.580314|11.451531
+map10|#Map10|   |13|52.424347|11.392086
+map11|#Map11| map1-invert-1501-1666.png |   |   |
+map12|#Map12|   |13|52.606592|11.739922
+map13|#Map13|   |13|52.607158|11.541947
+map14|#Map14|   |13|52.580314|11.451531
+map15|#Map15|   |13|52.424347|11.392086
+map16|#Map16|   |13|52.620934|11.664503
+map17|#Map17|   |13|52.606592|11.739922
+map18|#Map18|   |13|52.607158|11.541947
+map19|#Map19|   |13|52.580314|11.451531
+map20|#Map20|   |13|52.424347|11.392086

@@ -60,9 +60,11 @@ The server side architecture is easily extendable through writing a Java method 
 
 The client's architecture is based on the [RequireJS Multi-Page](https://github.com/requirejs/example-multipage) module and has overall four pages.
 
+* `welcome.js`: handles most text, image (all DOM) manipulations for "introduction.html", "pause.html", "start.html", "welcome.html" in _two conditions_
+* `pinning.js`: handles "pinning.html" in _two conditions_, including the mathematical filler-task
+* `estimation.js`: handles "estimation.html" including submission of certainty-values/ratings
+
 The REST-Client and all DOM manipulations are implemented with the help of [D3JS](http://www.d3js.org).
 
 The map component is a basic [LeafleftJS](http://www.leafletjs.com) integration.
-
-.. (to be written).
 

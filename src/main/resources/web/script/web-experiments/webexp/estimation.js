@@ -74,7 +74,7 @@ define(function (require) {
                 check_places_for_estimation_configuration(fromPlaceCoordinates, toPlaceName)
 
                 // 2.1.4 initialize leaflet container and task description according to map configuration
-                initialize_map("Trial1/Blank-Karte.png", fromPlaceCoordinates)
+                initialize_map("Blank-Karte.png", fromPlaceCoordinates)
                 init_task_description(report.from_place_id, report.to_place_id)
 
                 // 2.1.5 init pinning according to configured trial condition

@@ -143,6 +143,7 @@ define(function (require) {
         })
         // .. set viewport by the corresponding map file configuration for this trial
         map.setView([centerLat, centerLng], zoomLevel)
+        // ### make the mapbox style id configurable
         var tileLayer = L.tileLayer('http://api.tiles.mapbox.com/v4/malle.58740102/{z}/{x}/{y}.png?'
                 + 'access_token=pk.eyJ1IjoibWFsbGUiLCJhIjoiRDZkTFJOTSJ9.6tEtxWpZ_mUwVCyjWVw9MQ ', {
                 attribution: '&copy; Mapbox &amp; OpenStreetMap</a> contributors'
