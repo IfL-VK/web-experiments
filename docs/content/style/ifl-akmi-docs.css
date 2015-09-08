@@ -14,25 +14,35 @@
     color: #005EA8;
 }
 
-
+footer p a,
 .nav li a,
 h4,
 a {
     color: #005EA8;
+    text-decoration: none;
+}
+
+footer p a:hover {
+    color: #005EA8;
+    text-decoration: underline;
 }
 
 p a,
 li a {
-    color: #97BF0D;
-    text-decoration: underline #ffffff;
+    color: #ED8C00;
 }
 
 p a:hover,
 li a:hover {
-    color: #97BF0D;
-    text-decoration: underline #005EA8;
+    color: #ED8C00;
 }
 
+.hljs-keyword,
+.hljs-built_in {
+    color: #ED8C00;
+}
+
+.hljs,
 pre,
 code {
     color: #ED8C00;
