@@ -1,4 +1,0 @@
-webexp.config   | de.akmiraketen.webexp.trial_map_id    | de.akmiraketen.webexp.trial_map_filename  | de.akmiraketen.webexp.trial_map_scale | de.akmiraketen.webexp.trial_map_center_lat    | de.akmiraketen.webexp.trial_map_center_lng 
-map1          | #Map1                                   | Trial1/Karte-mit-selfmade-Labels.png      | 12                                    | 52.955304                              | 8.326077
-map2          | #Map2                                   | Trial1/Karte-mit-selfmade-Labels.png      | 12                                    | 51.123123                              | 8.123123
-map3          | #Map3                                   | Trial1/Karte-mit-selfmade-Labels.png      | 12                                    | 51.123123                              | 8.123123
