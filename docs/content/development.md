@@ -49,22 +49,37 @@ Additional, for a quicker JS/HTML **save/refresh** development turnaround:
 
 Please find all the details about how to set-up a basic experiment at [this page](/).
 
+### Code Overview
 
-### Server Side Development
+#### Server Side Development
 
 The server side architecture is easily extendable through writing a Java method and annotating it (like the others) using JAX-RS. Hot-deployment of your new java-code happens automatically after using the `mvn clean package` command for building the plugin.
 
-.. (to be continued).
+It is written in Java (1000 loc) responsible to:
+ * calculate the routes to the respective AJAX multi-page app per user and per configuration and
+ * for exposing important parts of the the storage layer (managing and loading trials and sending trial reports) via JAX-RS, HTTP and JSON.
 
-### Client Side Development
+#### Client Side Development
 
 The client's architecture is based on the [RequireJS Multi-Page](https://github.com/requirejs/example-multipage) module and has overall four pages.
 
-* `welcome.js`: handles most text, image (all DOM) manipulations for "introduction.html", "pause.html", "start.html", "welcome.html" in _two conditions_
-* `pinning.js`: handles "pinning.html" in _two conditions_, including the mathematical filler-task
-* `estimation.js`: handles "estimation.html" including submission of certainty-values/ratings
+ * *welcomePage*: Handles most text screens, more specifically all trials of type _intro_, _start_, _pause_, _welcome_ and _finish_<br/>
+   Does this always in respect to the _Trial condition_, because, e.g. the _intro_ differs for "Pinning" and "No Pinning" and the _start_ for "Pinning" serves a marker selection dialog
+ * *pinningPage*: Handles the first part of every _Trial_ (also a pinning trial in so called "Practice Mode") in both "Conditions" (=Pinning/No Pinning),<br/>
+   * memorizing a _Map_ with the pre-configured condition: "Pinning" or "No Pinning"
+   * performing intermediary tasks: curerntly users need to solve random multiplication task for 30 secs
+ * *estimationPage*: Handles the second part of every _Trial_ with no difference regarding the "Trial Condition" (but also estimations in the so called "Pracice Mode"). Especially this page provides <br/>
+   * five _estimations_ for **direction** and **distance** between the two configured places
+   * followed by an input dialog for a _confidence_ rating<br/>
+   with which users are asked to express a numeric score concerning their confidence in their latest estimation
 
-The REST-Client and all DOM manipulations are implemented with the help of [D3JS](http://www.d3js.org).
+The client side code comes with a rest client (written in D3) to communicate with the applications REST API. All DOM manipulations are implemented with the help of [D3JS](http://www.d3js.org) as well.
 
 The map component is a basic [LeafleftJS](http://www.leafletjs.com) integration.
+
+There are two _basic_ configuration files (CSV) to set up the base for any experiment, _Places Config_ and _Map File Config_.
+
+There is one _advanced_ configuraton file (CSV) setting up the combination of Places and Maps per user/participant. It is the so called _Trial Config_ which is loaded per "Username" and helps the application to determine which page each user sees next.
+
+To get started with adapting, extending or customizing this applicatino please start with the corresponding [PluginDevelopmentGuide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide) of DeepaMehta 4.
 

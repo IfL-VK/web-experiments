@@ -67,6 +67,7 @@ Please log in to the [webclient](http://localhost:8080/de.deepamehta.webclient) 
 2. Place names
 3. Trials
 
+If you installed the application on a web server and get an "Access denied" message, please adjust the network mask, see the first list item under [additional system configuration](/web-experiments/development/#additional-system-configuration).
 
 ### Configuration
 

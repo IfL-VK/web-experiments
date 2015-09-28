@@ -262,7 +262,6 @@ public class WebExperimentsPlugin extends PluginActivator {
      * 
      * @return  List of FileItems in JSON
      */
-    
     @GET
     @Path("/symbol/all")
     @Transactional
@@ -298,7 +297,6 @@ public class WebExperimentsPlugin extends PluginActivator {
      * @param topicId   long value id of file topic
      * @return  related File topic
      */
-    
     @GET
     @Path("/symbol/choose/{topicId}")
     @Transactional
@@ -482,7 +480,9 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/trial/{trialId}/seen")
     @Transactional
     public Response doMarkTrialAsSeen(@PathParam("trialId") long trialId) {
+        // 1) get current username by http session (or throw a 401)
         Topic user = getRequestingUsername();
+        // ..
         Association trial_seen = user.getAssociation(TRIAL_SEEN_EDGE_TYPE, 
                 ROLE_DEFAULT, ROLE_DEFAULT, trialId);
         if (trial_seen != null) {
@@ -496,10 +496,17 @@ public class WebExperimentsPlugin extends PluginActivator {
         return Response.ok(OK_NR).build();
     }
 
+    /**
+     * Since each estimation part of current trials is composed of five estimations
+     * we herewith count the number of already posted estimations per user and trial
+     * to identify the next one (until five estimations have been posted).
+     */
     @GET
     @Path("/estimation/next/{trialId}")
     public Response getNextTrialEstimationNr(@PathParam("trialId") long id) {
+        // 1) get current username by http session (or throw a 401)
         Topic user = getRequestingUsername();
+        // 2) load trial report for trial config and and count the number of the currently assigned estimation reports.
         String trialConfigUri = dms.getTopic(id).getUri();
         log.info("Fetching Trial Report for Trial: " + trialConfigUri + " and " + user.getSimpleValue());
         ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
@@ -607,6 +614,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     public void storePinningData(String payload, @PathParam("trialId") long trialId) {
+        // 1) get current username by http session (or throw a 401)
         Topic user = getRequestingUsername();
         try {
             // 1 Parse data of POST request
@@ -633,11 +641,19 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
 
+    /**
+     * An implementation to generate a CSV report containing all trial report (usage data) for all participants
+     * which have completed some trials data as a response to a HTTP GET request.
+     * @return String   The full contents of a CSV usage report.
+     */
     @GET
     @Path("/report/generate")
     @Transactional
     @Produces(MediaType.TEXT_PLAIN)
     public String doGenerateCompleteReport() {
+        // 1) check for logged in user (or throw a 401)
+        getRequestingUsername();
+        // 2) gather all reports from the db
         StringBuilder report = new StringBuilder();
         ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
         report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
