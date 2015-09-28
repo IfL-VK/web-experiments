@@ -1,0 +1,18 @@
+webexp.config|de.akmiraketen.webexp.trial_name|de.akmiraketen.webexp.trial_map_id|de.akmiraketen.webexp.trial_condition|de.akmiraketen.webexp.trial_place_to_pin|de.akmiraketen.webexp.trial_place_from_1|de.akmiraketen.webexp.trial_place_to_1|de.akmiraketen.webexp.trial_place_from_2|de.akmiraketen.webexp.trial_place_to_2|de.akmiraketen.webexp.trial_place_from_3|de.akmiraketen.webexp.trial_place_to_3|de.akmiraketen.webexp.trial_place_from_4|de.akmiraketen.webexp.trial_place_to_4|de.akmiraketen.webexp.trial_place_from_5|de.akmiraketen.webexp.trial_place_to_5|de.akmiraketen.webexp.trial_memo_sec
+intro10|Intro 1|#Map1|No Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+pract20|Practice 1|#Map4|No Pinning|16|19|20|18|17|16|19|20|18|17|16|60
+pract30|Practice 2|#Map5|No Pinning|22|24|21|22|25|25|24|21|23|23|22|60
+start40|Start Btn|#Map1|No Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+trial50||#Map3|No Pinning|13|13|15|15|12|14|13|12|11|11|14|60
+trial60||#Map2|No Pinning|6|9|10|7|9|8|7|10|6|6|8|60
+break70|Pause 1|#Map1|No Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+trial80||#Map1|No Pinning|2|1|5|4|1|2|4|5|3|3|2|60
+break90|Pause 2|#Map1|Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+intro100|Intro 2|#Map1|Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+pract110|Practice 3|#Map14|Pinning|66|69|70|68|67|66|69|70|68|67|66|60
+pract120|Practice 4|#Map15|Pinning|72|74|71|72|75|75|74|71|73|73|72|60
+start130|Start Btn|#Map1|Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+trial140||#Map13|Pinning|63|63|65|65|62|64|63|62|61|61|64|60
+trial150||#Map12|Pinning|56|59|60|57|59|58|57|60|56|56|58|60
+break160|Pause 2|#Map1|Pinning|0|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1
+trial170||#Map11|Pinning|52|51|55|54|51|52|54|55|53|53|52|60
