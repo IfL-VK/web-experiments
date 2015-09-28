@@ -430,15 +430,26 @@ public class WebExperimentsPlugin extends PluginActivator {
         return new ParticipantViewModel(username, dms);
     }
 
+    /**
+     * Determines the next trial screen for a currently authenticated user and
+     * routes the request to the respective multi-page (type).
+     * TODO: Currently the page type is coded into the uri of each trial.
+     */
     @GET
     @Path("/nextpage")
     public Response getNextPage() throws URISyntaxException {
+        // 1) get current username by http session (or throw a 401)
         Topic user = getRequestingUsername();
+        // 2) get next trial config topic related to the user topic, discarding those related
+        // to the user via a "trial_seen_edge".
         long trialId = getNextUnseenTrialId(user);
+        // 2.1) If the particpant has seen all trials configured for her we redirect to our final screen.
         if (trialId == FAIL_NR) {
             log.info("Experiment finished, no configured trial left for requesting user");
             return Response.seeOther(new URI("/web-exp/finish")).build();
         }
+        // 2.2) If there is yet an "unseen" trial configured for the user, we load and redirect
+        // the request according to the "type".
         Topic trialConfig = dms.getTopic(trialId);
         if (trialConfig.getUri().contains("intro")) {
             // route to intro page
@@ -826,6 +837,11 @@ public class WebExperimentsPlugin extends PluginActivator {
         return in_memory;
     }
 
+    /**
+     * Iterates all trial configurations related to a specific user and gets the topic id of the first one
+     * (those are ordered by an ordinal number in their respective URI) without an association of type
+     * "de.akmiraketen.webexp.trial_seen_edge".
+     */
     private long getNextUnseenTrialId(Topic username) {
         ResultList<RelatedTopic> all_trials = getAllUserTrialConfigs(username);
         ArrayList<RelatedTopic> sorted_trial_config_lines = getAllTrialsSortedByURI(all_trials);
@@ -839,6 +855,11 @@ public class WebExperimentsPlugin extends PluginActivator {
         return FAIL_NR; // experiment finished > no unseen trial left
     }
 
+    /**
+     * Checks if a trial config topic related to the given user has an association of type
+     * "de.akmiraketen.webexp.trial_seen_edge".
+     * NOTE: This type of association must be manually created by the respective page-type (js, frontend developer).
+     */
     private boolean hasSeenTrial(Topic user, Topic trial) {
         Association trial_seen = trial.getAssociation(TRIAL_SEEN_EDGE_TYPE,
             ROLE_DEFAULT, ROLE_DEFAULT, user.getId());
