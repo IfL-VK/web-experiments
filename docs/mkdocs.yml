@@ -5,7 +5,7 @@ repo_name: GitHub
 extra_css: ['style/ifl-akmi-docs.css']
 site_description: Web Experiments is a DeepaMehta 4 Plugin to conduct interactive experiments with web-based cartographies.
 site_author: Malte Reißig
-copyright: 'This work is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/3.0/de/deed.en">Creative Commons Attribution 3.0 Germany License</a>, 2015<br/><br/><a href="http://www.ifl-leipzig.de"><img src="../examples/logo/IfL_Logo_pos_blau-rgb-correctweb.svg" title="Website: Leibniz Institute for Regional Geography, 2015" width="240"></a><br/><br/>'
+copyright: 'This work is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/3.0/de/deed.en">Creative Commons Attribution 3.0 Germany License</a>, 2015<br/><br/><a href="http://www.ifl-leipzig.de"><img src="/web-experiments/examples/logo/IfL_Logo_pos_blau-rgb-correctweb.svg" title="Website: Leibniz Institute for Regional Geography, 2015" width="240"></a><br/><br/>'
 pages:
 -  Usage: index.md
 -  Develop: development.md
