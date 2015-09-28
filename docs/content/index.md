@@ -36,17 +36,21 @@ Please see this [standard installation guide](https://github.com/jri/deepamehta#
 * unzip and start the platform and 
 * install the two bundles/plugins
 
-**Alternatively**: You can download the whole platform and application **pre-configured with a demo experiment**. This [demo setup](https://github.com/mukil/web-experiments/tree/master/help) (download `web-exp-bundled-demo-0.2-SNAPSHOT.zip` from there) lets you run through an experiment as a participant. Doing the experiment gives you a great overview about our basic introductions, practice-trials, default markers and so on. This is the perfect choice if you just want to test drive the installation or need to replicate the research-environment.
+### Demo Installation
+
+Alternatively you can download the whole platform and application **pre-configured with a demo experiment**. Just download an archive of this repository [through clicking here](https://github.com/mukil/web-experiments/archive/master.zip) and after extracting the contents to your hard disk just find the `web-exp-bundled-demo-0.2-SNAPSHOT.zip` (in the `/help` folder) and extract that as well. In that folder everything needed to run the application and please make sure you complete the following steps.
 
 To start the preconfigured bundled you need to complete the following steps, after the [download](https://github.com/mukil/web-experiments/tree/master/help).
 
 * if not already installed, install **Java 6** or **7** on your operating system
-* unzip the bundle/-ziparchive
+* unzip the bundle/-zip archive to your hard disk
 * adjust the `dm4.filerepo.path` to the dm4-filerepo folder on your hard disk (which you just unzipped)
 * start it with the start-script named afer your operating system, e.g. `./deepamehta-linux.sh` on ubuntu
-* Open [http://localhost:8080/web-exp/] in your web-browser
+* Open the [start screen](http://localhost:8080/web-exp/) in your web-browser
 * Login as "VP 102", "VP 103", "VP 104" or "VP 105" to work through the experiment
 * Go to [http://localhost:8080/web-exp/report/generate](http://localhost:8080/web-exp/report/generate) to generate a full report
+
+When using that package you can run through an experiment as a participant after just starting the engine. Doing the experiment by yourself gives you a great overview about our basic introductions, practice-trials, default markers and so on. This is the perfect choice if you just want to test drive the installation or if you came here to replicate our research-environment.
 
 #### Vital
 
