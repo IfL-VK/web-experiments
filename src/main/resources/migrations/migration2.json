@@ -1,4 +1,7 @@
 {
+
+    ### All types for reporting usage data of trials, plus the three edge-types.
+
     "topic_types": [
         {
             "value": "Trial Report: Config ID",
@@ -360,15 +363,7 @@
         {
             "value": "Trial Seen",
             "uri": "de.akmiraketen.webexp.trial_seen_edge",
-            "data_type_uri": "dm4.core.composite",
-            "assoc_defs": [
-                { ### as of version 0.2 this composite is never used
-                    "child_type_uri": "de.akmiraketen.webexp.trial_report",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                }
-            ],
+            "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",

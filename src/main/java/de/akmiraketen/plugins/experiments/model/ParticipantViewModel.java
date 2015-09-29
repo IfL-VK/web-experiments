@@ -10,8 +10,8 @@ import org.codehaus.jettison.json.JSONObject;
  * The view model class every client holds for the currently authenticated participant.
  *
  * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
- * @website https://github.com/ifl-vk/web-exp
- * @version 0.2-SNAPSHOT
+ * @website https://github.com/mukil/web-experiments
+ * @version 0.3-SNAPSHOT
  */
 public class ParticipantViewModel implements JSONEnabled {
     

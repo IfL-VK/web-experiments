@@ -1,4 +1,7 @@
 {
+
+    ### All types used for configuring maps, places and trials of an experiment.
+
     "topic_types": [
         {
             "value": "Trial Map ID",
@@ -216,12 +219,6 @@
                     "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
-                },
-                { ### as of version 0.2 this composite is never used
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_id",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.aggregation_def"
                 }
             ],
             "view_config_topics": [
