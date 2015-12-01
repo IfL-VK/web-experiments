@@ -70,7 +70,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     private Logger log = Logger.getLogger(getClass().getName());
 
     private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4";
-    private final String WEB_EXPERIMENTS_VERSION = "0.2-SNAPSHOT";
+    private final String WEB_EXPERIMENTS_VERSION = "0.3-SNAPSHOT";
     private final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
@@ -944,7 +944,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private void generateSomeUsers() {
         // for 1000 do acService.createUser()
-        log.info("Setting up some new users for Web Experiments");
+        log.info("### Setting up new users for Web Experiments");
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             for (int i=1; i<=200; i++) {
@@ -958,9 +958,14 @@ public class WebExperimentsPlugin extends PluginActivator {
                     Topic vpAccount = dms.createTopic(userModel);
                     Topic usernameTopic = vpAccount.loadChildTopics(USERNAME_TYPE_URI)
                             .getChildTopics().getTopic(USERNAME_TYPE_URI);
-                    workspaceService.assignToWorkspace(usernameTopic, workspaceService.getDefaultWorkspace().getId());
-                    setDefaultAdminACLEntries(vpAccount);
-                    log.info("Created user \"" + username + "\" for web-experiments.");
+                    if (usernameTopic != null && workspaceService.getDefaultWorkspace() != null) {
+                        workspaceService.assignToWorkspace(usernameTopic, workspaceService.getDefaultWorkspace().getId());
+                        setDefaultAdminACLEntries(vpAccount);
+                        log.info("Created user \"" + username + "\" for web-experiments.");
+                    } else {
+                        log.info("Could not create new user, topic username: " + username+ ", workspace:" +
+                                workspaceService.getDefaultWorkspace());
+                    }
                 } else {
                     log.info("DEBUG: Username is already taken ..");
                 }
