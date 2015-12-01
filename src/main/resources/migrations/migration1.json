@@ -66,7 +66,7 @@
         },
         {
             "value": "Screen Configuration",
-            "uri": "de.akmiraketen.webexp.screen_configuration",
+            "uri": "de.akmiraketen.screen_configuration",
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
                 {
@@ -82,7 +82,7 @@
                     "assoc_type_uri":         "dm4.core.aggregation_def"
                 },
                 {
-                    "child_type_uri":         "de.akmiraketen.screen_timeout",
+                    "child_type_uri":         "de.akmiraketen.screen_options",
                     "child_cardinality_uri":  "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri":         "dm4.core.composition_def"
