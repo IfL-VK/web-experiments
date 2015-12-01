@@ -1,27 +1,12 @@
 {
 
-    ### All types used for configuring maps, places and trials of an experiment.
+    ### A composite type used for mapping a configuration file to our database.
+    ### This allows pre- (and continous) import configs for all possible screens in an experiment txt-file.
 
     "topic_types": [
         {
-            "value": "Trial Map ID",
-            "uri": "de.akmiraketen.webexp.trial_map_id",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Map Center Latitude",
-            "uri": "de.akmiraketen.webexp.trial_map_center_lat",
+            "value": "Screen Template",
+            "uri": "de.akmiraketen.screen_template",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -35,8 +20,8 @@
             ]
         },
         {
-            "value": "Trial Map Center Longitude",
-            "uri": "de.akmiraketen.webexp.trial_map_center_lng",
+            "value": "Screen Condition",
+            "uri": "de.akmiraketen.screen_condition",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -50,8 +35,8 @@
             ]
         },
         {
-            "value": "Trial Map Zoom Level",
-            "uri": "de.akmiraketen.webexp.trial_map_scale",
+            "value": "Screen Options",
+            "uri": "de.akmiraketen.screen_options",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -65,9 +50,9 @@
             ]
         },
         {
-            "value": "Trial Map Filename",
-            "uri": "de.akmiraketen.webexp.trial_map_filename",
-            "data_type_uri": "dm4.core.text",
+            "value": "Screen Timeout (Seconds)",
+            "uri": "de.akmiraketen.screen_timeout",
+            "data_type_uri": "dm4.core.number",
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
@@ -80,145 +65,33 @@
             ]
         },
         {
-            "value": "Map File Config",
-            "uri": "de.akmiraketen.webexp.mapfile_config",
+            "value": "Screen Configuration",
+            "uri": "de.akmiraketen.webexp.screen_configuration",
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_id",
-                    "child_cardinality_uri": "dm4.core.one",
+                    "child_type_uri":         "de.akmiraketen.screen_template",
+                    "child_cardinality_uri":  "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.aggregation_def"
+                    "assoc_type_uri":         "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_filename",
-                    "child_cardinality_uri": "dm4.core.one",
+                    "child_type_uri":         "de.akmiraketen.screen_condition",
+                    "child_cardinality_uri":  "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
+                    "assoc_type_uri":         "dm4.core.aggregation_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_scale",
-                    "child_cardinality_uri": "dm4.core.one",
+                    "child_type_uri":         "de.akmiraketen.screen_timeout",
+                    "child_cardinality_uri":  "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
+                    "assoc_type_uri":         "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_center_lat",
-                    "child_cardinality_uri": "dm4.core.one",
+                    "child_type_uri":         "de.akmiraketen.screen_timeout",
+                    "child_cardinality_uri":  "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_center_lng",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                }
-            ],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": true,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.locked": false
-                    }
-                }
-            ],
-            "label_config": [ 
-                "de.akmiraketen.webexp.trial_map_id",
-                "de.akmiraketen.webexp.trial_map_filename"
-            ]
-        },
-        {
-            "value": "Place ID",
-            "uri": "de.akmiraketen.webexp.place_id",
-            "index_mode_uris": ["dm4.core.key"],
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place Name",
-            "uri": "de.akmiraketen.webexp.place_name",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place Latitude",
-            "uri": "de.akmiraketen.webexp.place_latitude",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place Longitude",
-            "uri": "de.akmiraketen.webexp.place_longitude",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place Config",
-            "uri": "de.akmiraketen.webexp.place_config",
-            "data_type_uri": "dm4.core.composite",
-            "assoc_defs": [
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.place_id",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.place_name",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.place_latitude",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.place_longitude",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
+                    "assoc_type_uri":         "dm4.core.composition_def"
                 }
             ],
             "view_config_topics": [
@@ -232,342 +105,37 @@
                 }
             ],
             "label_config": [
-                "de.akmiraketen.webexp.place_name",
-                "de.akmiraketen.webexp.place_id"
-            ]
-        },
-        {
-            "value": "Trial Name",
-            "uri": "de.akmiraketen.webexp.trial_name",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Condition",
-            "uri": "de.akmiraketen.webexp.trial_condition",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place to Pin",
-            "uri": "de.akmiraketen.webexp.trial_place_to_pin",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place From 1",
-            "uri": "de.akmiraketen.webexp.trial_place_from_1",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place To 1",
-            "uri": "de.akmiraketen.webexp.trial_place_to_1",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place From 2",
-            "uri": "de.akmiraketen.webexp.trial_place_from_2",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place To 2",
-            "uri": "de.akmiraketen.webexp.trial_place_to_2",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place From 3",
-            "uri": "de.akmiraketen.webexp.trial_place_from_3",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place To 3",
-            "uri": "de.akmiraketen.webexp.trial_place_to_3",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place From 4",
-            "uri": "de.akmiraketen.webexp.trial_place_from_4",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place To 4",
-            "uri": "de.akmiraketen.webexp.trial_place_to_4",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place From 5",
-            "uri": "de.akmiraketen.webexp.trial_place_from_5",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Place To 5",
-            "uri": "de.akmiraketen.webexp.trial_place_to_5",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Memorization Seconds",
-            "uri": "de.akmiraketen.webexp.trial_memo_sec",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Trial Config",
-            "uri": "de.akmiraketen.webexp.trial_config",
-            "data_type_uri": "dm4.core.composite",
-            "assoc_defs": [
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_name",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_condition",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.aggregation_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_pin",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_from_1",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_1",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_from_2",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_2",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_from_3",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_3",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_from_4",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_4",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_from_5",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_place_to_5",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_memo_sec",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "de.akmiraketen.webexp.trial_map_id",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.aggregation_def"
-                }
-            ],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": true,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.locked": false
-                    }
-                }
-            ],
-            "label_config": [ 
-                "de.akmiraketen.webexp.trial_name",
-                "de.akmiraketen.webexp.trial_condition"
+                "de.akmiraketen.screen_template",
+                "de.akmiraketen.screen_condition"
             ]
         }
     ],
-    "topics": [
+    "assoc_types": [
         {
-            "type_uri"  : "de.akmiraketen.webexp.trial_condition",
-            "uri"       : "webexp.config.pinning",
-            "value"     : "Pinning"
+            "value":            "Screen Seen",
+            "uri":              "de.akmiraketen.screen_seen",
+            "data_type_uri":    "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
         },
         {
-            "type_uri"  : "de.akmiraketen.webexp.trial_condition",
-            "uri"       : "webexp.config.no_pinning",
-            "value"     : "No Pinning"
+            "value":            "Active Configuration",
+            "uri":              "de.akmiraketen.active_configuration",
+            "data_type_uri":    "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#E59037"
+                    }
+                }
+            ]
         }
     ]
 }
