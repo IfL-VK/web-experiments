@@ -16,7 +16,7 @@ import org.codehaus.jettison.json.JSONObject;
  *
  * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
  * @website https://github.com/mukil/web-experiments
- * @version 0.34SNAPSHOT
+ * @version 0.4-SNAPSHOT
  */
 public class ScreenConfigViewModel implements JSONEnabled {
     
@@ -49,8 +49,8 @@ public class ScreenConfigViewModel implements JSONEnabled {
         return screenConfig.getSimpleValue().toString();
     }
 
-    public int getScreenTimeoutValue() {
-        return screenConfig.getChildTopics().getInt(SCREEN_TIMEOUT);
+    public String getScreenTimeoutValue() {
+        return screenConfig.getChildTopics().getString(SCREEN_TIMEOUT);
     }
     
     public JSONObject toJSON() {

@@ -29,6 +29,7 @@ import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,7 +47,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
 
 
 /**
@@ -244,6 +244,13 @@ public class WebExperimentsPlugin extends PluginActivator {
         return symbolFiles.toString();
     }
 
+    @GET
+    @Path("/participant")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ParticipantViewModel getParticipantViewModel() {
+        Topic username = getRequestingUsername();
+        return new ParticipantViewModel(username);
+    }
     
     /** 
      * Fetches all Screen Configurations currently loaded into the database.
@@ -258,9 +265,27 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     @GET
     @Path("/screen/{screenTopicId}")
-    public ScreenConfigViewModel getTrialConfigViewModel(@PathParam("screenTopicId") long id) {
-        Topic trial = dms.getTopic(id);
-        return new ScreenConfigViewModel(trial);
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getScreen(@PathParam("screenTopicId") long id) {
+        InputStream fileInput = null;
+        try {
+            Topic screenTopic = dms.getTopic(id);
+            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(screenTopic);
+            String templateFileName = screenConfig.getScreenTemplateName();
+            File screenTemplate = fileService.getFile(TEMPLATE_FOLDER + "/" + templateFileName);
+            fileInput = new FileInputStream(screenTemplate);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return fileInput;
+    }
+
+    @GET
+    @Path("/screen/{screenTopicId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ScreenConfigViewModel getScreenConfiguration(@PathParam("screenTopicId") long id) {
+        Topic screenTopic = dms.getTopic(id);
+        return new ScreenConfigViewModel(screenTopic);
     }
     
     /** @GET
@@ -352,13 +377,6 @@ public class WebExperimentsPlugin extends PluginActivator {
         log.info(">>> Created new Trial Configuration: " + configUri + " (" + trialConfigTopic.getId() + ") for \"" + trialMapId + "\" (Topic: "+map.getId()+")");
         createTrialConfigUserAssignment(trialConfigTopic, username);
     } **/
-
-    @GET
-    @Path("/participant")
-    public ParticipantViewModel getParticipantViewModel() {
-        Topic username = getRequestingUsername();
-        return new ParticipantViewModel(username, dms);
-    }
 
     /**
      * Determines the next trial screen for a currently authenticated user and

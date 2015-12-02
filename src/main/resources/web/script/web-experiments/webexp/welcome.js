@@ -50,7 +50,8 @@ define(function (require) {
             newCtrl.fetchParticipant(function (data) {
             
                 if (view_state === "welcome" || view_state === "") {
-                    
+
+                    console.log("Logged in, Hello!")
                     init_welcome_view()
                     
                 } else if (view_state === "finish") {
@@ -102,15 +103,12 @@ define(function (require) {
 
     // --- Welcome View
 
-    function init_welcome_view () {
+    function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock">Das Experiment dauert ca. 2 Stunden und gliedert sich in zwei Bl&ouml;cke. '
-            + 'In beiden Bl&ouml;cken wirst du verschiedene Landkarten sehen und dir diese einpr&auml;gen, '
-            + 'um danach zur abgebildeten Landschaft Fragen zu beantworten.</p>'
-            + '<p class="wichtig">Bitte f&uuml;hre das Experiment konzentriert und gewissenhaft durch!<p><br/>'
+        var content = '<p class="textblock">Klick auf \"weiter\" und los geht es.</p>'
         set_page_content(content)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
-            next.on('click', function (e) { render_go_to_intro() })
+            next.on('click', function (e) { window.document.location.assign("/experiment/screen/next") })
     }
 
     // --- General Intro View

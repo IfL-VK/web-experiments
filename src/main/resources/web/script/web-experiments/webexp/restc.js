@@ -99,38 +99,38 @@ define(['d3'], function (d3, require) {
         },
         fetchParticipant: function (handle, failure, debug) {
             if (debug) console.log(" restc: requesting participant ... ")
-            fetch('/web-exp/participant', handle, failure, true, debug)
+            fetch('/experiment/participant', handle, failure, true, debug)
         },
         fetchAllIcons: function (handle, debug) {
             // 
-            fetch('/web-exp/symbol/all', handle, undefined, true, debug)
+            fetch('/experiment/symbol/all', handle, undefined, true, debug)
         },
         fetchAllTrials: function (handle, debug) {
-            fetch('/web-exp/trial/all', handle, undefined, true, debug)
+            fetch('/experiment/trial/all', handle, undefined, true, debug)
         },
         fetchAllUnseenTrials: function (conditionUri, handle, debug) {
             // 
-            fetch('/web-exp/trial/unseen/' + conditionUri, handle, undefined, true, debug)
+            fetch('/experiment/trial/unseen/' + conditionUri, handle, undefined, true, debug)
         },
         fetchTrialConfig: function (trialId, handle, debug) {
             //
-            fetch('/web-exp/trial/' + trialId, handle, undefined, true, debug)
+            fetch('/experiment/trial/' + trialId, handle, undefined, true, debug)
         },
         fetchNextEstimationNr: function (trialId, handle, fail, debug) {
             //
-            fetch('/web-exp/estimation/next/' + trialId, handle, fail, true, debug)
+            fetch('/experiment/estimation/next/' + trialId, handle, fail, true, debug)
         },
         postEstimationReport: function (trialId, estimationNr, payload, handle, fail, debug) {
-            post('/web-exp/estimation/' + trialId + '/' + estimationNr, payload, handle, fail, false, debug)
+            post('/experiment/estimation/' + trialId + '/' + estimationNr, payload, handle, fail, false, debug)
         },
         postPinningReport: function (trialId, payload, handle, fail, debug) {
-            post('/web-exp/pinning/' + trialId, payload, handle, fail, false, debug)
+            post('/experiment/pinning/' + trialId, payload, handle, fail, false, debug)
         },
         doMarkTrialAsSeen: function (trialId, callback, fail) {
-            mark('/web-exp/trial/' + trialId + "/seen", callback, fail)
+            mark('/experiment/trial/' + trialId + "/seen", callback, fail)
         },
         doMarkIconPreference: function (fileTopicId, callback, fail) {
-            mark('/web-exp/symbol/choose/' + fileTopicId, callback, fail)
+            mark('/experiment/symbol/choose/' + fileTopicId, callback, fail)
         },
         startSession: function (id, handle, debug) {
             authenticate(id, "", handle, false, debug)
