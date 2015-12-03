@@ -48,10 +48,14 @@ define(function (require) {
         // --- Render welcome View or static page (namely finish + pause)
 
             newCtrl.fetchParticipant(function (data) {
-            
-                if (view_state === "welcome" || view_state === "") {
 
-                    console.log("Logged in, Hello!")
+                if (data.status == 204) { // API change: as of 0.4-SNAPSHOT
+                    // re-implemented response for anunauthenticated request
+                    render_start_session_dialog()
+                    throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
+
+                } else if (view_state === "welcome" || view_state === "" || view_state === "#") {
+
                     init_welcome_view()
                     
                 } else if (view_state === "finish") {
@@ -68,7 +72,7 @@ define(function (require) {
 
                 }
 
-            }, function (error) {
+            }, function (error) { // this should never be thrown as of 0.4-SNAPSHOT
                 render_start_session_dialog()
                 throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
             }, false)
@@ -105,9 +109,9 @@ define(function (require) {
 
     function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock">Klick auf \"weiter\" und los geht es.</p>'
+        var content = '<p class="textblock"></p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text('weiter')
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Ok, los geht's")
             next.on('click', function (e) { window.document.location.assign("/experiment/screen/next") })
     }
 

@@ -37,8 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
-
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
@@ -294,18 +292,18 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic user = getRequestingUsername();
         // 2) get next trial config topic related to the user topic, discarding those related
         // to the user via a "trial_seen_edge".
-        long trialId = getNextUnseenTrialId(user);
+        long screenTopicId = getNextUnseenScreenId(user);
         // 2.1) If the particpant has seen all trials configured for her we redirect to our final screen.
-        if (trialId == FAIL_NR) {
+        if (screenTopicId == FAIL_NR) {
             log.info("Experiment finished, no configured trial left for requesting user");
             return Response.seeOther(new URI("/experiment/finish")).build();
             // 2.2) If there is yet an "unseen" trial configured for the user, we load and redirect
             // the request according to the "type".
-        } else if (trialId != FAIL_NR){
-            Topic trialConfig = dms.getTopic(trialId);
-            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(trialConfig);
-            log.info("Should REDIRECT to screen " + screenConfig.getScreenTemplateName());
-            URI location = new URI("/experiment/screen/" + trialConfig.getId());
+        } else if (screenTopicId != FAIL_NR){
+            Topic configuration = dms.getTopic(screenTopicId);
+            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(configuration);
+            log.info("Should REDIRECT to screen " + screenConfig.getScreenTemplateName() + " at /experiment/screen/" + configuration.getId());
+            URI location = new URI("/experiment/screen/" + configuration.getId());
             return Response.seeOther(location).build();
         } else {
             return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
@@ -319,17 +317,19 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     /**
      * Iterates all trial configurations related to a specific user and gets the topic id of the first one
-     * (those are ordered by an ordinal number in their respective URI) without an association of type
-     * "de.akmiraketen.webexp.trial_seen_edge".
+     * (those are ordered by an ordinal number in their respective URI) with an association of type
+     * "de.akmiraketen.webexp.active_configuration" but without an "de.akmiraketen.webexp.screen_seen_edge".
      */
-    private long getNextUnseenTrialId(Topic username) {
-        ResultList<RelatedTopic> all_trials = getUsersScreens(username);
-        ArrayList<RelatedTopic> sorted_trial_config_lines = getScreenTopicsSortedByURI(all_trials);
-        Iterator<RelatedTopic> iterator = sorted_trial_config_lines.iterator();
+    private long getNextUnseenScreenId(Topic username) {
+        ResultList<RelatedTopic> screenConfigs = getActiveScreenConfigs(username);
+        log.info("Found " + screenConfigs.getSize() + " active configurations for " + username.getSimpleValue());
+        ArrayList<RelatedTopic> orderedScreenConfigs = getScreenTopicsSortedByURI(screenConfigs);
+        log.info("Ordered them for " + username);
+        Iterator<RelatedTopic> iterator = orderedScreenConfigs.iterator();
         while (iterator.hasNext()) {
-            RelatedTopic trialConfig = iterator.next();
-            if (!hasSeenTrial(username, trialConfig)) {
-                return trialConfig.getId();
+            RelatedTopic screenConfig = iterator.next();
+            if (!hasSeenScreen(username, screenConfig)) {
+                return screenConfig.getId();
             }
         }
         return FAIL_NR; // experiment finished > no unseen trial left
@@ -337,30 +337,37 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     /**
      * Checks if a trial config topic related to the given user has an association of type
-     * "de.akmiraketen.webexp.trial_seen_edge".
+     * "de.akmiraketen.webexp.screen_seen_edge".
      * NOTE: This type of association must be manually created by the respective page-type (js, frontend developer).
      */
-    private boolean hasSeenTrial(Topic user, Topic trial) {
-        Association trial_seen = trial.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, user.getId());
+    private boolean hasSeenScreen(Topic user, RelatedTopic trial) {
+        Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, trial.getId());
         return trial_seen != null;
     }
 
+    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic user) {
+        return user.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
+    }
+
     @GET
-    @Path("/screen/{trialId}/seen")
+    @Path("/screen/{screenConfigId}/seen")
     @Transactional
-    public Response doMarkScreenAsSeen(@PathParam("trialId") long trialId) {
+    public Response setScreenAsSeen(@PathParam("screenConfigId") long trialId) {
         // 1) get current username by http session (or throw a 401)
         Topic user = getRequestingUsername();
         // ..
         Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, trialId);
-        if (trial_seen != null) {
-            long nextTrialId = getNextUnseenTrialId(user);
+        if (trial_seen == null) {
+            dms.createAssociation(new AssociationModel(SCREEN_SEEN_EDGE,
+                new TopicRoleModel(user.getId(), "dm4.core.default"),
+                new TopicRoleModel(trialId, "dm4.core.default")));
+        } else {
+            log.info("Seen Edge: " + trial_seen.toJSON().toString());
+            long nextTrialId = getNextUnseenScreenId(user);
             log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
             return Response.ok(nextTrialId).build();
         }
-        dms.createAssociation(new AssociationModel(SCREEN_SEEN_EDGE,
-                new TopicRoleModel(user.getId(), "dm4.core.default"),
-                new TopicRoleModel(trialId, "dm4.core.default")));
+        log.info("### Set screen " + trialId + " as SEEN by username=" + user.getSimpleValue());
         return Response.ok(OK_NR).build();
     }
 
@@ -696,7 +703,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     private Topic getRequestingUsername() {
         String username = acService.getUsername();
         if (username == null || username.isEmpty()) {
-            throw new WebApplicationException(Status.UNAUTHORIZED);
+            throw new WebApplicationException(204);
         }
         return dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
     }
