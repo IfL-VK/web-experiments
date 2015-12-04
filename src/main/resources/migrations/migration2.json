@@ -1,64 +1,61 @@
 {
 
-    ### A type for gathering report data relating to Screen Configuration AND Users.
+    ### A type for gathering data on a users actions in a specific Screen Configuration.
 
     "topic_types": [
         {
-            "value":            "Screen Report: Config ID",
-            "uri":              "de.akmiraketen.screen_report_config_id",
+            "value":            "Action Name",
+            "uri":              "de.akmiraketen.action_name",
             "data_type_uri":    "dm4.core.text",
+            "index_mode_uris":  ["dm4.core.key"],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
+                        "dm4.webclient.searchable_as_unit": false
                     }
                 }
             ]
         },
         {
-            "value":            "Screen Report: Object ID",
-            "uri":              "de.akmiraketen.screen_report_object_id",
+            "value":            "Action Value",
+            "uri":              "de.akmiraketen.action_value",
             "data_type_uri":    "dm4.core.text",
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
+                        "dm4.webclient.searchable_as_unit": false
                     }
                 }
             ]
         },
         {
-            "value":            "Screen Report: Object Name",
-            "uri":              "de.akmiraketen.screen_report_object_name",
-            "data_type_uri":    "dm4.core.text",
-            "view_config_topics": [
+            "value":            "Screen Action",
+            "uri":              "de.akmiraketen.screen_action",
+            "data_type_uri":    "dm4.core.composite",
+            "assoc_defs": [
                 {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
-                    }
+                    "child_type_uri":           "de.akmiraketen.action_name",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "parent_cardinality_uri":   "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.aggregation_def"
+                },
+                {
+                    "child_type_uri":           "de.akmiraketen.action_value",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "parent_cardinality_uri":   "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 }
-            ]
-        },
-        {
-            "value":            "Screen Report: Value",
-            "uri":              "de.akmiraketen.screen_report_value",
-            "data_type_uri":    "dm4.core.text",
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1
+                        "dm4.webclient.searchable_as_unit": false
                     }
                 }
             ]
@@ -69,26 +66,14 @@
             "data_type_uri":    "dm4.core.composite",
             "assoc_defs": [
                 {
-                    "child_type_uri":           "de.akmiraketen.screen_report_config_id",
+                    "child_type_uri":           "de.akmiraketen.screen_configuration",
                     "child_cardinality_uri":    "dm4.core.one",
                     "parent_cardinality_uri":   "dm4.core.one",
-                    "assoc_type_uri":           "dm4.core.composition_def"
+                    "assoc_type_uri":           "dm4.core.aggregation_def"
                 },
                 {
-                    "child_type_uri":           "de.akmiraketen.screen_report_object_name",
-                    "child_cardinality_uri":    "dm4.core.one",
-                    "parent_cardinality_uri":   "dm4.core.one",
-                    "assoc_type_uri":           "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri":           "de.akmiraketen.screen_report_object_id",
-                    "child_cardinality_uri":    "dm4.core.one",
-                    "parent_cardinality_uri":   "dm4.core.one",
-                    "assoc_type_uri":           "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri":           "de.akmiraketen.screen_report_value",
-                    "child_cardinality_uri":    "dm4.core.one",
+                    "child_type_uri":           "de.akmiraketen.screen_action",
+                    "child_cardinality_uri":    "dm4.core.many",
                     "parent_cardinality_uri":   "dm4.core.one",
                     "assoc_type_uri":           "dm4.core.composition_def"
                 }
@@ -103,6 +88,58 @@
                     }
                 }
             ]
+        }
+    ],
+    "topics": [
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Add",
+            "uri":      "de.akmiraketen.add"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Edit",
+            "uri":      "de.akmiraketen.edit"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Select",
+            "uri":      "de.akmiraketen.select"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Drag",
+            "uri":      "de.akmiraketen.drag"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Doubleclick",
+            "uri":      "de.akmiraketen.doubleclick"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Click",
+            "uri":      "de.akmiraketen.click"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Scroll",
+            "uri":      "de.akmiraketen.scroll"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Zoom",
+            "uri":      "de.akmiraketen.zoom"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Like",
+            "uri":      "de.akmiraketen.like"
+        },
+        {
+            "type_uri": "de.akmiraketen.action_name",
+            "value":    "Dislike",
+            "uri":      "de.akmiraketen.dislike"
         }
     ]
 }
