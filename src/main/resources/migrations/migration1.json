@@ -111,6 +111,9 @@
         }
     ],
     "assoc_types": [
+
+        ### The Screen Seen edge is to be dropped.
+
         {
             "value":            "Screen Seen",
             "uri":              "de.akmiraketen.screen_seen",

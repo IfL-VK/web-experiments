@@ -298,15 +298,18 @@ public class WebExperimentsPlugin extends PluginActivator {
      * NOTE: This type of association must be manually created by the respective page-type (js, frontend developer).
      */
     private boolean hasSeenScreen(Topic user, long screenConfigId) {
-        Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, screenConfigId);
-        return trial_seen != null;
+        RelatedTopic screenReport = user.getRelatedTopic("dm4.core.association", ROLE_DEFAULT, ROLE_DEFAULT,
+                SCREEN_REPORT_TYPE);
+        return screenReport != null;
+        // Association trialSeen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, screenConfigId);
+        // return trialSeen != null;
     }
 
     private ResultList<RelatedTopic> getActiveScreenConfigs(Topic user) {
         return user.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
     }
 
-    @GET
+    /** @GET
     @Path("/screen/{screenConfigId}/seen")
     @Transactional
     public Response setScreenAsSeen(@PathParam("screenConfigId") long trialId) {
@@ -325,7 +328,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
         log.info("### Set screen " + trialId + " as SEEN by user=" + user.getSimpleValue());
         return Response.ok(OK_NR).build();
-    }
+    } **/
 
     /**
      * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
@@ -356,6 +359,8 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     /**
      * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
+     * Note: This write method is NOT SAFE for parallel requests (many WRITE operations may need access to the very same
+     * Screen Configuration Topic).
      **/
     @POST
     @Path("/report/action/{screenConfigId}")

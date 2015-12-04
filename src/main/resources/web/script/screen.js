@@ -63,7 +63,7 @@
         this.report = obj
     }
 
-    this.initReporting = function(event) {
+    this.startReport = function(event) {
         $.get('/experiment/report/start/' + screen.id, function(e, status) {
             // console.log("  initReport HTTP Status", status, "Response", e)
             if (e != -1) {
@@ -103,13 +103,13 @@
     }
 
     this.setScreenAsSeen = function() {
-        $.get('/experiment/screen/' + screen.id + '/seen', function(e) {
+        /** $.get('/experiment/screen/' + screen.id + '/seen', function(e) {
             if (e != -1) {
                 console.log("  Screen configuration SET " + screen.id + " as SEEN by Participant ", screen.participant)
             } else {
                 console.warn("Could NOT SET screen as SEEN by " + screen.participant)
             }
-        })
+        }) **/
     }
 
     this.restartExperiment = function() {
