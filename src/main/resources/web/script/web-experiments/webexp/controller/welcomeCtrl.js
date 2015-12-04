@@ -13,6 +13,10 @@ define(['./BaseCtrl'], function (BaseCtrl) {
         customCtrl.restc.fetchAllUnseenPinningTrials(handle, debug)
     }
 
+    customCtrl.logoutParticipant = function (handle, debug) {
+        customCtrl.restc.logoutParticipant(handle, debug)
+    }
+
     return customCtrl
 
 });

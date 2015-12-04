@@ -14,7 +14,6 @@ define(function (require) {
     function init_page () {
 
         view_state = common.parse_view_state_from_page()
-        if (common.verbose) console.log(" Page initialization => ", view_state)
 
         if (view_state.indexOf("intro") !== -1 || view_state.indexOf("start") !== -1) {
 
@@ -60,10 +59,9 @@ define(function (require) {
                     
                 } else if (view_state === "finish") {
 
-                    set_task_description('Das war\'s am PC')
-                    set_page_content('<p class="textblock">Die Aufgaben am PC hast du nun erfolgreich beendet.<br/>'
-                        + 'Bitte f&uuml;lle nun den Fragebogen auf deinem Tisch aus.<br/>'
-                        + 'Wende dich danach bitte leise an die Versuchsleitung.</p>')
+                    set_task_description('<br/>Danke!<br/><br/>')
+                    set_page_content('<a class="restart" href="#">Neustart</a>')
+                    d3.select('a.restart').on('click', restart_experiment)
 
                 } else if (view_state.indexOf("pause") !== -1) {
                     // is modellled as a trial config, too, so we need to mark it as seen
@@ -78,6 +76,11 @@ define(function (require) {
             }, false)
         }
 
+    }
+
+    function restart_experiment() {
+        newCtrl.logoutParticipant()
+        window.document.location.assign('/experiment/')
     }
 
     // -- Login View
@@ -109,9 +112,9 @@ define(function (require) {
 
     function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock"></p>'
+        var content = '<p class="textblock"><br/><br/></p>'
         set_page_content(content)
-        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Ok, los geht's")
+        var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Start")
             next.on('click', function (e) { window.document.location.assign("/experiment/screen/next") })
     }
 
@@ -254,7 +257,7 @@ define(function (require) {
                         if (common.debug) console.log("OK - Icon set", iconId) // ### render icon as silected
                         d3.select('.content a.button').attr('class', 'button')
                             .on('click', function (e) {
-                               window.location.href = '/web-exp/nextpage'
+                               window.location.assign('/experiment/next/screen')
                             })
                     }, function (error) {
                         console.warn("Fail - Icon preference could not be set!")

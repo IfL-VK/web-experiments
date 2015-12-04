@@ -30,6 +30,7 @@ import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -92,6 +93,9 @@ public class WebExperimentsPlugin extends PluginActivator {
     // -- Screen Report URIs
 
     private static final String SCREEN_REPORT_TYPE = "de.akmiraketen.screen_report";
+    private static final String SCREEN_ACTION_TYPE = "de.akmiraketen.screen_action";
+    private static final String SCREEN_ACTION_NAME_TYPE = "de.akmiraketen.action_name";
+    private static final String SCREEN_ACTION_VALUE_TYPE = "de.akmiraketen.action_value";
 
     // -- Definitions
 
@@ -117,7 +121,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     @Override
     public void init() {
-        log.info("### Thank your for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
+        log.info("### Thank you for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
     }
     
     @Override
@@ -142,66 +146,10 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
     
     @GET
-    @Path("/icon")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getMarkerView() {
-        return getStaticResource("web/welcome.html");
-    }
-    
-    @GET
     @Path("/finish")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getFinishView() {
         return getStaticResource("web/welcome.html");
-    }
-    
-    @GET    
-    @Path("/trial/{trialId}/pinning")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getTrialPinningScreen(@PathParam("trialId") String trialId) {
-        return getStaticResource("web/pinning.html");
-    }
-    
-    @GET
-    @Path("/trial/{trialId}/estimation")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getTrialEstimationScreen(@PathParam("trialId") String trialId) {
-        return getStaticResource("web/estimation.html");
-    }
-
-    @GET
-    @Path("/pract/{trialId}/pinning")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getPracticeTrialPinningScreen(@PathParam("trialId") String trialId) {
-        return getStaticResource("web/pinning.html");
-    }
-
-    @GET
-    @Path("/pract/{trialId}/estimation")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getPracticeTrialEstimationScreen(@PathParam("trialId") String trialId) {
-        return getStaticResource("web/estimation.html");
-    }
-
-    @GET
-    @Path("/intro/{trialId}")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getIntroductionScreen(@PathParam("trialId") String trialId) {
-        return getStaticResource("web/introduction.html");
-    }
-
-    @GET
-    @Path("/pause/{trialId}")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getPauseScreen() {
-        return getStaticResource("web/pause.html");
-    }
-
-    @GET
-    @Path("/start/{trialId}")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getStartScreen() {
-        return getStaticResource("web/start.html");
     }
 
 
@@ -251,23 +199,30 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
     
     /** 
-     * Fetches all Screen Configurations currently loaded into the database.
-     * @return 
+     * Fetches the Template file for the given Screen Configuration Topic ID.
+     * @return  InputStream     HTML Template File representing the "Screen" (=Task, Trial).
      */
-
     @GET
     @Path("/screen/{screenTopicId}")
     @Produces(MediaType.TEXT_HTML)
-    public InputStream getScreen(@PathParam("screenTopicId") long id) {
+    public InputStream getScreen(@PathParam("screenTopicId") long id) throws URISyntaxException {
         InputStream fileInput = null;
         try {
+            // 1) get current username by http session (or throw a 401)
+            Topic user = getRequestingUsername();
+            // 2) fetch screen
             Topic screenTopic = dms.getTopic(id);
+            // 3) check if unseen by user
+            if (hasSeenScreen(user, screenTopic.getId())) {
+                throw new WebApplicationException(Response.seeOther(new URI("/experiment/screen/next")).build());
+            }
             ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(screenTopic);
             String templateFileName = screenConfig.getScreenTemplateName();
             File screenTemplate = fileService.getFile(TEMPLATE_FOLDER + "/" + templateFileName);
             fileInput = new FileInputStream(screenTemplate);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("A file for the Screen Configuration Topic with ID was NOT FOUND, please use" +
+                    " the \"/web-experiments/templates\" folder in your configured DM 4 File Repository.", e);
         }
         return fileInput;
     }
@@ -276,15 +231,17 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/screen/{screenTopicId}")
     @Produces(MediaType.APPLICATION_JSON)
     public ScreenConfigViewModel getScreenConfiguration(@PathParam("screenTopicId") long id) {
-        Topic screenTopic = dms.getTopic(id);
-        return new ScreenConfigViewModel(screenTopic);
+        try {
+            Topic screenTopic = dms.getTopic(id);
+            return new ScreenConfigViewModel(screenTopic);
+        } catch(Exception e) {
+            throw new RuntimeException("A Screen Configuration Topic with the given id was NOT FOUND", e);
+        }
     }
 
     /**
-     * Determines the next trial screen for a currently authenticated user and
-     * routes the request to the respective multi-page (type).
-     * TODO: Currently the page type is coded into the uri of each trial.
-     */
+     * Determines the next screen template address (and redirects there) for a currently authenticated user.
+     **/
     @GET
     @Path("/screen/next")
     public Response getNextScreen() throws URISyntaxException {
@@ -328,7 +285,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         Iterator<RelatedTopic> iterator = orderedScreenConfigs.iterator();
         while (iterator.hasNext()) {
             RelatedTopic screenConfig = iterator.next();
-            if (!hasSeenScreen(username, screenConfig)) {
+            if (!hasSeenScreen(username, screenConfig.getId())) {
                 return screenConfig.getId();
             }
         }
@@ -340,8 +297,8 @@ public class WebExperimentsPlugin extends PluginActivator {
      * "de.akmiraketen.webexp.screen_seen_edge".
      * NOTE: This type of association must be manually created by the respective page-type (js, frontend developer).
      */
-    private boolean hasSeenScreen(Topic user, RelatedTopic trial) {
-        Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, trial.getId());
+    private boolean hasSeenScreen(Topic user, long screenConfigId) {
+        Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, screenConfigId);
         return trial_seen != null;
     }
 
@@ -362,14 +319,107 @@ public class WebExperimentsPlugin extends PluginActivator {
                 new TopicRoleModel(user.getId(), "dm4.core.default"),
                 new TopicRoleModel(trialId, "dm4.core.default")));
         } else {
-            log.info("Seen Edge: " + trial_seen.toJSON().toString());
-            long nextTrialId = getNextUnseenScreenId(user);
-            log.warning("This trial was already seen by our VP - Please load next => " + nextTrialId);
-            return Response.ok(nextTrialId).build();
+            log.info("### Screen Seen Edge already exists, responding with next unseen screen id - OK!");
+            long screenConfigurationId = getNextUnseenScreenId(user);
+            return Response.ok(screenConfigurationId).build();
         }
-        log.info("### Set screen " + trialId + " as SEEN by username=" + user.getSimpleValue());
+        log.info("### Set screen " + trialId + " as SEEN by user=" + user.getSimpleValue());
         return Response.ok(OK_NR).build();
     }
+
+    /**
+     * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
+     **/
+    @GET
+    @Path("/report/start/{screenConfigId}")
+    @Transactional
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response initScreenReport(@PathParam("screenConfigId") long screenConfigId) {
+        Topic username = getRequestingUsername();
+        Topic screenConfigTopic = dms.getTopic(screenConfigId);
+        Topic existingReport = getScreenReportTopic(username, screenConfigTopic);
+        if (existingReport == null) {
+            //
+            ChildTopicsModel reportModel = new ChildTopicsModel().putRef(SCREEN_CONFIG_TYPE, screenConfigId);
+            Topic screenReport = dms.createTopic(new TopicModel(SCREEN_REPORT_TYPE, reportModel));
+            dms.createAssociation(new AssociationModel("dm4.core.association",
+                    new TopicRoleModel(username.getId(), "dm4.core.default"),
+                    new TopicRoleModel(screenReport.getId(), "dm4.core.default")));
+            log.info("Initialized Screen Report Topic for " + username.getSimpleValue() + " on " + screenConfigTopic
+                    .getSimpleValue());
+        } else {
+            log.warning("### Screen Report already exists, do not attempt to create another! - SKIPPING");
+            return Response.ok(FAIL_NR).build();
+        }
+        return Response.ok(OK_NR).build();
+    }
+
+    /**
+     * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
+     **/
+    @POST
+    @Path("/report/action/{screenConfigId}")
+    @Transactional
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addActionReport(@PathParam("screenConfigId") long screenConfigId, String actionObject)
+            throws JSONException {
+        Topic username = getRequestingUsername();
+        Topic screenConfigTopic = dms.getTopic(screenConfigId);
+        Topic existingReport = getScreenReportTopic(username, screenConfigTopic);
+        if (existingReport == null) {
+            //
+            log.warning("### Screen Report does NOT exist, please do initialize one before trying to report an action" +
+                    " - ACTION REPORT FAILED");
+        } else {
+            JSONObject actionReport = new JSONObject(actionObject.toString());
+            if (!actionReport.has(SCREEN_ACTION_NAME_TYPE)) {
+                throw new IllegalArgumentException("addActionReport misses a \"" +
+                        "" + SCREEN_ACTION_NAME_TYPE + "\" property / key (JSON POST Body)");
+            }
+            String actionNameUri =  actionReport.getString(SCREEN_ACTION_NAME_TYPE);
+            String actionValue = actionReport.getString("value");
+            log.info("POSTed Action Name URI: " + actionNameUri + ", value=" + actionValue);
+            ChildTopicsModel actionReportChilds = new ChildTopicsModel()
+                    .putRef(SCREEN_ACTION_NAME_TYPE, actionNameUri)
+                    .put(SCREEN_ACTION_VALUE_TYPE, actionValue);
+            ChildTopicsModel actionReportTopic = new ChildTopicsModel()
+                    .add(SCREEN_ACTION_TYPE, new TopicModel(SCREEN_ACTION_TYPE, actionReportChilds));
+            TopicModel actionReportModel = new TopicModel(SCREEN_REPORT_TYPE, actionReportTopic);
+            existingReport.update(actionReportModel);
+            return Response.ok(OK_NR).build();
+        }
+        return Response.ok(FAIL_NR).build();
+    }
+
+    private RelatedTopic getScreenReportTopic(Topic username, Topic screenConfig) {
+        ResultList<RelatedTopic> reports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
+                "dm4.core.default", SCREEN_REPORT_TYPE, 0);
+        Iterator<RelatedTopic> iterator = reports.iterator();
+        while (iterator.hasNext()) {
+            RelatedTopic screenReportTopic = iterator.next();
+            screenReportTopic.loadChildTopics();
+            Topic screenConfigChildTopic = screenReportTopic.getChildTopics().getTopic(SCREEN_CONFIG_TYPE);
+            if (screenConfigChildTopic.getId() == screenConfig.getId()) {
+                log.info("Fetched existing screen report with topicId=" + screenConfigChildTopic.getId()
+                        + " for " + username.getSimpleValue());
+                return screenReportTopic;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Utility method to construct a valid \"Screen Action\" report entry.
+     * @return String   All action name topics current in the DB.
+     */
+    @GET
+    @Path("/report/action")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResultList<RelatedTopic> getReportEventTypes() {
+        return dms.getTopics("de.akmiraketen.action_name", 0);
+    }
+
 
 
     /** @GET
