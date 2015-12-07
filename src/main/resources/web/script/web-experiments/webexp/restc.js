@@ -42,7 +42,11 @@ define(['d3'], function (d3, require) {
         var response_type = "application/json"
         var xhr = d3.xhr(resource, response_type)
             xhr.header('Content-Type', "application/json")
-            xhr.post(JSON.stringify(data))
+            if (data) {
+                xhr.post(JSON.stringify(data))
+            } else {
+                xhr.post()
+            }
             xhr.on('load', function (response) {
                 if (debug) console.log(response)
                 if (json && typeof callback !== "undefined") {
@@ -130,7 +134,7 @@ define(['d3'], function (d3, require) {
             mark('/experiment/trial/' + trialId + "/seen", callback, fail)
         },
         logoutParticipant: function (callback, fail) {
-            post('/accesscontrol/logout', callback, fail)
+            post('/accesscontrol/logout', undefined, callback, fail)
         },
         doMarkIconPreference: function (fileTopicId, callback, fail) {
             mark('/experiment/symbol/choose/' + fileTopicId, callback, fail)

@@ -49,7 +49,7 @@ define(function (require) {
             newCtrl.fetchParticipant(function (data) {
 
                 if (data.status == 204) { // API change: as of 0.4-SNAPSHOT
-                    // re-implemented response for anunauthenticated request
+                    // re-implemented response for an unauthenticated request
                     render_start_session_dialog()
                     throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
 
@@ -79,8 +79,16 @@ define(function (require) {
     }
 
     function restart_experiment() {
-        newCtrl.logoutParticipant()
-        window.document.location.assign('/experiment/')
+        newCtrl.logoutParticipant(function(e) {
+            console.log("OK - Restart log out successful!")
+            window.document.location.assign('/experiment/')
+        }, true)
+    }
+
+    function logout() {
+        newCtrl.logoutParticipant(function(e) {
+            window.document.location.assign('/experiment/')
+        }, true)
     }
 
     // -- Login View
@@ -112,8 +120,9 @@ define(function (require) {
 
     function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock"><br/><br/></p>'
+        var content = '<p class="textblock"><br/><br/></p><a class="logout" href="#">Log out</a>'
         set_page_content(content)
+        d3.select('a.logout').on('click', logout)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Start")
             next.on('click', function (e) { window.document.location.assign("/experiment/screen/next") })
     }
