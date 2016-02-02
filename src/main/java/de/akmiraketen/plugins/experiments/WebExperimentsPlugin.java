@@ -37,13 +37,16 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -52,7 +55,7 @@ import org.codehaus.jettison.json.JSONObject;
  * A simple and flexible web-application to conduct experiments on the
  * perception and the processing of web-cartographies.
  *
- * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
+ * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2016
  * @website https://github.com/mukil/web-experiments
  * @version 0.4-SNAPSHOT
  */
@@ -84,6 +87,9 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     private static final String SCREEN_CONFIG_TYPE = "de.akmiraketen.screen_configuration";
     private static final String SCREEN_CONDITION_TYPE = "de.akmiraketen.screen_condition";
+    private static final String SCREEN_TEMPLATE_NAME = "de.akmiraketen.screen_template";
+    private static final String SCREEN_TIMEOUT_VALUE = "de.akmiraketen.screen_timeout";
+    private static final String SCREEN_OPTIONS_BLOB = "de.akmiraketen.screen_options";
 
     // -- Per User Config
 
@@ -108,16 +114,11 @@ public class WebExperimentsPlugin extends PluginActivator {
     private static final String TEMPLATE_FOLDER = "web-experiments/templates";
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
 
-    // --- Plugin Services
+    // --- Consumed Plugin Services
     
-    @Inject
-    private AccessControlService acService = null;
-    
-    @Inject
-    private FilesService fileService = null;
-    
-    @Inject
-    private WorkspacesService workspaceService = null;
+    @Inject private AccessControlService acService = null;
+    @Inject private WorkspacesService workspaceService = null;
+    @Inject private FilesService fileService = null;
     
     @Override
     public void init() {
@@ -136,7 +137,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         createFolderWithName("templates", parentFolderName);
     }
     
-    // --- All available routes to single pages
+    // ---------------------------------------------------------------------------------------------------- Routes
     
     @GET
     @Path("/")
@@ -152,9 +153,67 @@ public class WebExperimentsPlugin extends PluginActivator {
         return getStaticResource("web/welcome.html");
     }
 
+    /**
+     * Redirects the requesting clien to the next configured resource for her (if the request is authenticated).
+     **/
+    @GET
+    @Path("/screen/next")
+    public Response getNextScreen() throws URISyntaxException {
+        // 1) get current username by http session (or throw a 401)
+        Topic user = getRequestingUsername();
+        // 2) get next trial config topic related to the user topic, discarding those related
+        //    to the user via a "trial_seen_edge".
+        long screenTopicId = getNextUnseenScreenId(user);
+        if (screenTopicId == FAIL_NR) {
+            // 2.1) If the particpant has seen all trials configured for her we redirect to our final screen.
+            log.info("Experiment finished, no configured trial left for requesting user");
+            return Response.seeOther(new URI("/experiment/finish")).build();
+        } else if (screenTopicId != FAIL_NR) {
+            // 2.2) If there is yet an "unseen" trial configured for the user, we load and redirect
+            //      the request according to the configured template "type".
+            Topic configuration = dms.getTopic(screenTopicId);
+            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(configuration);
+            log.info("Should REDIRECT to screen template \"" + screenConfig.getScreenTemplateName() + "\" configured at "
+                + "\"/experiment/screen/" + configuration.getId() + "\"");
+            URI location = new URI("/experiment/screen/" + configuration.getId());
+            return Response.seeOther(location).build();
+        } else {
+            return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
+        }
+    }
+
+    /**
+     * Fetches the Template file for the given Screen Configuration Topic ID.
+     * @return  InputStream     HTML Template File representing the "Screen" (=Task, Trial).
+     */
+    @GET
+    @Path("/screen/{screenTopicId}")
+    @Produces(MediaType.TEXT_HTML)
+    public InputStream getScreen(@PathParam("screenTopicId") long id) throws URISyntaxException {
+        InputStream fileInput = null;
+        try {
+            // 1) get current username by http session (or throw a 401)
+            Topic user = getRequestingUsername();
+            // 2) fetch screen
+            Topic screenTopic = dms.getTopic(id);
+            // 3) check if unseen by user
+            if (hasSeenScreen(user, screenTopic.getId())) {
+                throw new WebApplicationException(Response.seeOther(new URI("/experiment/screen/next")).build());
+            }
+            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(screenTopic);
+            String templateFileName = screenConfig.getScreenTemplateName();
+            File screenTemplate = fileService.getFile(TEMPLATE_FOLDER + "/" + templateFileName);
+            fileInput = new FileInputStream(screenTemplate);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("A file for the Screen Configuration Topic with ID was NOT FOUND, please use" +
+                    " the \"/web-experiments/templates\" folder in your configured DM 4 File Repository.", e);
+        }
+        return fileInput;
+    }
 
 
-    // --- REST Resources / API Endpoints
+
+    // ----------------------------------------------------------------------------------------------- API Resources
     
     /** 
      * 
@@ -190,6 +249,10 @@ public class WebExperimentsPlugin extends PluginActivator {
         return symbolFiles.toString();
     }
 
+    /**
+     * Fetches the web-experiments representation of a user account/participant.
+     * @return ParticipantViewModel JSON String
+     */
     @GET
     @Path("/participant")
     @Produces(MediaType.APPLICATION_JSON)
@@ -197,36 +260,12 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic username = getRequestingUsername();
         return new ParticipantViewModel(username);
     }
-    
-    /** 
-     * Fetches the Template file for the given Screen Configuration Topic ID.
-     * @return  InputStream     HTML Template File representing the "Screen" (=Task, Trial).
-     */
-    @GET
-    @Path("/screen/{screenTopicId}")
-    @Produces(MediaType.TEXT_HTML)
-    public InputStream getScreen(@PathParam("screenTopicId") long id) throws URISyntaxException {
-        InputStream fileInput = null;
-        try {
-            // 1) get current username by http session (or throw a 401)
-            Topic user = getRequestingUsername();
-            // 2) fetch screen
-            Topic screenTopic = dms.getTopic(id);
-            // 3) check if unseen by user
-            if (hasSeenScreen(user, screenTopic.getId())) {
-                throw new WebApplicationException(Response.seeOther(new URI("/experiment/screen/next")).build());
-            }
-            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(screenTopic);
-            String templateFileName = screenConfig.getScreenTemplateName();
-            File screenTemplate = fileService.getFile(TEMPLATE_FOLDER + "/" + templateFileName);
-            fileInput = new FileInputStream(screenTemplate);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("A file for the Screen Configuration Topic with ID was NOT FOUND, please use" +
-                    " the \"/web-experiments/templates\" folder in your configured DM 4 File Repository.", e);
-        }
-        return fileInput;
-    }
 
+    /** 
+     * Loads a Screen Configuration Topic.
+     * @param id    topicId
+     * @return ScreenConfigViewModel    String JSON
+     */
     @GET
     @Path("/screen/{screenTopicId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -239,96 +278,25 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
 
-    /**
-     * Determines the next screen template address (and redirects there) for a currently authenticated user.
-     **/
     @GET
-    @Path("/screen/next")
-    public Response getNextScreen() throws URISyntaxException {
-        // 1) get current username by http session (or throw a 401)
-        Topic user = getRequestingUsername();
-        // 2) get next trial config topic related to the user topic, discarding those related
-        // to the user via a "trial_seen_edge".
-        long screenTopicId = getNextUnseenScreenId(user);
-        // 2.1) If the particpant has seen all trials configured for her we redirect to our final screen.
-        if (screenTopicId == FAIL_NR) {
-            log.info("Experiment finished, no configured trial left for requesting user");
-            return Response.seeOther(new URI("/experiment/finish")).build();
-            // 2.2) If there is yet an "unseen" trial configured for the user, we load and redirect
-            // the request according to the "type".
-        } else if (screenTopicId != FAIL_NR){
-            Topic configuration = dms.getTopic(screenTopicId);
-            ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(configuration);
-            log.info("Should REDIRECT to screen " + screenConfig.getScreenTemplateName() + " at /experiment/screen/" + configuration.getId());
-            URI location = new URI("/experiment/screen/" + configuration.getId());
-            return Response.seeOther(location).build();
-        } else {
-            return Response.ok(FAIL_NR).build(); // experiment finished > no unseen trial left
-        }
-    }
-
-    private ResultList<RelatedTopic> getUsersScreens(Topic username) {
-        return username.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE,
-                "dm4.core.default", "dm4.core.default", SCREEN_CONFIG_TYPE, 0);
-    }
-
-    /**
-     * Iterates all trial configurations related to a specific user and gets the topic id of the first one
-     * (those are ordered by an ordinal number in their respective URI) with an association of type
-     * "de.akmiraketen.webexp.active_configuration" but without an "de.akmiraketen.webexp.screen_seen_edge".
-     */
-    private long getNextUnseenScreenId(Topic username) {
-        ResultList<RelatedTopic> screenConfigs = getActiveScreenConfigs(username);
-        log.info("Found " + screenConfigs.getSize() + " active configurations for " + username.getSimpleValue());
-        ArrayList<RelatedTopic> orderedScreenConfigs = getScreenTopicsSortedByURI(screenConfigs);
-        log.info("Ordered them for " + username);
-        Iterator<RelatedTopic> iterator = orderedScreenConfigs.iterator();
-        while (iterator.hasNext()) {
-            RelatedTopic screenConfig = iterator.next();
-            if (!hasSeenScreen(username, screenConfig.getId())) {
-                return screenConfig.getId();
-            }
-        }
-        return FAIL_NR; // experiment finished > no unseen trial left
-    }
-
-    /**
-     * Checks if a trial config topic related to the given user has an association of type
-     * "de.akmiraketen.webexp.screen_seen_edge".
-     * NOTE: This type of association must be manually created by the respective page-type (js, frontend developer).
-     */
-    private boolean hasSeenScreen(Topic user, long screenConfigId) {
-        RelatedTopic screenReport = user.getRelatedTopic("dm4.core.association", ROLE_DEFAULT, ROLE_DEFAULT,
-                SCREEN_REPORT_TYPE);
-        return screenReport != null;
-        // Association trialSeen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, screenConfigId);
-        // return trialSeen != null;
-    }
-
-    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic user) {
-        return user.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
-    }
-
-    /** @GET
     @Path("/screen/{screenConfigId}/seen")
     @Transactional
     public Response setScreenAsSeen(@PathParam("screenConfigId") long trialId) {
         // 1) get current username by http session (or throw a 401)
-        Topic user = getRequestingUsername();
-        // ..
-        Association trial_seen = user.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, trialId);
-        if (trial_seen == null) {
+        Topic username = getRequestingUsername();
+        // 2) Check if user has seen the screen already
+        if (!hasSeenScreen(username, trialId)) {
             dms.createAssociation(new AssociationModel(SCREEN_SEEN_EDGE,
-                new TopicRoleModel(user.getId(), "dm4.core.default"),
+                new TopicRoleModel(username.getId(), "dm4.core.default"),
                 new TopicRoleModel(trialId, "dm4.core.default")));
         } else {
             log.info("### Screen Seen Edge already exists, responding with next unseen screen id - OK!");
-            long screenConfigurationId = getNextUnseenScreenId(user);
+            long screenConfigurationId = getNextUnseenScreenId(username);
             return Response.ok(screenConfigurationId).build();
         }
-        log.info("### Set screen " + trialId + " as SEEN by user=" + user.getSimpleValue());
+        log.info("### Set screen " + trialId + " as SEEN by user=" + username.getSimpleValue());
         return Response.ok(OK_NR).build();
-    } **/
+    }
 
     /**
      * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
@@ -358,9 +326,9 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
 
     /**
-     * Initiates a screen report for the authenticated user and the given screen configuration (topicId).
-     * Note: This write method is NOT SAFE for parallel requests (many WRITE operations may need access to the very same
-     * Screen Configuration Topic).
+     * Adds an "action" topic to the screen report for the authenticated user and the given screen config topic id.
+     * Note: This write method is NOT SAFE for parallel requests (many WRITE operations may need access to the very
+     * same Screen Configuration Topic).
      **/
     @POST
     @Path("/report/action/{screenConfigId}")
@@ -397,6 +365,11 @@ public class WebExperimentsPlugin extends PluginActivator {
         return Response.ok(FAIL_NR).build();
     }
 
+    /**
+     * @param username
+     * @param screenConfig
+     * @return screenReport     Returns the given Screen Report as a RelatedTopic if existent, otherwise 'null'.
+     */
     private RelatedTopic getScreenReportTopic(Topic username, Topic screenConfig) {
         ResultList<RelatedTopic> reports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
                 "dm4.core.default", SCREEN_REPORT_TYPE, 0);
@@ -424,8 +397,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     public ResultList<RelatedTopic> getReportEventTypes() {
         return dms.getTopics("de.akmiraketen.action_name", 0);
     }
-
-
 
     /** @GET
     @Path("/screen/config/import")
@@ -526,145 +497,146 @@ public class WebExperimentsPlugin extends PluginActivator {
         getRequestingUsername();
         // 2) gather all reports from the db
         StringBuilder report = new StringBuilder();
-        /** ResultList<RelatedTopic> propositi = dms.getTopics("dm4.accesscontrol.user_account", 0);
-        report.append("VP ID\tTrial Condition\tMap ID\tTopin\tTopinname\tPinned\tPinRT\tPinInactive\t");
-        report.append("Estfromname.1\tEsttoname.1\tEsttoscreen.1\tEstimation.1\tEststart.1\tEstend.1\tEstconfidence.1\t");
-        report.append("Estfromname.2\tEsttoname.2\tEsttoscreen.2\tEstimation.2\tEststart.2\tEstend.2\tEstconfidence.2\t");
-        report.append("Estfromname.3\tEsttoname.3\tEsttoscreen.3\tEstimation.3\tEststart.3\tEstend.3\tEstconfidence.3\t");
-        report.append("Estfromname.4\tEsttoname.4\tEsttoscreen.4\tEstimation.4\tEststart.4\tEstend.4\tEstconfidence.4\t");
-        report.append("Estfromname.5\tEsttoname.5\tEsttoscreen.5\tEstimation.5\tEststart.5\tEstend.5\tEstconfidence.5");
+        ResultList<RelatedTopic> participants = dms.getTopics("dm4.accesscontrol.username", 0);
+        log.info("Gathering reporting for overall " + participants.getSize() + " user accounts");
+        report.append("VP ID\tScreen Template\tScreen Condition\tScreen Options\tScreen Timeout\tAction Type\tAction Value");
         report.append("\n");
-        for (RelatedTopic vp : propositi.getItems()) {
-            Topic username = vp.loadChildTopics(USERNAME_TYPE_URI).getChildTopics().getTopic(USERNAME_TYPE_URI);
-            String vpId = username.getSimpleValue().toString();
-            ResultList<RelatedTopic> trialReports = username.getRelatedTopics("dm4.core.association", "dm4.core.parent",
-                    "dm4.core.child", TRIAL_REPORT_URI, 0);
-            ArrayList<RelatedTopic> sortedTrialReports = getAllTrialReportsSortedByURI(trialReports);
-            if (sortedTrialReports.size()> 0) {
-                log.info("  Fetched " + sortedTrialReports.size() + " written to DB for " + vpId);
-                for (RelatedTopic trialReport : sortedTrialReports) {
-                    trialReport.loadChildTopics();
-                    String trialConfigId = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    if (trialConfigId.contains("trial")) { //  exluding from report the practice || trialConfigId.contains("pract")
-                        Topic trialConfig = dms.getTopic("uri", new SimpleValue(trialConfigId));
-                        if (trialConfig != null) { // trial configuration could be loaded
-                            // Collect General Info on Trial
-                            String trialCondition = trialConfig.loadChildTopics(TRIAL_CONDITION_TYPE)
-                                    .getChildTopics().getString(TRIAL_CONDITION_TYPE);
-                            String mapId = trialConfig.loadChildTopics(TRIAL_CONFIG_MAP_ID)
-                                    .getChildTopics().getString(TRIAL_CONFIG_MAP_ID);
-                            // Collect Pinning Data
-                            String placeToPinId = trialConfig.loadChildTopics(TRIAL_CONFIG_PLACE_TO_PIN)
-                                .getChildTopics().getString(TRIAL_CONFIG_PLACE_TO_PIN);
-                            Topic placeConfig = getConfiguredPlace(placeToPinId);
-                            String placeToPinName = getConfiguredPlaceName(placeConfig);
-                            String placeCoordinates = getConfiguredPlaceCoordinates(placeConfig);
-                            String pinnedCoordinates = "-1;-1";
-                            int pinningRT = -1, pinInactive = -1;
-                            try {
-                                pinnedCoordinates = trialReport.loadChildTopics(COORDINATES_PINNED_URI)
-                                    .getChildTopics().getString(COORDINATES_PINNED_URI);
-                                pinningRT = trialReport.loadChildTopics(REACTION_TIME_URI)
-                                        .getChildTopics().getInt(REACTION_TIME_URI);
-                                pinInactive = trialReport.loadChildTopics(COUNT_OUTSIDE_URI)
-                                        .getChildTopics().getInt(COUNT_OUTSIDE_URI);
-                            } catch (Exception e) {
-                                log.warning("No pinning data was recorded / could be accessed for trial config: "
-                                        + trialConfigId + " for " + username.getSimpleValue());
-                            }
-                            // Collect Estimation Report Data
-                            String estimation1 = "", realToScreen1 = "", estFromName1 = "", estToName1 = "";
-                            int estStart1 = -1, estEnd1 = -1, estConfidence1 = -1;
-                            String estimation2 = "", realToScreen2 = "", estFromName2 = "", estToName2 = "";
-                            int estStart2 = -1, estEnd2 = -1, estConfidence2 = -1;
-                            String estimation3 = "", realToScreen3 = "", estFromName3 = "", estToName3 = "";
-                            int estStart3 = -1, estEnd3 = -1, estConfidence3 = -1;
-                            String estimation4 = "", realToScreen4 = "", estFromName4 = "", estToName4 = "";
-                            int estStart4 = -1, estEnd4 = -1, estConfidence4 = -4;
-                            String estimation5 = "", realToScreen5 = "", estFromName5 = "", estToName5 = "";
-                            int estStart5 = -1, estEnd5 = -1, estConfidence5 = -1;
-                            try {
-                                List<Topic> estimationReports = trialReport.getChildTopics().getTopics(ESTIMATION_REPORT_URI);
-                                for (Topic estimationReport : estimationReports) {
-                                    int estimationNr = -1;
-                                    estimationReport.loadChildTopics();
-                                    estimationNr = estimationReport.getChildTopics().getInt(ESTIMATION_NR_URI);
-                                    Topic fromPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_FROM_PLACE_URI));
-                                    Topic toPlace = getConfiguredPlace(estimationReport.getChildTopics().getString(ESTIMATION_TO_PLACE_URI));
-                                    switch (estimationNr) {
-                                        case 1:
-                                            estFromName1 = getConfiguredPlaceName(fromPlace);
-                                            estToName1 = getConfiguredPlaceName(toPlace);
-                                            realToScreen1 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
-                                            estimation1 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
-                                            estStart1 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                            estEnd1 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                            estConfidence1 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                            break;
-                                        case 2:
-                                            estFromName2 = getConfiguredPlaceName(fromPlace);
-                                            estToName2 = getConfiguredPlaceName(toPlace);
-                                            realToScreen2 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
-                                            estimation2 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
-                                            estStart2 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                            estEnd2 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                            estConfidence2 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                            break;
-                                        case 3:
-                                            estFromName3 = getConfiguredPlaceName(fromPlace);
-                                            estToName3 = getConfiguredPlaceName(toPlace);
-                                            realToScreen3 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
-                                            estimation3 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
-                                            estStart3 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                            estEnd3 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                            estConfidence3 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                            break;
-                                        case 4:
-                                            estFromName4 = getConfiguredPlaceName(fromPlace);
-                                            estToName4 = getConfiguredPlaceName(toPlace);
-                                            realToScreen4 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
-                                            estimation4 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
-                                            estStart4 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                            estEnd4 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                            estConfidence4 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                            break;
-                                        case 5:
-                                            estFromName5 = getConfiguredPlaceName(fromPlace);
-                                            estToName5 = getConfiguredPlaceName(toPlace);
-                                            realToScreen5 = estimationReport.getChildTopics().getString(REAL_SCREEN_COORDINATES_URI);
-                                            estimation5 = estimationReport.getChildTopics().getString(ESTIMATED_SCREEN_COORDINATES_URI);
-                                            estStart5 = estimationReport.getChildTopics().getInt(ESTIMATION_TO_START_TIME_URI);
-                                            estEnd5 = estimationReport.getChildTopics().getInt(ESTIMATION_TIME_URI);
-                                            estConfidence5 = estimationReport.getChildTopics().getInt(ESTIMATION_CONFIDENCE);
-                                            break;
-                                    }
-                                }
-                            } catch (Exception e) {
-                                log.warning("No estimation data was recorded during trial " + trialConfigId + " for " + username.getSimpleValue());
-                            }
-                            // Write line
-                            report.append(vpId + "\t" + trialCondition + "\t" + mapId + "\t" + placeCoordinates + "\t" + placeToPinName
-                                    + "\t" + pinnedCoordinates + "\t" + pinningRT + "\t" + pinInactive
-                                    + "\t" + estFromName1 + "\t" + estToName1 + "\t" + realToScreen1 + "\t" + estimation1 + "\t" + estStart1 + "\t" + estEnd1 + "\t" + estConfidence1
-                                    + "\t" + estFromName2 + "\t" + estToName2 + "\t" + realToScreen2 + "\t" + estimation2 + "\t" + estStart2 + "\t" + estEnd2 + "\t" + estConfidence2
-                                    + "\t" + estFromName3 + "\t" + estToName3 + "\t" + realToScreen3 + "\t" + estimation3 + "\t" + estStart3 + "\t" + estEnd3 + "\t" + estConfidence3
-                                    + "\t" + estFromName4 + "\t" + estToName4 + "\t" + realToScreen4 + "\t" + estimation4 + "\t" + estStart4 + "\t" + estEnd4 + "\t" + estConfidence4
-                                    + "\t" + estFromName5 + "\t" + estToName5 + "\t" + realToScreen5 + "\t" + estimation5 + "\t" + estStart5 + "\t" + estEnd5 + "\t" + estConfidence5);
-                            report.append("\n");
-                        } else { // trial configuration could not be loaded..
-                            log.warning("System Trial Configuration changed"
-                                + " - Fetching Trial Config with URI: " + trialConfigId + " failed --- SKIPPED");
-                        }
+        for (RelatedTopic username : participants.getItems()) {
+            String usernameValue = username.getSimpleValue().toString();
+            ResultList<RelatedTopic> screenReports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
+                    "dm4.core.default", SCREEN_REPORT_TYPE, 0);
+            if (screenReports.getSize()> 0) {
+                log.info("Fetched " + screenReports.getSize() + " Screen Reports for \"" + usernameValue + "\"");
+                for (RelatedTopic screenReport : screenReports) {
+                    // load full report
+                    screenReport.loadChildTopics();
+                    // load corresponding screen configuration topic
+                    Topic screenConfigurationTopic = null;
+                    String templateName = "", conditionValue = "", options = "", timeout = "";
+                    if (screenReport.getChildTopics().has(SCREEN_CONFIG_TYPE)) {
+                        screenConfigurationTopic = screenReport.getChildTopics().getTopic(SCREEN_CONFIG_TYPE);
+                        screenConfigurationTopic.loadChildTopics();
+                        templateName = screenConfigurationTopic.getChildTopics().getString(SCREEN_TEMPLATE_NAME);
+                        conditionValue = screenConfigurationTopic.getChildTopics().getString(SCREEN_CONDITION_TYPE);
+                        options = screenConfigurationTopic.getChildTopics().getString(SCREEN_OPTIONS_BLOB);
+                        timeout = screenConfigurationTopic.getChildTopics().getString(SCREEN_TIMEOUT_VALUE);
+                    }
+                    // load all actions reported for that screen
+                    List<Topic> reportedActions = null;
+                    if (screenReport.getChildTopics().has(SCREEN_ACTION_TYPE)) {
+                        reportedActions = screenReport.getChildTopics().getTopics(SCREEN_ACTION_TYPE);
+                    }
+                    if (screenConfigurationTopic != null && reportedActions != null && reportedActions.size() > 0) {
+                        // aggregate reported line
+                        // fullActionReport(usernameValue, templateName, conditionValue, options, timeout, reportedActions, report);
+                        customSelectionReport(usernameValue, templateName, conditionValue, options, timeout, reportedActions, report);
+                    } else {
+                        log.info("NO action REPORTED for \"" + usernameValue + "\" on screen "
+                            + screenReport.getSimpleValue().toString());
                     }
                 }
             }
-        } **/
+        }
         return report.toString();
     }
 
 
+
+    // ------------------------------------------------------------------------------------------------- Helper Methods
     
-    // --- Helper Methods
+    /**
+     * Iterates all Screen Configuration Topics dirctly related to a specific username.
+     * @return ID   long Topic id of the next sceen configuration to load.
+     *
+     * Note: Screen Configuration Topics are ordered by an ordinal number (the last part of the topics URI).
+     * Note: The screen configuration topic must be related to the username topic directly via an association of
+     * type "de.akmiraketen.webexp.active_configuration".
+     * Note: A screen is regarded as "Unseen" if there is no relation (typed="de.akmiraketen.webexp.screen_seen_edge")
+     * between the username and the screen configuration topic.
+     */
+    private long getNextUnseenScreenId(Topic username) {
+        ResultList<RelatedTopic> screenConfigs = getActiveScreenConfigs(username);
+        log.info("Found " + screenConfigs.getSize() + " active configurations for " + username.getSimpleValue());
+        ArrayList<RelatedTopic> orderedScreenConfigs = getScreenTopicsSortedByURI(screenConfigs);
+        Iterator<RelatedTopic> iterator = orderedScreenConfigs.iterator();
+        while (iterator.hasNext()) {
+            RelatedTopic screenConfig = iterator.next();
+            if (!hasSeenScreen(username, screenConfig.getId())) {
+                return screenConfig.getId();
+            }
+        }
+        return FAIL_NR; // experiment finished > no unseen trial left
+    }
+
+    /**
+     * Checks if a screen config topic with the given id is already related
+     * (type="de.akmiraketen.webexp.screen_seen_edge") to the given username topic.
+     */
+    private boolean hasSeenScreen(Topic username, long screenConfigId) {
+        Association trialSeen = username.getAssociation(SCREEN_SEEN_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, screenConfigId);
+        return trialSeen != null;
+    }
+
+   /**
+    * Loads all active screen configuration for the given username topic.
+    **/
+    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic user) {
+        return user.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
+    }
+
+    private void fullActionReport(String usernameValue, String templateName, String conditionValue, String options,
+            String timeout, List<Topic> reportedActions, StringBuilder report) {
+        for (Topic action : reportedActions) {
+            String actionType = "", actionValue = "";
+            if (action.getChildTopics().has(SCREEN_ACTION_NAME_TYPE)) {
+                actionType = action.getChildTopics().getString(SCREEN_ACTION_NAME_TYPE);
+            }
+            if (action.getChildTopics().has(SCREEN_ACTION_VALUE_TYPE)) {
+                actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
+            }
+            report.append(usernameValue).append("\t").append(templateName).append("\t").append(conditionValue).
+                append("\t").append(options).append("\t").append(timeout).append("\t").append(actionType)
+                .append("\t").append(actionValue).append("\n");
+        }
+    }
+
+    private void customSelectionReport(String usernameValue, String templateName, String conditionValue, String options,
+            String timeout, List<Topic> reportedActions, StringBuilder report) {
+        // Sum of selections by "name" in actionValue Object
+        HashMap sum = new HashMap();
+        for (Topic action : reportedActions) {
+            String actionType = "", actionValue = "";
+            if (action.getChildTopics().has(SCREEN_ACTION_NAME_TYPE)) {
+                actionType = action.getChildTopics().getString(SCREEN_ACTION_NAME_TYPE);
+                if (actionType.equals("Select")) {
+                    if (action.getChildTopics().has(SCREEN_ACTION_VALUE_TYPE)) {
+                        try {
+                            actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
+                            JSONObject valueObject = new JSONObject(actionValue);
+                            String name = valueObject.getString("name") + " (" + valueObject.getString("type") + ")";
+                            if (sum.containsKey(name)) {
+                                int count = (Integer) sum.get(name) + 1;
+                                sum.replace(name, count);
+                            } else {
+                                sum.put(name, 1);
+                            }
+                        } catch (JSONException ex) {
+                            log.log(Level.SEVERE, "Could not transform \"Action Value\" string to JSONObject", ex);
+                        }
+                    }
+                }
+            }
+        }
+        //
+        Set<String> nameKeys = sum.keySet();
+        Iterator<String> namesIterator = nameKeys.iterator();
+        while(namesIterator.hasNext()) {
+            String name = namesIterator.next();
+            report.append(usernameValue).append("\t").append(templateName).append("\t").append(conditionValue)
+                .append("\t").append(options).append("\t").append(timeout).append("\t").append(name)
+                .append("\t").append(sum.get(name)).append("\n");
+        }
+    }
     
     private ArrayList<RelatedTopic> getScreenTopicsSortedByURI(ResultList<RelatedTopic> all) {
         // build up sortable collection of all result-items
@@ -691,68 +663,6 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
         });
         return in_memory;
-    }
-    
-    /** private ArrayList<RelatedTopic> getAllTrialReportsSortedByURI(ResultList<RelatedTopic> all) {
-        // build up sortable collection of all result-items
-        ArrayList<RelatedTopic> in_memory = new ArrayList<RelatedTopic>();
-        for (RelatedTopic obj : all) {
-            in_memory.add(obj);
-        }
-        // sort all result-items
-        Collections.sort(in_memory, new Comparator<RelatedTopic>() {
-            public int compare(RelatedTopic t1, RelatedTopic t2) {
-                try {
-                    t1.loadChildTopics("de.akmiraketen.screen_report_config_id");
-                    t2.loadChildTopics("de.akmiraketen.webexp.report_trial_config_id");
-                    String trialConfigIdOne = t1.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    String trialConfigIdTwo = t2.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-                    if (trialConfigIdOne.contains("trial") && trialConfigIdTwo.contains("trial")) {
-                        String one = trialConfigIdOne.substring(trialConfigIdOne.lastIndexOf("_") + 6);
-                        String two = trialConfigIdTwo.substring(trialConfigIdTwo.lastIndexOf("_") + 6);
-                        if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
-                        if ( Long.parseLong(one) > Long.parseLong(two)) return 1;
-                    }
-                } catch (Exception nfe) {
-                    log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
-                            + t2.getUri() + " nfe: " + nfe.getMessage());
-                    return 1;
-                }
-                return 1;
-            }
-        });
-        return in_memory;
-    } **/
-
-    private Topic getOrCreateTrialPinningReportTopic (long trialId, Topic user) {
-        DeepaMehtaTransaction tx = dms.beginTx();
-        Topic report = null;
-        String trialConfigUri = dms.getTopic(trialId).getUri();
-        ResultList<RelatedTopic> trialReports = user.getRelatedTopics("dm4.core.association", 
-                "dm4.core.parent", "dm4.core.child", "de.akmiraketen.webexp.trial_report", 0);
-        for (RelatedTopic trialReport : trialReports) {
-            String trial = trialReport.getChildTopics().getString("de.akmiraketen.webexp.report_trial_config_id");
-            if (trialConfigUri.equals(trial)) {
-                log.info("Re-using Trial Report for Trial: " + trialConfigUri + " and VP " + user.getSimpleValue());
-                return trialReport;
-            }
-        }
-        try {
-            log.info("Creating new Trial Report for user " + user.getSimpleValue() + " and Trial " + trialConfigUri);
-            ChildTopicsModel child = new ChildTopicsModel(new JSONObject()
-                    .put("de.akmiraketen.webexp.report_trial_config_id", trialConfigUri));
-            TopicModel model = new TopicModel("de.akmiraketen.webexp.trial_report", child);
-            report = dms.createTopic(model);
-            dms.createAssociation(new AssociationModel("dm4.core.association", 
-                    new TopicRoleModel(user.getId(), "dm4.core.parent"), 
-                    new TopicRoleModel(report.getId(), "dm4.core.child")));
-            tx.success();
-        } catch (JSONException ex) {
-            log.severe("Could not create a Trial Report for user ..");
-        } finally {
-            tx.finish();
-        }
-        return report;
     }
 
     private Topic getRequestingUsername() {

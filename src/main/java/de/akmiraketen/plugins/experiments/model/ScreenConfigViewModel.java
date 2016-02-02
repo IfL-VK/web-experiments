@@ -2,26 +2,22 @@ package de.akmiraketen.plugins.experiments.model;
 
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.service.DeepaMehtaService;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 /**
  * The view model class every client holds for the currently loaded trial.
  *
- * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2014-2015
+ * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2016
  * @website https://github.com/mukil/web-experiments
  * @version 0.4-SNAPSHOT
  */
 public class ScreenConfigViewModel implements JSONEnabled {
     
     Logger log = Logger.getLogger(getClass().getName());
-    
     Topic screenConfig = null;
     
     private final String SCREEN_TEMPLATE_NAME = "de.akmiraketen.screen_template";

@@ -22,7 +22,7 @@
         // init
         $.getJSON('/experiment/participant', function(participant, status, xhr) {
             // ..
-            if (status != "nocontent") {
+            if (status !== "nocontent") {
                 screen.participant = participant
                 console.log("  Cached Screen Participant", screen.participant)
             } else {
@@ -40,7 +40,7 @@
             // ..
             screen.configuration = config
             console.log("  Cached Screen Configuration", screen.configuration, "HTTP Status", status)
-            if (status == "success") {
+            if (status === "success") {
                 screen.init()
             } else {
                 throw new Error("Could not load screen configuration, please check the server logs or the URL!")
@@ -103,13 +103,14 @@
     }
 
     this.setScreenAsSeen = function() {
-        /** $.get('/experiment/screen/' + screen.id + '/seen', function(e) {
-            if (e != -1) {
+        console.log("Marking Screen as Seen")
+        $.get('/experiment/screen/' + screen.id + '/seen', function(e) {
+            if (e !== -1) {
                 console.log("  Screen configuration SET " + screen.id + " as SEEN by Participant ", screen.participant)
             } else {
                 console.warn("Could NOT SET screen as SEEN by " + screen.participant)
             }
-        }) **/
+        })
     }
 
     this.restartExperiment = function() {
@@ -120,8 +121,9 @@
     }
 
     // 4) Setup Hook "init" - is called when screen configuration was loaded
-    this.init = function() { console.log("  Hint: You can use the screen.init() hook to execute code after screen "
-         + " configuration was loaded")}
+    this.init = function() {
+        console.log("  Hint: You can use the screen.init() hook to execute code after screen configuration was loaded")
+    }
 
     // ------------------------------------------------------------------------------------------------ Constructor Code
 
@@ -148,6 +150,9 @@
         })
         // 4) init event types for reporting
         screen.initEventTypes()
+        // 5) invalidate configured screen for the current participant
+        screen.setScreenAsSeen()
+        // $('.loader').remove()
 
     })
 

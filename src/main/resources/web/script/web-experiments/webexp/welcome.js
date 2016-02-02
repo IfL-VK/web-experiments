@@ -1,7 +1,7 @@
 
 // The main module called by/for the "welcome" page.
 
-define(function (require) {
+define(function(require) {
 
     var newCtrl     = require('./controller/welcomeCtrl')
     var newModel    = require('./model/welcomeModel')
@@ -11,7 +11,7 @@ define(function (require) {
 
     // ------ Initialization of page (according to view_state)
 
-    function init_page () {
+    function init_page() {
 
         view_state = common.parse_view_state_from_page()
 
@@ -28,7 +28,6 @@ define(function (require) {
 
                     if (page_condition === "webexp.config.pinning") {
                         render_pinning_intro()
-
                     } else {
                         render_no_pinning_intro()
                     }
@@ -48,7 +47,11 @@ define(function (require) {
 
             newCtrl.fetchParticipant(function (data) {
 
-                if (data.status == 204) { // API change: as of 0.4-SNAPSHOT
+                // Remove Loader
+                d3.select('.loader').remove()
+
+                // Handler Authentication/User Status
+                if (data.status === 204) { // API change: as of 0.4-SNAPSHOT
                     // re-implemented response for an unauthenticated request
                     render_start_session_dialog()
                     throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
@@ -78,6 +81,14 @@ define(function (require) {
 
     }
 
+    function load_next_screen() {
+        window.document.location.assign("/experiment/screen/next")
+    }
+
+    function page_refresh() {
+        window.location.reload()
+    }
+
     function restart_experiment() {
         newCtrl.logoutParticipant(function(e) {
             console.log("OK - Restart log out successful!")
@@ -98,8 +109,8 @@ define(function (require) {
         d3.select('.title').text('')
         var content = d3.select('.content')
             content.html('<p class="textblock">Zum Starten des Experiments bitte eine ID f&uuml;r die Versuchsperson '
-                + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><br/><input class="vp-id" type="text" '
-                + 'name="username" placeholder="VP <Nr>"><input type="button" value="OK" class="login-btn" '
+                + 'eintragen und mit <b>OK</b> die Sitzung starten:<br/><br/><input class="vp-id input" type="text" '
+                + 'name="username" placeholder="VP <Nr>"><input type="button" value="OK" class="login-btn button" '
                 + 'name="submit"></p>')
         content.select('.login-btn').on('click', do_auth)
         content.select('.vp-id').on('keyup', function () {
@@ -111,7 +122,7 @@ define(function (require) {
         function do_auth() {
             var element = d3.select('input.vp-id')[0][0]
             newCtrl.startSession(element.value, function (){
-                window.location.reload()
+                page_refresh()
             }, common.debug)
         }
     }
@@ -120,11 +131,13 @@ define(function (require) {
 
     function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<p class="textblock"><br/><br/></p><a class="logout" href="#">Log out</a>'
+        var content = '<a class="logout" href="#">Log out</a>'
         set_page_content(content)
         d3.select('a.logout').on('click', logout)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Start")
-            next.on('click', function (e) { window.document.location.assign("/experiment/screen/next") })
+            next.on('click', function (e) {
+                load_next_screen()
+            })
     }
 
     // --- General Intro View
@@ -266,7 +279,7 @@ define(function (require) {
                         if (common.debug) console.log("OK - Icon set", iconId) // ### render icon as silected
                         d3.select('.content a.button').attr('class', 'button')
                             .on('click', function (e) {
-                               window.location.assign('/experiment/next/screen')
+                                load_next_screen()
                             })
                     }, function (error) {
                         console.warn("Fail - Icon preference could not be set!")

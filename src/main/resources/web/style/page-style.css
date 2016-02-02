@@ -11,6 +11,7 @@ body {
     padding: 0px;
     margin: 0px;
     font-family: 'Calibri', 'Helvetica Neue','Arial', 'Helvetica', sans-serif;
+    background-color: rgba(200,200,200,0.3);
 }
 
 .window {
@@ -18,6 +19,17 @@ body {
     margin-left: auto;
     margin-right: auto;
     width: 800px;
+}
+
+.loader {
+    position: absolute; top: 0px; left: 0px;
+    font-size: 4em;
+    color: #444;
+    padding-top: 30%;
+    z-index: 2001;
+    text-align: center;
+    width: 100%;
+    height: 100%;
 }
 
 .estimation .window {
@@ -72,6 +84,12 @@ body {
 .main.start .content input {
     padding: 10px;
     margin: 10px;
+    font-size: 1em;
+}
+
+.main.start input.vp-id {
+    position: relative;
+    top: 2px;
 }
 
 .main.start .content .logout {
