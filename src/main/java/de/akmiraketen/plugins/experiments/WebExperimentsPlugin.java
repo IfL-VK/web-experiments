@@ -143,14 +143,14 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getWelcomeScreen() {
-        return getStaticResource("web/welcome.html");
+        return getStaticResource("web/index.html");
     }
     
     @GET
     @Path("/finish")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getFinishView() {
-        return getStaticResource("web/welcome.html");
+        return getStaticResource("web/index.html");
     }
 
     /**
@@ -499,7 +499,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         StringBuilder report = new StringBuilder();
         ResultList<RelatedTopic> participants = dms.getTopics("dm4.accesscontrol.username", 0);
         log.info("Gathering reporting for overall " + participants.getSize() + " user accounts");
-        report.append("VP ID\tScreen Template\tScreen Condition\tScreen Options\tScreen Timeout\tAction Type\tAction Value");
+        report.append("VP ID\tScreen Template\tScreen Condition\tScreen Timeout\tScreen Options\tAction Type\tAction Value");
         report.append("\n");
         for (RelatedTopic username : participants.getItems()) {
             String usernameValue = username.getSimpleValue().toString();
@@ -595,7 +595,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                 actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
             }
             report.append(usernameValue).append("\t").append(templateName).append("\t").append(conditionValue).
-                append("\t").append(options).append("\t").append(timeout).append("\t").append(actionType)
+                append("\t").append(timeout).append("\t").append(options).append("\t").append(actionType)
                 .append("\t").append(actionValue).append("\n");
         }
     }
@@ -633,7 +633,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         while(namesIterator.hasNext()) {
             String name = namesIterator.next();
             report.append(usernameValue).append("\t").append(templateName).append("\t").append(conditionValue)
-                .append("\t").append(options).append("\t").append(timeout).append("\t").append(name)
+                .append("\t").append(timeout).append("\t").append(options).append("\t").append(name)
                 .append("\t").append(sum.get(name)).append("\n");
         }
     }
