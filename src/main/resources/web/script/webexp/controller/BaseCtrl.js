@@ -15,20 +15,11 @@ define(['../restc'], function (restClient, require) {
         fetchParticipant: function (handle, fail, debug) {
             restc.fetchParticipant(handle, fail, debug)
         },
-        fetchAllUnseenTrials: function (conditionUri, handle, debug) {
-            restc.fetchAllUnseenTrials(conditionUri, handle, debug)
-        },
-        fetchAllTrials: function (handle, debug) {
-            restc.fetchAllTrials(handle, debug)
-        },
         fetchTrialConfig: function (trialId, handle, debug) {
             restc.fetchTrialConfig(trialId, handle, debug)
         },
         doMarkTrialAsSeen: function (trialId, handle, fail) {
             restc.doMarkTrialAsSeen(trialId, handle, fail)
-        },
-        doMarkIconPreference: function (fileTopicId, handle, fail) {
-            restc.doMarkIconPreference(fileTopicId, handle, fail)
         },
         setModel: function (model) {
             this.model = model;
@@ -39,6 +30,9 @@ define(['../restc'], function (restClient, require) {
         },
         startSession: function (vpId, handle, debug) {
             restc.startSession(vpId, handle, debug)
+        },
+        logoutParticipant: function (handle, debug) {
+            restc.logoutParticipant(handle, debug)
         },
         restc: restc 
         

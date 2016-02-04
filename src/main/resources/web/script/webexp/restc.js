@@ -109,35 +109,15 @@ define(['d3'], function (d3, require) {
             // 
             fetch('/experiment/symbol/all', handle, undefined, true, debug)
         },
-        fetchAllTrials: function (handle, debug) {
-            fetch('/experiment/screen/all', handle, undefined, true, debug)
-        },
-        fetchAllUnseenTrials: function (conditionUri, handle, debug) {
-            // 
-            fetch('/experiment/screen/unseen/' + conditionUri, handle, undefined, true, debug)
-        },
         fetchTrialConfig: function (trialId, handle, debug) {
             //
             fetch('/experiment/screen/' + trialId, handle, undefined, true, debug)
-        },
-        fetchNextEstimationNr: function (trialId, handle, fail, debug) {
-            //
-            fetch('/experiment/estimation/next/' + trialId, handle, fail, true, debug)
-        },
-        postEstimationReport: function (trialId, estimationNr, payload, handle, fail, debug) {
-            post('/experiment/estimation/' + trialId + '/' + estimationNr, payload, handle, fail, false, debug)
-        },
-        postPinningReport: function (trialId, payload, handle, fail, debug) {
-            post('/experiment/pinning/' + trialId, payload, handle, fail, false, debug)
         },
         doMarkTrialAsSeen: function (trialId, callback, fail) {
             mark('/experiment/screen/' + trialId + "/seen", callback, fail)
         },
         logoutParticipant: function (callback, fail) {
             post('/accesscontrol/logout', undefined, callback, fail)
-        },
-        doMarkIconPreference: function (fileTopicId, callback, fail) {
-            mark('/experiment/symbol/choose/' + fileTopicId, callback, fail)
         },
         startSession: function (id, handle, debug) {
             authenticate(id, "", handle, false, debug)

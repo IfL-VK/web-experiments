@@ -2,7 +2,7 @@
 // Require config (common) to all ..
 
 require.config({
-    baseUrl: "/de.akmiraketen.web-experiments/script/web-experiments/",
+    baseUrl: "/de.akmiraketen.web-experiments/script/",
     paths: {
       d3: "/de.akmiraketen.web-experiments/script/vendor/d3/d3.min"
     },
