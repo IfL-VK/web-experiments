@@ -1,13 +1,16 @@
 
-// The main module called by/for the "welcome" page.
+// The main module used in the "index" template.
+// Here, the very first and the very last screen of your experiment is handled.
+// With that there is a utility to login and logout (which are the equivalent to
+// starting and restarting an experiment.
 
 define(function(require) {
 
-    var newCtrl     = require('./controller/welcomeCtrl')
-    var newModel    = require('./model/welcomeModel')
+    var newCtrl     = require('./controller/indexCtrl')
+    var newModel    = require('./model/indexModel')
     var common      = require('common')
 
-    var view_state  = "" // values may be "", "finish", "welcome", "pause" or "icon", "intro"
+    var view_state  = "" // values may be "" or "welcome" and "finish"
 
     // ------ Initialization of page (according to view_state)
 
@@ -23,6 +26,8 @@ define(function(require) {
 
             // Remove Loader
             d3.select('.loader').remove()
+            // Init Model
+            newModel.setUsername(data.username)
 
             // Handler Authentication/User Status
             if (data.status === 204) { // API change: as of 0.4-SNAPSHOT
@@ -39,11 +44,6 @@ define(function(require) {
                 set_task_description('<br/>Danke!<br/><br/>')
                 set_page_content('<a class="restart" href="#">Neustart</a>')
                 d3.select('a.restart').on('click', restart_experiment)
-
-            } else if (view_state.indexOf("pause") !== -1) {
-                // is modellled as a trial config, too, so we need to mark it as seen
-                var trialId = common.parse_trial_id_from_resource_location()
-                newCtrl.doMarkTrialAsSeen(trialId)
 
             }
 
@@ -108,7 +108,7 @@ define(function(require) {
 
     function init_welcome_view() {
         set_task_description("Willkommen zu unserem Experiment")
-        var content = '<a class="logout" href="#">Log out</a>'
+        var content = '<p>Angemeldet als '+newModel.getUsername()+'</p><a class="logout" href="#">Log out</a>'
         set_page_content(content)
         d3.select('a.logout').on('click', logout)
         var next = d3.select('.content').append('a').attr('class', 'button').attr('href', '#').text("Start")

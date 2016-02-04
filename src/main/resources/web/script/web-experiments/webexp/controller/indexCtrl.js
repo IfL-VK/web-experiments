@@ -1,7 +1,7 @@
 
 define(['./BaseCtrl'], function (BaseCtrl) {
 
-    var customCtrl = new BaseCtrl('Controller: Welcome Page')
+    var customCtrl = new BaseCtrl('Controller: Index Page')
 
     // Extending BaseCtrl module for new page/app specific controls
 

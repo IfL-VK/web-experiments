@@ -110,15 +110,15 @@ define(['d3'], function (d3, require) {
             fetch('/experiment/symbol/all', handle, undefined, true, debug)
         },
         fetchAllTrials: function (handle, debug) {
-            fetch('/experiment/trial/all', handle, undefined, true, debug)
+            fetch('/experiment/screen/all', handle, undefined, true, debug)
         },
         fetchAllUnseenTrials: function (conditionUri, handle, debug) {
             // 
-            fetch('/experiment/trial/unseen/' + conditionUri, handle, undefined, true, debug)
+            fetch('/experiment/screen/unseen/' + conditionUri, handle, undefined, true, debug)
         },
         fetchTrialConfig: function (trialId, handle, debug) {
             //
-            fetch('/experiment/trial/' + trialId, handle, undefined, true, debug)
+            fetch('/experiment/screen/' + trialId, handle, undefined, true, debug)
         },
         fetchNextEstimationNr: function (trialId, handle, fail, debug) {
             //
@@ -131,7 +131,7 @@ define(['d3'], function (d3, require) {
             post('/experiment/pinning/' + trialId, payload, handle, fail, false, debug)
         },
         doMarkTrialAsSeen: function (trialId, callback, fail) {
-            mark('/experiment/trial/' + trialId + "/seen", callback, fail)
+            mark('/experiment/screen/' + trialId + "/seen", callback, fail)
         },
         logoutParticipant: function (callback, fail) {
             post('/accesscontrol/logout', undefined, callback, fail)

@@ -1,7 +1,7 @@
 
 define(['./BaseModel'], function (Base) {
 
-    var newModel = new Base('Model: Welcome Page')
+    var newModel = new Base('Model: Index Page')
 
     return newModel;
 
