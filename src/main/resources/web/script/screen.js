@@ -151,7 +151,7 @@
         // 4) init event types for reporting
         screen.initEventTypes()
         // 5) invalidate configured screen for the current participant
-        screen.setScreenAsSeen()
+        // screen.setScreenAsSeen()
         // $('.loader').remove()
 
     })
