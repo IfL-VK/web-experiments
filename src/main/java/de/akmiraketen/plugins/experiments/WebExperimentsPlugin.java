@@ -648,11 +648,14 @@ public class WebExperimentsPlugin extends PluginActivator {
         Collections.sort(in_memory, new Comparator<RelatedTopic>() {
             public int compare(RelatedTopic t1, RelatedTopic t2) {
                 try { // ### webexp.config.intro + webexp.config.pract
-                    if (!t1.getUri().contains(".") && !t2.getUri().contains(".")) {
+                    if (t1.getUri().contains(".") && t2.getUri().contains(".")) {
                         String one = t1.getUri().substring(t1.getUri().lastIndexOf(".") + 1);
                         String two = t2.getUri().substring(t2.getUri().lastIndexOf(".") + 1);
                         if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
                         if ( Long.parseLong(one) > Long.parseLong(two)) return 1;
+                    } else {
+                        log.warning("We could not sort the active screen configurations for this users due to a "
+                            + "misconfigured URI in 1.\"" + t1.getUri() + "\" OR 2. \"" + t2.getUri());
                     }
                 } catch (Exception nfe) {
                     log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
