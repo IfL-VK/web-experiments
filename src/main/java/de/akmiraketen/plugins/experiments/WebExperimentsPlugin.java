@@ -281,20 +281,22 @@ public class WebExperimentsPlugin extends PluginActivator {
     @GET
     @Path("/screen/{screenConfigId}/seen")
     @Transactional
-    public Response setScreenAsSeen(@PathParam("screenConfigId") long trialId) {
+    public Response setScreenAsSeen(@PathParam("screenConfigId") long screenId) {
         // 1) get current username by http session (or throw a 401)
         Topic username = getRequestingUsername();
         // 2) Check if user has seen the screen already
-        if (!hasSeenScreen(username, trialId)) {
+        if (!hasSeenScreen(username, screenId)) {
             dms.createAssociation(new AssociationModel(SCREEN_SEEN_EDGE,
                 new TopicRoleModel(username.getId(), "dm4.core.default"),
-                new TopicRoleModel(trialId, "dm4.core.default")));
+                new TopicRoleModel(screenId, "dm4.core.default")));
         } else {
             log.info("### Screen Seen Edge already exists, responding with next unseen screen id - OK!");
             long screenConfigurationId = getNextUnseenScreenId(username);
             return Response.ok(screenConfigurationId).build();
         }
-        log.info("### Set screen " + trialId + " as SEEN by user=" + username.getSimpleValue());
+        log.info("### Set screen " + screenId + " as SEEN by user=" + username.getSimpleValue());
+        // 3) Create Report - To avoid deadlocks we could initSceenReport always when screen is marked as seen
+        // But we probably would need to remove the @Transactiononal annotation from initScreenReport()
         return Response.ok(OK_NR).build();
     }
 
@@ -305,13 +307,13 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Path("/report/start/{screenConfigId}")
     @Transactional
     @Produces(MediaType.APPLICATION_JSON)
-    public Response initScreenReport(@PathParam("screenConfigId") long screenConfigId) {
+    public Response initScreenReport(@PathParam("screenConfigId") long screenId) {
         Topic username = getRequestingUsername();
-        Topic screenConfigTopic = dms.getTopic(screenConfigId);
+        Topic screenConfigTopic = dms.getTopic(screenId);
         Topic existingReport = getScreenReportTopic(username, screenConfigTopic);
         if (existingReport == null) {
             //
-            ChildTopicsModel reportModel = new ChildTopicsModel().putRef(SCREEN_CONFIG_TYPE, screenConfigId);
+            ChildTopicsModel reportModel = new ChildTopicsModel().putRef(SCREEN_CONFIG_TYPE, screenId);
             Topic screenReport = dms.createTopic(new TopicModel(SCREEN_REPORT_TYPE, reportModel));
             dms.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(username.getId(), "dm4.core.default"),
