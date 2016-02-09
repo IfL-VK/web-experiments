@@ -616,12 +616,11 @@ public class WebExperimentsPlugin extends PluginActivator {
                             actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
                             JSONObject valueObject = new JSONObject(actionValue);
                             String name = valueObject.getString("name") + " (" + valueObject.getString("type") + ")";
+                            int count = 1;
                             if (sum.containsKey(name)) {
-                                int count = (Integer) sum.get(name) + 1;
-                                sum.replace(name, count);
-                            } else {
-                                sum.put(name, 1);
+                                count = (Integer) sum.get(name) + 1;
                             }
+                            sum.put(name, count);
                         } catch (JSONException ex) {
                             log.log(Level.SEVERE, "Could not transform \"Action Value\" string to JSONObject", ex);
                         }
