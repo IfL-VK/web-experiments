@@ -29,9 +29,12 @@ import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -72,47 +76,49 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     // --- DeepaMehta 4 URIs
     
-    private static final String USER_ACCOUNT_TYPE_URI = "dm4.accesscontrol.user_account";
-    private static final String USERNAME_TYPE_URI = "dm4.accesscontrol.username";
-    private static final String USER_PASSWORD_TYPE_URI = "dm4.accesscontrol.password";
+    private static final String USER_ACCOUNT_TYPE_URI       = "dm4.accesscontrol.user_account";
+    private static final String USERNAME_TYPE_URI           = "dm4.accesscontrol.username";
+    private static final String USER_PASSWORD_TYPE_URI      = "dm4.accesscontrol.password";
     
-    private static final String ROLE_PARENT = "dm4.core.child";
-    private static final String ROLE_CHILD = "dm4.core.parent";
-    private static final String ROLE_DEFAULT = "dm4.core.default";
+    private static final String ROLE_PARENT                 = "dm4.core.child";
+    private static final String ROLE_CHILD                  = "dm4.core.parent";
+    private static final String ROLE_DEFAULT                = "dm4.core.default";
     
-    private static final String FILE_TYPE = "dm4.files.file";
-    private static final String FILE_PATH_TYPE = "dm4.files.path";
+    private static final String FILE_TYPE                   = "dm4.files.file";
+    private static final String FILE_PATH_TYPE              = "dm4.files.path";
     
     // --- Web Experiment URIs
 
-    private static final String SCREEN_CONFIG_TYPE = "de.akmiraketen.screen_configuration";
-    private static final String SCREEN_CONDITION_TYPE = "de.akmiraketen.screen_condition";
-    private static final String SCREEN_TEMPLATE_NAME = "de.akmiraketen.screen_template";
-    private static final String SCREEN_TIMEOUT_VALUE = "de.akmiraketen.screen_timeout";
-    private static final String SCREEN_OPTIONS_BLOB = "de.akmiraketen.screen_options";
+    private static final String SCREEN_CONFIG_TYPE          = "de.akmiraketen.screen_configuration";
+    private static final String SCREEN_CONDITION_NAME       = "de.akmiraketen.screen_condition";
+    private static final String SCREEN_TEMPLATE_NAME        = "de.akmiraketen.screen_template";
+    private static final String SCREEN_TIMEOUT_VALUE        = "de.akmiraketen.screen_timeout";
+    private static final String SCREEN_OPTIONS_BLOB         = "de.akmiraketen.screen_options";
 
     // -- Per User Config
 
-    private static final String SCREEN_SEEN_EDGE = "de.akmiraketen.screen_seen";
-    private static final String ACTIVE_CONFIGURATION_EDGE = "de.akmiraketen.active_configuration";
+    private static final String SCREEN_SEEN_EDGE            = "de.akmiraketen.screen_seen";
+    private static final String ACTIVE_CONFIGURATION_EDGE   = "de.akmiraketen.active_configuration";
 
     // -- Screen Report URIs
 
-    private static final String SCREEN_REPORT_TYPE = "de.akmiraketen.screen_report";
-    private static final String SCREEN_ACTION_TYPE = "de.akmiraketen.screen_action";
-    private static final String SCREEN_ACTION_NAME_TYPE = "de.akmiraketen.action_name";
-    private static final String SCREEN_ACTION_VALUE_TYPE = "de.akmiraketen.action_value";
+    private static final String SCREEN_REPORT_TYPE          = "de.akmiraketen.screen_report";
+    private static final String SCREEN_ACTION_TYPE          = "de.akmiraketen.screen_action";
+    private static final String SCREEN_ACTION_NAME_TYPE     = "de.akmiraketen.action_name";
+    private static final String SCREEN_ACTION_VALUE_TYPE    = "de.akmiraketen.action_value";
 
     // -- Definitions
 
     private static final int OK_NR = 1;
     private static final int FAIL_NR = -1;
+    private static final String SCREEN_CONFIG_URI_PREFIX    = "webexp.config.";
 
     // -- Settings
 
     private static final int NR_OF_USERS = 300;
     private static final String TEMPLATE_FOLDER = "web-experiments/templates";
     private static final String SYMBOL_FOLDER = "web-experiments/symbols";
+    private static final String CONFIG_SEPERATOR = "|";
 
     // --- Consumed Plugin Services
     
@@ -400,45 +406,46 @@ public class WebExperimentsPlugin extends PluginActivator {
         return dms.getTopics("de.akmiraketen.action_name", 0);
     }
 
-    /** @GET
-    @Path("/screen/config/import")
-    @Transactional
-    public Topic doImportUserTrialConfig() {
-        return doImportUserTrialConfig(acService.getUsername());
-    }
-
+    /** Custom Configuration Loading Mechanism, available as a Topic Command for the selected username Topic... */
     @GET
     @Path("/screen/config/import/{username}")
     @Transactional
-    public Topic doImportUserTrialConfig(@PathParam("username") String name) {
+    public Topic doImportScreenConfigurationForUsername(@PathParam("username") String name) {
         try {
             // 1) fetch related file topic
             Topic username = acService.getUsername(name);
-            Topic fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, "dm4.core.default",
-                    "dm4.core.default", "dm4.files.file");
-            log.info("Loading Trial Config File Topic: " + fileTopic.getId()
-                    + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username);
-            File trialConfig = fileService.getFile(fileTopic.getId());
-            // 2) delete and create trial config topic
-            ResultList<RelatedTopic> usersTrialConfigs = getUsersScreens(username);
+            Topic fileTopic = null;
+            try {
+                fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT,
+                        ROLE_DEFAULT, FILE_TYPE);
+            } catch(Exception e) {
+                log.severe("Screen Configuration could not be loaded. Reason: There can only be 1 screen " +
+                        "configuration file related to a Username via an \"Active Configuration\" assocation at a time.");
+                throw new WebApplicationException(500);
+            }
+            log.info("Importing new Screen Configuration File: " + fileTopic.getId()
+                    + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username + "\"");
+            File screenConfigurationFileTopic = fileService.getFile(fileTopic.getId());
+            // 2) delete potential former trial config topic
+            ResultList<RelatedTopic> usersTrialConfigs = getActiveScreenConfigs(username);
             Iterator<RelatedTopic> i = usersTrialConfigs.iterator();
             while (i.hasNext()) {
                 Topic topic = i.next();
                 if (topic.getTypeUri().equals(SCREEN_CONFIG_TYPE)) {
-                    log.fine(">>> Deleting former Trial Config Topic " + topic.getUri());
+                    log.fine("Deleting former Screen Configuration Topic " + topic.getUri() + " for user " + name);
                     i.remove();
                     topic.delete();
                 }
             }
-            // 3) read in file topic's lines
+            // 3) read in file topic's lines and create new trial configs
             int nr = 1;
-            BufferedReader br = new BufferedReader(new FileReader(trialConfig.getAbsolutePath()));
+            BufferedReader br = new BufferedReader(new FileReader(screenConfigurationFileTopic.getAbsolutePath()));
             try {
                 String line = br.readLine();
                 while (line != null) {
-                    if (!line.startsWith("webexp.config")) {
+                    if (!line.startsWith("webexp.order_id")) {
                         log.fine("Line: " + line);
-                        createNewTrialConfig(nr, line, username);
+                        createNewTrialConfig(line, username);
                         nr++;
                     }
                     line = br.readLine();
@@ -448,42 +455,46 @@ public class WebExperimentsPlugin extends PluginActivator {
             }
             return username;
         } catch (IOException ex) {
-            log.log(Level.SEVERE, "Could not import trial configuration fo user " + name, ex);
+            log.log(Level.SEVERE, "Could not import Screen Configuration for user " + name, ex);
             return null;
         }
-    } **/
+    }
     
-    /** private void createNewTrialConfig(int lineNr, String config_line, Topic username) {
-        // split csv-config file line
-        String[] values = Pattern.compile("|", Pattern.LITERAL).split(config_line);
-        String conditionUri = (values[3].trim().equals("Pinning")) ? TRIAL_CONDITION_A : ((values[3].trim().equals("No Pinning")) ? TRIAL_CONDITION_B : "");
-        String trialMapId = values[2].trim();
-        Topic map = dms.getTopic(TRIAL_CONFIG_MAP_ID, new SimpleValue(trialMapId));
-        if (conditionUri.isEmpty()) log.severe("Trial Conditition URI could not be detected...!");
-        if (map == null) log.severe("Map ID could not be detected...!");
-        // build up topic model
-        String configUri = "webexp.config." + username.getSimpleValue() + "_" + lineNr + "_" + values[0].trim();
-        TopicModel trialConfig = new TopicModel(configUri, TRIAL_CONFIG_TYPE, new ChildTopicsModel()
-                .put(TRIAL_CONFIG_NAME, values[1].trim())
-                .putRef(TRIAL_CONFIG_MAP_ID, map.getId())
-                .putRef(TRIAL_CONDITION_TYPE, conditionUri)
-                .put(TRIAL_CONFIG_PLACE_TO_PIN, values[4].trim())
-                .put(TRIAL_CONFIG_PLACE_FROM1, values[5].trim())
-                .put(TRIAL_CONFIG_PLACE_TO1, values[6].trim())
-                .put(TRIAL_CONFIG_PLACE_FROM2, values[7].trim())
-                .put(TRIAL_CONFIG_PLACE_TO2, values[8].trim())
-                .put(TRIAL_CONFIG_PLACE_FROM3, values[9].trim())
-                .put(TRIAL_CONFIG_PLACE_TO3, values[10].trim())
-                .put(TRIAL_CONFIG_PLACE_FROM4, values[11].trim())
-                .put(TRIAL_CONFIG_PLACE_TO4, values[12].trim())
-                .put(TRIAL_CONFIG_PLACE_FROM5, values[13].trim())
-                .put(TRIAL_CONFIG_PLACE_TO5, values[14].trim())
-                .put(TRIAL_CONFIG_MEMO_SEC, values[15].trim()));
-        // create topic
-        Topic trialConfigTopic = dms.createTopic(trialConfig);
-        log.info(">>> Created new Trial Configuration: " + configUri + " (" + trialConfigTopic.getId() + ") for \"" + trialMapId + "\" (Topic: "+map.getId()+")");
-        createTrialConfigUserAssignment(trialConfigTopic, username);
-    } **/
+    private void createNewTrialConfig(String config_line, Topic username) {
+        // 1) split csv-config file line and read in config value for this screen
+        // webexp.order_id | de.akmiraketen.screen_template | de.akmiraketen.screen_condition | de.akmiraketen.screen_timeout | de.akmiraketen.screen_options
+        String[] values = Pattern.compile(CONFIG_SEPERATOR, Pattern.LITERAL).split(config_line);
+        String ordinalNumber = values[0].trim();
+        String screenTemplateName = values[1].trim();
+        String screenConditionName = values[2].trim();
+        String screenTimeout = values[3].trim();
+        String screenJsonOptions = "";
+        if (values.length > 4) {
+            screenJsonOptions = values[4].trim();
+        }
+        // 2) Check sanity, template Name and ordinal Number can't be empty values
+        if (screenTemplateName.isEmpty()) {
+            throw new RuntimeException("Screen Configuration misses Template Name!");
+        }
+        if (ordinalNumber.isEmpty()) {
+            throw new RuntimeException("Screen Configuration misses Ordinal Number!");
+        }
+        // 3) Build up Screen Configuration Topic model
+        String configUri = SCREEN_CONFIG_URI_PREFIX + username.getSimpleValue() + "_" + ordinalNumber;
+        TopicModel screenConfiguration = new TopicModel(configUri, SCREEN_CONFIG_TYPE, new ChildTopicsModel()
+                .put(SCREEN_TEMPLATE_NAME, screenTemplateName)
+                .put(SCREEN_CONDITION_NAME, screenConditionName)
+                .put(SCREEN_TIMEOUT_VALUE, screenTimeout)
+                .put(SCREEN_TIMEOUT_VALUE, screenTimeout)
+                .put(SCREEN_OPTIONS_BLOB, screenJsonOptions));
+        // 4) Create Screen Configuraton Topic
+        Topic screenConfigTopic = dms.createTopic(screenConfiguration);
+        log.info("Created Screen Configuration with URI=\"" + configUri + " " + screenConfigTopic.getId() + "\" " +
+                "Condition: " + screenConditionName + ", " +  "Template: \""
+                + screenTemplateName + "\"and Ordinal Nr" + ". " + ordinalNumber);
+        // 5) Assign Scren Configuration Topic to Username via "Active Configuration" edge
+        createTrialConfigUserAssignment(screenConfigTopic, username);
+    }
 
     /**
      * An implementation to generate a CSV report containing all trial report (usage data) for all participants
@@ -499,14 +510,14 @@ public class WebExperimentsPlugin extends PluginActivator {
         getRequestingUsername();
         // 2) gather all reports from the db
         StringBuilder report = new StringBuilder();
-        ResultList<RelatedTopic> participants = dms.getTopics("dm4.accesscontrol.username", 0);
+        ResultList<RelatedTopic> participants = dms.getTopics(USERNAME_TYPE_URI, 0);
         log.info("Gathering reporting for overall " + participants.getSize() + " user accounts");
         report.append("VP ID\tScreen Template\tScreen Condition\tScreen Timeout\tScreen Options\tAction Type\tAction Value");
         report.append("\n");
         for (RelatedTopic username : participants.getItems()) {
             String usernameValue = username.getSimpleValue().toString();
-            ResultList<RelatedTopic> screenReports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
-                    "dm4.core.default", SCREEN_REPORT_TYPE, 0);
+            ResultList<RelatedTopic> screenReports = username.getRelatedTopics("dm4.core.association",ROLE_DEFAULT,
+                    ROLE_DEFAULT, SCREEN_REPORT_TYPE, 0);
             if (screenReports.getSize()> 0) {
                 log.info("Fetched " + screenReports.getSize() + " Screen Reports for \"" + usernameValue + "\"");
                 for (RelatedTopic screenReport : screenReports) {
@@ -519,7 +530,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                         screenConfigurationTopic = screenReport.getChildTopics().getTopic(SCREEN_CONFIG_TYPE);
                         screenConfigurationTopic.loadChildTopics();
                         templateName = screenConfigurationTopic.getChildTopics().getString(SCREEN_TEMPLATE_NAME);
-                        conditionValue = screenConfigurationTopic.getChildTopics().getString(SCREEN_CONDITION_TYPE);
+                        conditionValue = screenConfigurationTopic.getChildTopics().getString(SCREEN_CONDITION_NAME);
                         options = screenConfigurationTopic.getChildTopics().getString(SCREEN_OPTIONS_BLOB);
                         timeout = screenConfigurationTopic.getChildTopics().getString(SCREEN_TIMEOUT_VALUE);
                     }
@@ -582,8 +593,8 @@ public class WebExperimentsPlugin extends PluginActivator {
    /**
     * Loads all active screen configuration for the given username topic.
     **/
-    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic user) {
-        return user.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
+    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic username) {
+        return username.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
     }
 
     private void fullActionReport(String usernameValue, String templateName, String conditionValue, String options,
@@ -645,11 +656,13 @@ public class WebExperimentsPlugin extends PluginActivator {
         for (RelatedTopic obj : all) {
             in_memory.add(obj);
         }
-        // sort all result-items
+        // 1) sort all result-items
         Collections.sort(in_memory, new Comparator<RelatedTopic>() {
             public int compare(RelatedTopic t1, RelatedTopic t2) {
-                try { // ### webexp.config.intro + webexp.config.pract
+                try { // ### webexp.config.VP X_
                     if (t1.getUri().contains(".") && t2.getUri().contains(".")) {
+                        // 1.1) If screens were configured manually
+                        // throws NotFoundException if our URI was constructed automatically via doImportScreenConfig
                         String one = t1.getUri().substring(t1.getUri().lastIndexOf(".") + 1);
                         String two = t2.getUri().substring(t2.getUri().lastIndexOf(".") + 1);
                         if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
@@ -659,9 +672,23 @@ public class WebExperimentsPlugin extends PluginActivator {
                             + "misconfigured URI in 1.\"" + t1.getUri() + "\" OR 2. \"" + t2.getUri());
                     }
                 } catch (Exception nfe) {
-                    log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
-                            + t2.getUri() + " nfe: " + nfe.getMessage());
-                    return 0;
+                    // 1.2) If screen configs were imported via our per-user function
+                    try {
+                        if (t1.getUri().contains("_") && t2.getUri().contains("_")) {
+                            // 1.1) If screens were configured manually
+                            String one = t1.getUri().substring(t1.getUri().lastIndexOf("_") + 1);
+                            String two = t2.getUri().substring(t2.getUri().lastIndexOf("_") + 1);
+                            if ( Long.parseLong(one) < Long.parseLong(two)) return -1;
+                            if ( Long.parseLong(one) > Long.parseLong(two)) return 1;
+                        } else {
+                            log.warning("We could not sort the active screen configurations for this users due to a "
+                                    + "misconfigured URI in 1.\"" + t1.getUri() + "\" OR 2. \"" + t2.getUri());
+                        }
+                        return 0;
+                    } catch(Exception nf) {
+                        log.warning("Error while accessing URI of Topic 1: " + t1.getUri() + " Topic2: "
+                                + t2.getUri() + " Ordinal Number Seperator Not Found " + nfe.getMessage());
+                    }
                 }
                 return 0;
             }
