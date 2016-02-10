@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="UTF-8" />
+    <title>Start - Web Experiment</title>
+
+    <link rel="stylesheet" href="/de.akmiraketen.web-experiments/style/page-style.css" />
+    
+    <script src="/de.akmiraketen.web-experiments/script/vendor/jquery/jquery-2.1.4.min.js"></script>
+    <script src="/de.akmiraketen.web-experiments/script/screen.js"></script>
+    <script>
+        // The following function is called from web-experiments after 
+        // a) the resp. Screen config was loaded and 
+        // b) the resp. Participant authenticated succesfully 
+        screen.init = function() {
+            // 1) check condition of this screen configuration
+            var configuration = screen.getConfiguration()
+            console.log("Screen Configuration", configuration)
+            // 2) initializes a "Screen Report" for this participant and Screen
+            screen.startReport()
+            // 3) set screen as seen
+            // calling the folloinwg NOT "near simultaniously" to screen.startReport prevents deadlock scenarios
+            // A deadlock could mean that, in the end, no report was recorded for a given participant (=critical)
+            setTimeout(screen.setScreenAsSeen, 5000) // comment during template development
+        }
+    </script>
+
+</head>
+<body>
+
+    <div class="main start">
+        
+        <h3 id="title" class="title">
+            Start
+        </h3>
+        
+        <div class="content">
+
+            <p class="textblock">
+                Falls du noch Fragen zum Versuch oder deinen Aufgaben hast, melde dich bitte bei der Versuchsleitung. Ansonsten starte bitte nun mit dem Versuchsblock.
+            </p>
+            <br/><br/>
+
+            <a href="/experiment/screen/next" class="button">OK</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

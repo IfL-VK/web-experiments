@@ -8,11 +8,12 @@ Compared to jsPsych this web-application is more of a complete setup for develop
 The app is realized as a [DeepaMehta 4](http://www.github.com/jri/deepamehta) Plugin, which is a FLOSS development framework and Java based implementation of a [microservice architecture](http://martinfowler.com/articles/microservices.html). It therefore uses Neo4j, Apache Lucene and Jetty among other technologies. You can find out more about DeepaMehta 4 on its github page. The DM 4 Standard Distribution males it easy to deploy this application on your desktop or web server.
 
 The central concepts in this application are `Screen` and `Screen Report`.<br/>
-Additionally you write a `Screen Configuration` file in TAB seperated CSV to control the flow of Screens across all your participants.
+Additionally you write a `Screen Configuration` file in TAB seperated CSV to control the flow of Screens across all your participants.<br/>
+This release comes with three standard templates implementing a "Welcome", "Start" and "Pause" Screen. These should get you going when implementing your own `Screens` for a user study.
 
 ## Usage of `screen.js`
 
-For the realisation of new `Screens` (think of as `Task Implementation` or `Introduction Page`) for experiments developers are assisted through the usage of `screen.js`.
+For the realisation of new `Screens` (think of as `Task Implementation` or `Introduction Page`) developers are assisted when importing `screen.js` and using the screen-Object (see [here](help/README.md) and [here](src/main/resources/web/script/screen.js) to read about all currently available utility methods).
 
 <pre>
 <!-- Import the Screen-Interface into your HTML Template -->
@@ -61,11 +62,7 @@ https://github.com/mukil/web-experiments/releases
 New in this Version:
 Complete Rewrite of version 0.2. Comes now with support for _Screen Templates_ and a JavaScript Interface (`screen.js`) supporting developers in implementing new Templates. Additionally it comes with a revised Screen Configuration model and reduced complexity for reporting arbitrary data.
 
-With this release, no Templates come shipped, though three **Sets of Templates** now exist for `Web-Experiments`:
-
-- Set of two Templates for conducting: Distance - und Direction-Estimations (based on OpenLayers 3 und D3)
-- Set of four "Standard" Templates: One being a "Welcome", a "Start", a "Pause" and an "Introduction"-Page (based on HTML, CSS)
-- Template realising an interactive Citymap (based on Mapbox, LeafletJS and jQuery)
+In this version we released a simple set of three standard templates (in folder `templates/standard` in this repository) for `Web-Experiments` which hopefully get you going quick when implementing your experiment.
 
 #### 0.3 Release, 01. Dezember 2015
 
