@@ -1,31 +1,44 @@
 
-## dm4-ice: Interactive cartographic experiments with DeepaMehta 4
+## Web-Experiments Module for DeepaMehta 4
 
-A seemingly complicated web application to generate and conduct interactive cartographic experiments in the web-browser.
+A template based web-service module facilitating the generation and realisation of web-based user studies.
 
-This plugin provides web application developers and researchers a _structure_ for designing and running behavioral experiments online. Compared to jsPsych this web-application is more of a complete setup for developers who are familiar with writing Java based REST APIs and developing JavaScript Multi-Page applications.
+Compared to jsPsych this web-application is more of a complete setup for developers who are familiar with writing Java based REST APIs and developing JavaScript Multi-Page applications. It basically frees you of things like _session management_, handling _experiment configuration_ per participant and _creating arbitrary reports_ per `Screen`.
 
-[DeepaMehta 4](http://www.github.com/jri/deepamehta) is a plugin development framework and a [microservice architecture](http://martinfowler.com/articles/microservices.html) (shipping with e.g. neo4j and Jetty) making it easy to deploy this application either on your desktop machine or on a web server.
+The app is realized as a [DeepaMehta 4](http://www.github.com/jri/deepamehta) Plugin, which is a FLOSS development framework and Java based implementation of a [microservice architecture](http://martinfowler.com/articles/microservices.html). It therefore uses Neo4j, Apache Lucene and Jetty among other technologies. You can find out more about DeepaMehta 4 on its github page. The DM 4 Standard Distribution males it easy to deploy this application on your desktop or web server.
 
-_dm4-ice_ basically handles things like user and session management, enables you to load and edit three types of configuration files and it determines which trial runs next for whom and when.
+The central concepts in this application are `Screen` and `Screen Report`.<br/>
+Additionally you write a `Screen Configuration` file in TAB seperated CSV to control the flow of Screens across all your participants.
 
-The differences to jsPsych on the technology side are:
-* a persistent semantic network in the backend (with neo4j-storage),
-* configuration files can be managed and edited by end-users (using the standard dm4-webclient)
-* writing a custom report (output of the experiment) is not part of the storage mechanisms but a distinct operation and thus better customizable and/or extendable
-* server side Java/JAX-RS facility to easily write and extend this applications REST API,
-* a simple Multi-Page AJAX architecture on client-side (require.js)
+## Usage of `screen.js`
 
-The current applications features include:
- * Varying _Trial Configurations_ per _Participant_
- * Mapping Component: Leaflet is set up for serving either (A) static bitmap files or generated bitmaps of your (B) Tile Map Server, depending on your _Map configuration_-file
- * Place Label: Each location and label on a map are editable via a _Place Configuration_-file
- * Pinning Task: Memorization of maps based on a _Trial Condition_
-   ("Pinning" and "No Pinning" are currently implemented)
- * Estimation Task: Submitting values for direction and distance in between two configured _Places_
- * Introduction and Training Mode (per _Trial Condition_), Marker Selection, Filler tasks (Multiplication), Timing
- * The applications architecture allows for _resuming_ once started trials at a later point in time (participants just going throug the introductions again)
- * Reporting: Custom CSV Export operations implement to collect the usage data over all participants
+For the realisation of new `Screens` (think of as `Task Implementation` or `Introduction Page`) for experiments developers are assisted through the usage of `screen.js`.
+
+<pre>
+<!-- Import the Screen-Interface into your HTML Template -->
+<script src="/de.akmiraketen.web-experiments/script/screen.js"></script>
+// 0) Override this method to initialize your screen
+// At this point you can easily access data about the current Participant and Screen
+screen.init = function() {
+    // 1) Access to this screen configuration, e.g. to read out its "condition"
+    var configuration = screen.getConfiguration()
+    // 2) initialize reporting for this screen and user
+    screen.startReport()
+    // 3) set this screen as seen so the participant does not see this screen again
+    setTimeout(screen.setScreenAsSeen, 5000)
+}
+// 1) Example to report a "click" action (for the screen and user) when the "map" is clicked
+map.on('click', function(e) {
+    screen.postActionReport({
+        "de.akmiraketen.action_name": "de.akmiraketen.click",
+        "value": {
+            "name" : e.latlng.toString(),
+            "type": "map",
+            "id" : "-1"
+        }
+    })
+})
+</pre>
 
 ## Installation & Configuration
 
@@ -33,10 +46,51 @@ Please find help on this at the [help/README.md](https://github.com/mukil/web-ex
 
 ## Development
 
-If you are not familiar with DM 4 developer you will get kickstarted on [our docs page for new developers](http://mukil.github.io/web-experiments/development/).
- 
+If you are not familiar with DeepaMehta 4 Plugin Development you can get kickstarted in this [PluginDevelopmentGuide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide).
+
+### Release History
+
+#### 0.4 Release, Upcoming
+
+Source Code:
+https://github.com/mukil/web-experiments/tree/rewrite
+
+Download:
+https://github.com/mukil/web-experiments/releases
+
+New in this Version:
+Complete Rewrite of version 0.2. Comes now with support for _Screen Templates_ and a JavaScript Interface (`screen.js`) supporting developers in implementing new Templates. Additionally it comes with a revised Screen Configuration model and reduced complexity for reporting arbitrary data.
+
+With this release, no Templates come shipped, though three **Sets of Templates** now exist for `Web-Experiments`:
+
+- Set of two Templates for conducting: Distance - und Direction-Estimations (based on OpenLayers 3 und D3)
+- Set of four "Standard" Templates: One being a "Welcome", a "Start", a "Pause" and an "Introduction"-Page (based on HTML, CSS)
+- Template realising an interactive Citymap (based on Mapbox, LeafletJS and jQuery)
+
+#### 0.3 Release, 01. Dezember 2015
+
+Source Code:
+https://github.com/mukil/web-experiments/tree/b2b483306558388d1957eade5c29612b82dee0fa
+
+Download:
+https://github.com/mukil/web-experiments/releases
+
+New in this Version:
+The source code repository now comes with an extensive documentation.
+
+#### 0.2 Release, 15. August 2015
+
+The very first Release, developed under heavy constraints.
+
+Source Code:
+https://github.com/mukil/web-experiments/commit/fcf95efa04440932793244ecdae90c7bee64f533
+
+Download:
+https://github.com/mukil/web-experiments/releases
+
+
 #### Author
 
-Malte Reißig, 2014-2015
+Malte Reißig, 2014-2016
 Leibniz-Institut für L&auml;nderkunde e. V.
 

@@ -1,0 +1,8 @@
+webexp.order_id|de.akmiraketen.screen_template|de.akmiraketen.screen_condition|de.akmiraketen.screen_timeout|de.akmiraketen.screen_options
+10| standards/start.html | Mit  | -1 |
+20| toms-citymap/index.html | Ohne | -1 |
+30| standards/pause.html | Mit  | -1 |
+40| toms-citymap/index.html | Mit  | -1 |
+50| standards/introduction.html | Mit  | -1 |
+60| pinning-experiment/pinning.html | Mit  | -1 |
+70| pinning-experiment/estimation.html | Mit  | -1 |

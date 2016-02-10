@@ -16,10 +16,7 @@ For setting up your development environment, please follow all the instructions 
   Enter the path to your newly created `target` folder (inside of your web-experiments folder) into the main deepamehta `pom.xml`, too (this time just append `/target` to your web-experiments path)
 * Now you are ready to start the platform with these two plugins
 
-Additional:
-* For a quick JS/HTML turnaroudn (save/refresh) further change the value in the main DeepaMehta `pom.xml`-file of `dm4.filerepo.path` to a location including all the javascript sources of this project.
-
-## Config
+## Platform Configuration
 
 * To make the instance world-wide and publicly available you need to ensure
   to set installation properties in `<DeepaMehta4-Directory>/conf/conf.properties`:
@@ -30,30 +27,71 @@ Additional:
   Especially do make the `FilesPlugin` less verbose through adding the following line to `<DeepaMehta4-Directory>/conf/logging.properties`
   `de.deepamehta.plugins.files.FilesPlugin.level=WARNING`
 
-### Load Basic Configuration
+### Web-Experiments
 
-Open http://localhost:8080/de.deepamehta.webclient as the administrative GUI and do _Login_ as `admin` (no password needed).
+To start an experiment and see anything you must upload a "Screen Configuration" file. You can use the examplary one in this very folder named "screen_configuration_example.csv" but please adapt the "de.akmiraketen.screen_template" column to contain a valid path to a HTML Template which should be shown to the participant. The template files must be located underneath your file repository (see Platform Configuration above).
 
-To _upload_ the three basic configuration files describing your experiment complete the following steps:
+### Template Development
+
+Use `screen.js`as explained in the main README of this repository (one level above).
+
+The `screen` JavaScript object provides you the following functionality:
+
+Implement your own `screen.init` method to initialze your template
+
+**screen.getConfiguration()** - Returns the resp. "Screen Configuration" for this template
+
+**screen.getParticipant()** - Returns the resp. "Participant" data for the session
+
+**screen.setScreenAsSeen()** - Comment this during template development, it sets the screen as seen and will make sure that the next page-refresh will deliver the screen configured up next (for the logged in participant)
+
+**screen.startReport()** - Initializes a "Screen Report" for this screen and user
+
+**screen.postActionReport({})** - Adds an "Action Report" to the resp. "Screen Report"- To see which types of Actions already ship in your release please read the "migration2.json" file in "src/main/resources/migrations" which is part of this repo.
+
+### Web-Experiments: Screen Configuration
+
+If you are familiar with DeepaMehta 4 please have a look at the "active_configuration_used.png" image file in this folder (above). It visualizes a proper configuration. Additionally it shows that there already have been "Screen Reports" collected for this participant and the configured screens.
+
+**To configure** open http://localhost:8080/de.deepamehta.webclient in your browser (IE is not supported) as that is the administrative GUI. Do _Login_ as `admin` (no password needed) to upload a `Screen Configuration`.
+
+#### Manually Configure Screens per Participant
+
+This method is OK during software development or experiments with just a few screens.
 
 * Click in the *Toolbar*: "By Type" > "Topic Type" > "Search" to reveal all so called "Topic Types"
-* Find and click in the *Page Panel* (showing your _Search Results_): "Map File Config" and "Place Config"
-* _Map_ and _Place_ configuration: Select each of these two _Topic Types_ and execute the *Import CSV* upon them
-* _Trial_ configurations can be loaded on a per-user base. To load a trial configuration you need to upload them via "Create File Browser" and "Upload file" command or copy them into the configured dm4-filerepo on your hard-disk. Then you need to reveal and relate all the "Username"-Topics with a `.txt` "File"-Topic which contains a proper configuration through a "Trial Configuration"-Edge (orange). Then fire the "Load Trial Config" command on the given "Username" and the trial configuration is set.
+* Select `Screen Configuration` from the search results and
+* Select `Import CSV` command on the lower right side of the screen.
+* Select a `Screen Configuration` File from your Desktop and press `Upload`.
 
+After the successfull import of all your _Screen Configurations_, reveal one in the map through selecting one and associate it with the _Username_ of your choice via an _Active Configuration_ association.
 
-Note: At any given time there can be just one specific set of _map_ and _place_ configuration files loaded into the application and the report depends on the settings configured. This means: Always generate a report before loading a new set of _map_ or _place_ configuration files into the system.
+#### Load a configuration file containing many `Screens` on a per user base
 
+_Screen_ configurations can be loaded on a per-user base, all screens get automatically associated (as _Active Configuration_) association with the _Username_ selected.
 
-If no error dialog is shown your experiment configuration was loaded successfully. You should now give this configuration a test run.
+* Use the "Create"-Menu to start a "New File Browser"
+* Upload all "Screen Configuration" files into a folder of your choice
+* Reveal the "Screen Configuration" of your interest
+* Reveal the "Username Configration" to be setup with that screen configuration
+* Associate the two items via an "Active Configuration" association
+* Select the _Username_ topic again and
+* Select the "Load Screen Configuration" command on the lower right side of the screen
 
-### Start experiments
+If no error dialog is shown your experiment configuration was loaded successfully and you can double check this by selecting the _Username_ topic on the map again, you will see all the screens as items configured for it.
 
-* Open http://localhost:8080/web-exp/ and enter an unused `VP <NR>`, e.g. `VP 10`
+### Start Experiment
 
-## Generate a full report
+* Open http://localhost:8080/experiment/ and enter an unused `VP <NR>`, e.g. `VP 10`
 
-* Open http://localhost:8080/web-exp/report/generate in your browser and do "Save as" to write the contents of this page into some .CSV file
+## Access Reporting
+
+The syetem simply generates a report which aggregates all actions of all users reported in the lifetime of your datbase/installation.
+
+Please note: To do so you must be logged in.
+
+* Open http://localhost:8080/experiment/report/generate in your browser and 
+* Do "Save as" to write the contents of this page into some .CSV file
 
 Author: Malte Reißig, 2014-2015
 Leibniz-Institut für L&auml;nderkunde e. V.
