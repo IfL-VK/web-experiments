@@ -659,7 +659,8 @@ public class WebExperimentsPlugin extends PluginActivator {
         // 1) sort all result-items
         Collections.sort(in_memory, new Comparator<RelatedTopic>() {
             public int compare(RelatedTopic t1, RelatedTopic t2) {
-                try { // ### webexp.config.VP X_
+                try { // URI is, either global "webexp.config.10" or per participant "webexp.config.VP X_10"
+                    // 1.1) Compare global screen config topics
                     if (t1.getUri().contains(".") && t2.getUri().contains(".")) {
                         // 1.1) If screens were configured manually
                         // throws NotFoundException if our URI was constructed automatically via doImportScreenConfig

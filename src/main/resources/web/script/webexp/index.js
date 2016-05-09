@@ -18,7 +18,7 @@ define(function(require) {
 
         view_state = common.parse_view_state_from_page()
         // correcting a call to this page without a trailing slash
-        if (view_state.contains("experiment")) load_init_screen()
+        if (view_state.indexOf("experiment") !== -1) load_init_screen()
 
         // --- Render welcome or finish screen (including login, logout and restart)
 
