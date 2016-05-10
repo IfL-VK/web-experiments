@@ -45,6 +45,8 @@ map.on('click', function(e) {
 
 Please find help on this at the [help/README.md](https://github.com/mukil/web-experiments/tree/master/help) page in this repo.
 
+Installation just works with `dm4.filerepo.per_workspace=false`.
+
 ## Development
 
 If you are not familiar with DeepaMehta 4 Plugin Development you can get kickstarted in this [PluginDevelopmentGuide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide).

@@ -69,8 +69,8 @@
                 console.log("  Screen Initiated Reporting for Screen Config=" + screen.id + " and Participant=",
                     screen.participant)
             } else { // Skipped creation of a new report 
-                console.log("   Did NOT INIT Reporting for Screen Configuration=" + screen.id +  " and Participant=",
-                    screen.participant, "(A topic for reporting may already be created before)")
+                console.log("   Skipped starting Screen report for Screen Configuration=" + screen.id +  " and Participant=",
+                    screen.participant, " - A topic for reporting may already be created before via screen.startReporting()")
             }
         })
     }

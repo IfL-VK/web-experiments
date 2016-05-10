@@ -52,7 +52,7 @@ import org.codehaus.jettison.json.JSONObject;
  *
  * @author Malte Reißig (<m_reissig@ifl-leipzig.de>), 2016
  * @website https://github.com/mukil/web-experiments
- * @version 0.4-SNAPSHOT
+ * @version 0.5-SNAPSHOT
  */
 @Path("/experiment")
 @Consumes(MediaType.APPLICATION_JSON)
