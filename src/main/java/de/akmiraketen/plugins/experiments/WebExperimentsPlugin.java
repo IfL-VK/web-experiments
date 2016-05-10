@@ -1,32 +1,23 @@
 package de.akmiraketen.plugins.experiments;
 
+import de.akmiraketen.plugins.experiments.migrations.Migration4;
 import de.akmiraketen.plugins.experiments.model.ParticipantViewModel;
 import de.akmiraketen.plugins.experiments.model.ScreenConfigViewModel;
 import de.deepamehta.core.Association;
-import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
-import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.accesscontrol.model.ACLEntry;
-import de.deepamehta.plugins.accesscontrol.model.AccessControlList;
-import de.deepamehta.plugins.accesscontrol.model.Credentials;
-import de.deepamehta.plugins.accesscontrol.model.Operation;
-import de.deepamehta.plugins.accesscontrol.model.UserRole;
-import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
-import de.deepamehta.plugins.files.DirectoryListing;
-import de.deepamehta.plugins.files.DirectoryListing.FileItem;
-import de.deepamehta.plugins.files.ItemKind;
-import de.deepamehta.plugins.files.service.FilesService;
-import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import de.deepamehta.accesscontrol.AccessControlService;
+import de.deepamehta.files.DirectoryListing;
+import de.deepamehta.files.DirectoryListing.FileItem;
+import de.deepamehta.files.ItemKind;
+import de.deepamehta.files.FilesService;
+import de.deepamehta.workspaces.WorkspacesService;
 
 import java.io.File;
 import java.io.FileReader;
@@ -70,9 +61,9 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4.3";
-    private final String WEB_EXPERIMENTS_VERSION = "0.4-SNAPSHOT";
-    private final String CHARSET = "UTF-8";
+    public static final String DEEPAMEHTA_VERSION = "DeepaMehta 4.8";
+    public static final String WEB_EXPERIMENTS_VERSION = "0.5-SNAPSHOT";
+    public static final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
     
@@ -115,10 +106,7 @@ public class WebExperimentsPlugin extends PluginActivator {
 
     // -- Settings
 
-    private static final int NR_OF_USERS = 300;
-    private static final String TEMPLATE_FOLDER = "web-experiments/templates";
-    private static final String SYMBOL_FOLDER = "web-experiments/symbols";
-    private static final String CONFIG_SEPERATOR = "|";
+    public static final String CONFIG_SEPERATOR = "|";
 
     // --- Consumed Plugin Services
     
@@ -129,18 +117,6 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Override
     public void init() {
         log.info("### Thank you for deploying Web Experiments " + WEB_EXPERIMENTS_VERSION);
-    }
-    
-    @Override
-    public void postInstall() {
-        log.info(" ### Generating "+NR_OF_USERS+" user account for your web-experiment " + WEB_EXPERIMENTS_VERSION);
-        generateNumberOfUsers();
-        log.info(" ### Creating the \"/web-experiments/templates\" folder in your filerepo for screen templates " +
-                "web-experiments " + WEB_EXPERIMENTS_VERSION);
-        String parentFolderName = "web-experiments";
-        createFolderWithName(parentFolderName, null);
-        createFolderWithName("symbols", parentFolderName);
-        createFolderWithName("templates", parentFolderName);
     }
     
     // ---------------------------------------------------------------------------------------------------- Routes
@@ -177,7 +153,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         } else if (screenTopicId != FAIL_NR) {
             // 2.2) If there is yet an "unseen" trial configured for the user, we load and redirect
             //      the request according to the configured template "type".
-            Topic configuration = dms.getTopic(screenTopicId);
+            Topic configuration = dm4.getTopic(screenTopicId);
             ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(configuration);
             log.info("Should REDIRECT to screen template \"" + screenConfig.getScreenTemplateName() + "\" configured at "
                 + "\"/experiment/screen/" + configuration.getId() + "\"");
@@ -201,14 +177,14 @@ public class WebExperimentsPlugin extends PluginActivator {
             // 1) get current username by http session (or throw a 401)
             Topic user = getRequestingUsername();
             // 2) fetch screen
-            Topic screenTopic = dms.getTopic(id);
+            Topic screenTopic = dm4.getTopic(id);
             // 3) check if unseen by user
             if (hasSeenScreen(user, screenTopic.getId())) {
                 throw new WebApplicationException(Response.seeOther(new URI("/experiment/screen/next")).build());
             }
             ScreenConfigViewModel screenConfig = new ScreenConfigViewModel(screenTopic);
             String templateFileName = screenConfig.getScreenTemplateName();
-            File screenTemplate = fileService.getFile(TEMPLATE_FOLDER + "/" + templateFileName);
+            File screenTemplate = fileService.getFile(Migration4.TEMPLATE_FOLDER + "/" + templateFileName);
             fileInput = new FileInputStream(screenTemplate);
         } catch (FileNotFoundException e) {
             throw new RuntimeException("A file for the Screen Configuration Topic with ID was NOT FOUND, please use" +
@@ -230,7 +206,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Transactional
     @Produces(MediaType.APPLICATION_JSON)
     public String getAllSymbolFileTopics() {
-        DirectoryListing items = fileService.getDirectoryListing(SYMBOL_FOLDER);
+        DirectoryListing items = fileService.getDirectoryListing(Migration4.SYMBOL_FOLDER);
         // ArrayList<Topic> symbols = new ArrayList<Topic>(); 
         ArrayList<JSONObject> symbolFiles = new ArrayList<JSONObject>();
         // 1) Gather svg-icon files from our symbols directory
@@ -242,15 +218,15 @@ public class WebExperimentsPlugin extends PluginActivator {
         // 2) Create file topics (representing the files in our DB)
         Iterator<FileItem> icons = items.getFileItems().iterator();
         while (icons.hasNext()) {
-            FileItem file = icons.next();
-            Topic fileTopic = fileService.createFileTopic(file.getPath()); // fetches topic if existing
-            JSONObject responseObject = new JSONObject();
             try {
+                FileItem file = icons.next();
+                Topic fileTopic = fileService.getFileTopic(file.getPath()); // creates topic if not-existing
+                JSONObject responseObject = new JSONObject();
                 responseObject.put("path", file.getPath()).put("topic_id", fileTopic.getId());
+                symbolFiles.add(responseObject);
             } catch (JSONException ex) {
-                log.severe("Could not build up icon response list");
+                Logger.getLogger(WebExperimentsPlugin.class.getName()).log(Level.SEVERE, null, ex);
             }
-            symbolFiles.add(responseObject);
         }
         return symbolFiles.toString();
     }
@@ -277,7 +253,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Produces(MediaType.APPLICATION_JSON)
     public ScreenConfigViewModel getScreenConfiguration(@PathParam("screenTopicId") long id) {
         try {
-            Topic screenTopic = dms.getTopic(id);
+            Topic screenTopic = dm4.getTopic(id);
             return new ScreenConfigViewModel(screenTopic);
         } catch(Exception e) {
             throw new RuntimeException("A Screen Configuration Topic with the given id was NOT FOUND", e);
@@ -292,9 +268,9 @@ public class WebExperimentsPlugin extends PluginActivator {
         Topic username = getRequestingUsername();
         // 2) Check if user has seen the screen already
         if (!hasSeenScreen(username, screenId)) {
-            dms.createAssociation(new AssociationModel(SCREEN_SEEN_EDGE,
-                new TopicRoleModel(username.getId(), "dm4.core.default"),
-                new TopicRoleModel(screenId, "dm4.core.default")));
+            dm4.createAssociation(mf.newAssociationModel(SCREEN_SEEN_EDGE,
+                mf.newTopicRoleModel(username.getId(), "dm4.core.default"),
+                mf.newTopicRoleModel(screenId, "dm4.core.default")));
         } else {
             log.info("### Screen Seen Edge already exists, responding with next unseen screen id - OK!");
             long screenConfigurationId = getNextUnseenScreenId(username);
@@ -315,15 +291,15 @@ public class WebExperimentsPlugin extends PluginActivator {
     @Produces(MediaType.APPLICATION_JSON)
     public Response initScreenReport(@PathParam("screenConfigId") long screenId) {
         Topic username = getRequestingUsername();
-        Topic screenConfigTopic = dms.getTopic(screenId);
+        Topic screenConfigTopic = dm4.getTopic(screenId);
         Topic existingReport = getScreenReportTopic(username, screenConfigTopic);
         if (existingReport == null) {
             //
-            ChildTopicsModel reportModel = new ChildTopicsModel().putRef(SCREEN_CONFIG_TYPE, screenId);
-            Topic screenReport = dms.createTopic(new TopicModel(SCREEN_REPORT_TYPE, reportModel));
-            dms.createAssociation(new AssociationModel("dm4.core.association",
-                    new TopicRoleModel(username.getId(), "dm4.core.default"),
-                    new TopicRoleModel(screenReport.getId(), "dm4.core.default")));
+            ChildTopicsModel reportModel = mf.newChildTopicsModel().putRef(SCREEN_CONFIG_TYPE, screenId);
+            Topic screenReport = dm4.createTopic(mf.newTopicModel(SCREEN_REPORT_TYPE, reportModel));
+            dm4.createAssociation(mf.newAssociationModel("dm4.core.association",
+                    mf.newTopicRoleModel(username.getId(), "dm4.core.default"),
+                    mf.newTopicRoleModel(screenReport.getId(), "dm4.core.default")));
             log.info("Initialized Screen Report Topic for " + username.getSimpleValue() + " on " + screenConfigTopic
                     .getSimpleValue());
         } else {
@@ -346,7 +322,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     public Response addActionReport(@PathParam("screenConfigId") long screenConfigId, String actionObject)
             throws JSONException {
         Topic username = getRequestingUsername();
-        Topic screenConfigTopic = dms.getTopic(screenConfigId);
+        Topic screenConfigTopic = dm4.getTopic(screenConfigId);
         Topic existingReport = getScreenReportTopic(username, screenConfigTopic);
         if (existingReport == null) {
             //
@@ -361,12 +337,12 @@ public class WebExperimentsPlugin extends PluginActivator {
             String actionNameUri =  actionReport.getString(SCREEN_ACTION_NAME_TYPE);
             String actionValue = actionReport.getString("value");
             log.info("POSTed Action Name URI: " + actionNameUri + ", value=" + actionValue);
-            ChildTopicsModel actionReportChilds = new ChildTopicsModel()
+            ChildTopicsModel actionReportChilds = mf.newChildTopicsModel()
                     .putRef(SCREEN_ACTION_NAME_TYPE, actionNameUri)
                     .put(SCREEN_ACTION_VALUE_TYPE, actionValue);
-            ChildTopicsModel actionReportTopic = new ChildTopicsModel()
-                    .add(SCREEN_ACTION_TYPE, new TopicModel(SCREEN_ACTION_TYPE, actionReportChilds));
-            TopicModel actionReportModel = new TopicModel(SCREEN_REPORT_TYPE, actionReportTopic);
+            ChildTopicsModel actionReportTopic = mf.newChildTopicsModel()
+                    .add(SCREEN_ACTION_TYPE, mf.newTopicModel(SCREEN_ACTION_TYPE, actionReportChilds));
+            TopicModel actionReportModel = mf.newTopicModel(SCREEN_REPORT_TYPE, actionReportTopic);
             existingReport.update(actionReportModel);
             return Response.ok(OK_NR).build();
         }
@@ -379,8 +355,8 @@ public class WebExperimentsPlugin extends PluginActivator {
      * @return screenReport     Returns the given Screen Report as a RelatedTopic if existent, otherwise 'null'.
      */
     private RelatedTopic getScreenReportTopic(Topic username, Topic screenConfig) {
-        ResultList<RelatedTopic> reports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
-                "dm4.core.default", SCREEN_REPORT_TYPE, 0);
+        List<RelatedTopic> reports = username.getRelatedTopics("dm4.core.association", "dm4.core.default",
+                "dm4.core.default", SCREEN_REPORT_TYPE);
         Iterator<RelatedTopic> iterator = reports.iterator();
         while (iterator.hasNext()) {
             RelatedTopic screenReportTopic = iterator.next();
@@ -402,8 +378,8 @@ public class WebExperimentsPlugin extends PluginActivator {
     @GET
     @Path("/report/action")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResultList<RelatedTopic> getReportEventTypes() {
-        return dms.getTopics("de.akmiraketen.action_name", 0);
+    public List<Topic> getReportEventTypes() {
+        return dm4.getTopicsByType("de.akmiraketen.action_name");
     }
 
     /** Custom Configuration Loading Mechanism, available as a Topic Command for the selected username Topic... */
@@ -413,7 +389,7 @@ public class WebExperimentsPlugin extends PluginActivator {
     public Topic doImportScreenConfigurationForUsername(@PathParam("username") String name) {
         try {
             // 1) fetch related file topic
-            Topic username = acService.getUsername(name);
+            Topic username = acService.getUsernameTopic(name);
             Topic fileTopic = null;
             try {
                 fileTopic = username.getRelatedTopic(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT,
@@ -427,7 +403,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                     + " fileName=" + fileTopic.getSimpleValue() + " for \"" + username + "\"");
             File screenConfigurationFileTopic = fileService.getFile(fileTopic.getId());
             // 2) delete potential former trial config topic
-            ResultList<RelatedTopic> usersTrialConfigs = getActiveScreenConfigs(username);
+            List<RelatedTopic> usersTrialConfigs = getActiveScreenConfigs(username);
             Iterator<RelatedTopic> i = usersTrialConfigs.iterator();
             while (i.hasNext()) {
                 Topic topic = i.next();
@@ -481,14 +457,14 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
         // 3) Build up Screen Configuration Topic model
         String configUri = SCREEN_CONFIG_URI_PREFIX + username.getSimpleValue() + "_" + ordinalNumber;
-        TopicModel screenConfiguration = new TopicModel(configUri, SCREEN_CONFIG_TYPE, new ChildTopicsModel()
+        TopicModel screenConfiguration = mf.newTopicModel(configUri, SCREEN_CONFIG_TYPE, mf.newChildTopicsModel()
                 .put(SCREEN_TEMPLATE_NAME, screenTemplateName)
                 .put(SCREEN_CONDITION_NAME, screenConditionName)
                 .put(SCREEN_TIMEOUT_VALUE, screenTimeout)
                 .put(SCREEN_TIMEOUT_VALUE, screenTimeout)
                 .put(SCREEN_OPTIONS_BLOB, screenJsonOptions));
         // 4) Create Screen Configuraton Topic
-        Topic screenConfigTopic = dms.createTopic(screenConfiguration);
+        Topic screenConfigTopic = dm4.createTopic(screenConfiguration);
         log.info("Created Screen Configuration with URI=\"" + configUri + " " + screenConfigTopic.getId() + "\" " +
                 "Condition: " + screenConditionName + ", " +  "Template: \""
                 + screenTemplateName + "\"and Ordinal Nr" + ". " + ordinalNumber);
@@ -510,23 +486,23 @@ public class WebExperimentsPlugin extends PluginActivator {
         getRequestingUsername();
         // 2) gather all reports from the db
         StringBuilder report = new StringBuilder();
-        ResultList<RelatedTopic> participants = dms.getTopics(USERNAME_TYPE_URI, 0);
-        log.info("Gathering reporting for overall " + participants.getSize() + " user accounts");
+        List<Topic> participants = dm4.getTopicsByType(USERNAME_TYPE_URI);
+        log.info("Gathering reporting for overall " + participants.size() + " user accounts");
         report.append("VP ID\tScreen Template\tScreen Condition\tScreen Timeout\tScreen Options\tAction Type\tAction Value");
         report.append("\n");
-        for (RelatedTopic username : participants.getItems()) {
+        for (Topic username : participants) {
             String usernameValue = username.getSimpleValue().toString();
-            ResultList<RelatedTopic> screenReports = username.getRelatedTopics("dm4.core.association",ROLE_DEFAULT,
-                    ROLE_DEFAULT, SCREEN_REPORT_TYPE, 0);
-            if (screenReports.getSize()> 0) {
-                log.info("Fetched " + screenReports.getSize() + " Screen Reports for \"" + usernameValue + "\"");
+            List<RelatedTopic> screenReports = username.getRelatedTopics("dm4.core.association",ROLE_DEFAULT,
+                    ROLE_DEFAULT, SCREEN_REPORT_TYPE);
+            if (screenReports.size() > 0) {
+                log.info("Fetched " + screenReports.size() + " Screen Reports for \"" + usernameValue + "\"");
                 for (RelatedTopic screenReport : screenReports) {
                     // load full report
                     screenReport.loadChildTopics();
                     // load corresponding screen configuration topic
                     Topic screenConfigurationTopic = null;
                     String templateName = "", conditionValue = "", options = "", timeout = "";
-                    if (screenReport.getChildTopics().has(SCREEN_CONFIG_TYPE)) {
+                    if (screenReport.getChildTopics().getTopicOrNull(SCREEN_CONFIG_TYPE) != null) {
                         screenConfigurationTopic = screenReport.getChildTopics().getTopic(SCREEN_CONFIG_TYPE);
                         screenConfigurationTopic.loadChildTopics();
                         templateName = screenConfigurationTopic.getChildTopics().getString(SCREEN_TEMPLATE_NAME);
@@ -535,10 +511,7 @@ public class WebExperimentsPlugin extends PluginActivator {
                         timeout = screenConfigurationTopic.getChildTopics().getString(SCREEN_TIMEOUT_VALUE);
                     }
                     // load all actions reported for that screen
-                    List<Topic> reportedActions = null;
-                    if (screenReport.getChildTopics().has(SCREEN_ACTION_TYPE)) {
-                        reportedActions = screenReport.getChildTopics().getTopics(SCREEN_ACTION_TYPE);
-                    }
+                    List<RelatedTopic> reportedActions = screenReport.getChildTopics().getTopicsOrNull(SCREEN_ACTION_TYPE);
                     if (screenConfigurationTopic != null && reportedActions != null && reportedActions.size() > 0) {
                         // aggregate reported line
                         // fullActionReport(usernameValue, templateName, conditionValue, options, timeout, reportedActions, report);
@@ -568,8 +541,8 @@ public class WebExperimentsPlugin extends PluginActivator {
      * between the username and the screen configuration topic.
      */
     private long getNextUnseenScreenId(Topic username) {
-        ResultList<RelatedTopic> screenConfigs = getActiveScreenConfigs(username);
-        log.info("Found " + screenConfigs.getSize() + " active configurations for " + username.getSimpleValue());
+        List<RelatedTopic> screenConfigs = getActiveScreenConfigs(username);
+        log.info("Found " + screenConfigs.size() + " active configurations for " + username.getSimpleValue());
         ArrayList<RelatedTopic> orderedScreenConfigs = getScreenTopicsSortedByURI(screenConfigs);
         Iterator<RelatedTopic> iterator = orderedScreenConfigs.iterator();
         while (iterator.hasNext()) {
@@ -593,18 +566,18 @@ public class WebExperimentsPlugin extends PluginActivator {
    /**
     * Loads all active screen configuration for the given username topic.
     **/
-    private ResultList<RelatedTopic> getActiveScreenConfigs(Topic username) {
-        return username.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE, 0);
+    private List<RelatedTopic> getActiveScreenConfigs(Topic username) {
+        return username.getRelatedTopics(ACTIVE_CONFIGURATION_EDGE, ROLE_DEFAULT, ROLE_DEFAULT, SCREEN_CONFIG_TYPE);
     }
 
     private void fullActionReport(String usernameValue, String templateName, String conditionValue, String options,
             String timeout, List<Topic> reportedActions, StringBuilder report) {
         for (Topic action : reportedActions) {
             String actionType = "", actionValue = "";
-            if (action.getChildTopics().has(SCREEN_ACTION_NAME_TYPE)) {
+            if (action.getChildTopics().getTopicOrNull(SCREEN_ACTION_NAME_TYPE) != null) {
                 actionType = action.getChildTopics().getString(SCREEN_ACTION_NAME_TYPE);
             }
-            if (action.getChildTopics().has(SCREEN_ACTION_VALUE_TYPE)) {
+            if (action.getChildTopics().getTopicOrNull(SCREEN_ACTION_VALUE_TYPE) != null) {
                 actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
             }
             report.append(usernameValue).append("\t").append(templateName).append("\t").append(conditionValue).
@@ -614,15 +587,15 @@ public class WebExperimentsPlugin extends PluginActivator {
     }
 
     private void customSelectionReport(String usernameValue, String templateName, String conditionValue, String options,
-            String timeout, List<Topic> reportedActions, StringBuilder report) {
+            String timeout, List<RelatedTopic> reportedActions, StringBuilder report) {
         // Sum of selections by "name" in actionValue Object
         HashMap sum = new HashMap();
         for (Topic action : reportedActions) {
             String actionType = "", actionValue = "";
-            if (action.getChildTopics().has(SCREEN_ACTION_NAME_TYPE)) {
+            if (action.getChildTopics().getTopicOrNull(SCREEN_ACTION_NAME_TYPE) != null) {
                 actionType = action.getChildTopics().getString(SCREEN_ACTION_NAME_TYPE);
                 if (actionType.equals("Select")) {
-                    if (action.getChildTopics().has(SCREEN_ACTION_VALUE_TYPE)) {
+                    if (action.getChildTopics().getTopicOrNull(SCREEN_ACTION_VALUE_TYPE) != null) {
                         try {
                             actionValue = action.getChildTopics().getString(SCREEN_ACTION_VALUE_TYPE);
                             JSONObject valueObject = new JSONObject(actionValue);
@@ -650,7 +623,7 @@ public class WebExperimentsPlugin extends PluginActivator {
         }
     }
     
-    private ArrayList<RelatedTopic> getScreenTopicsSortedByURI(ResultList<RelatedTopic> all) {
+    private ArrayList<RelatedTopic> getScreenTopicsSortedByURI(List<RelatedTopic> all) {
         // build up sortable collection of all result-items
         ArrayList<RelatedTopic> in_memory = new ArrayList<RelatedTopic>();
         for (RelatedTopic obj : all) {
@@ -702,95 +675,13 @@ public class WebExperimentsPlugin extends PluginActivator {
         if (username == null || username.isEmpty()) {
             throw new WebApplicationException(204);
         }
-        return dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
+        return dm4.getTopicByValue(USERNAME_TYPE_URI, new SimpleValue(username));
     }
-    
-    private void generateNumberOfUsers() {
-        // for 1000 do acService.createUser()
-        log.info("### Setting up new users for Web Experiments");
-        DeepaMehtaTransaction tx = dms.beginTx();
-        try {
-            for (int i=1; i<=NR_OF_USERS; i++) {
-                String username = "VP "+ i;
-                if (isUsernameAvailable(username)) {
-                    Credentials cred = new Credentials(username, "");
-                    ChildTopicsModel userAccount = new ChildTopicsModel()
-                        .put(USERNAME_TYPE_URI, cred.username)
-                        .put(USER_PASSWORD_TYPE_URI, cred.password);
-                    TopicModel userModel = new TopicModel(USER_ACCOUNT_TYPE_URI, userAccount);
-                    Topic vpAccount = dms.createTopic(userModel);
-                    Topic usernameTopic = vpAccount.loadChildTopics(USERNAME_TYPE_URI)
-                            .getChildTopics().getTopic(USERNAME_TYPE_URI);
-                    if (usernameTopic != null && workspaceService.getDefaultWorkspace() != null) {
-                        workspaceService.assignToWorkspace(usernameTopic, workspaceService.getDefaultWorkspace().getId());
-                        setDefaultAdminACLEntries(vpAccount);
-                        log.info("Created user \"" + username + "\" for web-experiments.");
-                    } else {
-                        log.info("Could not create new user, topic username: " + username+ ", workspace:" +
-                                workspaceService.getDefaultWorkspace());
-                    }
-                } else {
-                    log.info("DEBUG: Username is already taken ..");
-                }
-            }
-            tx.success();
-        } finally {
-            tx.finish();
-        }
-    }
-    
-    private DeepaMehtaObject setDefaultAdminACLEntries(DeepaMehtaObject item) {
-        // Let's repair broken/missing ACL-Entries
-        ACLEntry writeEntry = new ACLEntry(Operation.WRITE, UserRole.CREATOR, UserRole.OWNER);
-        acService.setACL(item, new AccessControlList(writeEntry));
-        acService.setCreator(item, "admin");
-        acService.setOwner(item, "admin");
-        return item;
-    }
-    
-    private void createFolderWithName(String folderName, String parentFolderName) {
-        DeepaMehtaTransaction tx = dms.beginTx();
-        String parent = "/";
-        if (parentFolderName != null) parent = parentFolderName;
-        try {
-            File item = fileService.getFile(parent + "/" + folderName); // throws RuntimeException if no result
-            if (!item.isDirectory()) { // folder does not exist
-                fileService.createFolder(folderName, parent);
-            } else  {
-                log.info("OK - Folder already exists");
-            }
-            tx.success();
-        } catch (RuntimeException fe) { // file or folder does not exist
-            log.info("Cause: " + fe.getCause().toString());
-            if (fe.getCause().toString().contains("does not exist")) {
-                try {
-                    log.info("Folder does not exist!..");
-                    fileService.createFolder(folderName, parent); // might throw permission denied error
-                    log.info("CREATED new Folder " + folderName);
-                    tx.success();
-                } catch (RuntimeException re) {
-                    log.severe("Most probably DeepaMehta cant write to your filerepo, "
-                            + "please check the filrepo configuration in the pom.xml");
-                    throw new RuntimeException(re);
-                }
-            } else {
-                // throw new RuntimeException(fe);
-                log.info("OK - Folder already exists");
-            }
-        } finally {
-            tx.finish();
-        }
-    }
-    
-    private boolean isUsernameAvailable(String username) {
-        Topic userName = dms.getTopic(USERNAME_TYPE_URI, new SimpleValue(username));
-        return (userName == null);
-    }
-    
+
     private Association createTrialConfigUserAssignment(Topic trialConfig, Topic username) {
-        return dms.createAssociation(new AssociationModel(ACTIVE_CONFIGURATION_EDGE,
-            new TopicRoleModel(username.getId(), ROLE_DEFAULT),
-            new TopicRoleModel(trialConfig.getId(), ROLE_DEFAULT)));
+        return dm4.createAssociation(mf.newAssociationModel(ACTIVE_CONFIGURATION_EDGE,
+            mf.newTopicRoleModel(username.getId(), ROLE_DEFAULT),
+            mf.newTopicRoleModel(trialConfig.getId(), ROLE_DEFAULT)));
     }
 
 }
