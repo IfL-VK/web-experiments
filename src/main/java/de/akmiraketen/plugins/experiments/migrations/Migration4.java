@@ -74,6 +74,8 @@ public class Migration4 extends Migration {
         DeepaMehtaTransaction tx = dm4.beginTx();
         String parent = "/";
         if (parentFolderName != null) parent = parentFolderName;
+        // ### 1. make use of FilesPlugin.FILE_REPOSITORY_PER_WORKSPACE
+        // ### 2. make use of filesService.fileExists("/path")
         try {
             File item = fileService.getFile(parent + "/" + folderName); // throws RuntimeException if no result
             if (!item.isDirectory()) { // folder does not exist
