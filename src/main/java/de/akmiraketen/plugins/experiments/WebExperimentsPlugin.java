@@ -77,8 +77,11 @@ public class WebExperimentsPlugin extends PluginActivator {
     
     private static final String FILE_TYPE                   = "dm4.files.file";
     private static final String FILE_PATH_TYPE              = "dm4.files.path";
-    
+
     // --- Web Experiment URIs
+
+    public static final String WEBEXP_WORKSPACE_NAME = "Web Experiments";
+    public static final String WEBEXP_WORKSPACE_URI = "de.akmiraketen.web_experiments";
 
     private static final String SCREEN_CONFIG_TYPE          = "de.akmiraketen.screen_configuration";
     private static final String SCREEN_CONDITION_NAME       = "de.akmiraketen.screen_condition";
@@ -196,7 +199,14 @@ public class WebExperimentsPlugin extends PluginActivator {
 
 
     // ----------------------------------------------------------------------------------------------- API Resources
-    
+
+    @GET
+    @Path("/workspace")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Topic getWorkpsace() {
+        return dm4.getTopicByValue("uri", new SimpleValue(WEBEXP_WORKSPACE_URI));
+    }
+
     /** 
      * 
      * @return  List of FileItems in JSON
