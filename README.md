@@ -51,7 +51,7 @@ If you are not familiar with DeepaMehta 4 Plugin Development you can get kicksta
 
 ### Release History
 
-#### 0.4 Release, Upcoming
+#### 0.4 Release, 15th June 2016
 
 Source Code:
 https://github.com/mukil/web-experiments/tree/rewrite
