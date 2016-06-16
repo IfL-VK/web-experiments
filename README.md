@@ -1,15 +1,19 @@
 
-## Web-Experiments Module for DeepaMehta 4
+## Web-Experiments with DeepaMehta 4
 
 A template based web-service module facilitating the generation and realisation of web-based user studies.
 
-Compared to jsPsych this web-application is more of a complete setup for developers who are familiar with writing Java based REST APIs and developing JavaScript Multi-Page applications. It basically frees you of things like _session management_, handling _experiment configuration_ per participant and _creating arbitrary reports_ per `Screen`.
+Compared to jsPsych this web-application is more of a complete setup for developers who are familiar with writing Java based REST APIs and developing JavaScript Multi-Page applications. It basically frees you of things like _session management_, handling _experiment configuration_ per participant and simplifies _creating reports_ per `Screen` (think of "task") and `Participant`.
 
-The app is realized as a [DeepaMehta 4](http://www.github.com/jri/deepamehta) Plugin, which is a FLOSS development framework and Java based implementation of a [microservice architecture](http://martinfowler.com/articles/microservices.html). It therefore uses Neo4j, Apache Lucene and Jetty among other technologies. You can find out more about DeepaMehta 4 on its github page. The DM 4 Standard Distribution males it easy to deploy this application on your desktop or web server.
+The app is realized as a DeepaMehta 4 Plugin, which is a FLOSS application development framework and designed as an [microservice architecture](http://martinfowler.com/articles/microservices.html). It uses Neo4j, Apache Lucene and Jetty among other technologies. You can find out more about DeepaMehta 4 on its [github](http://www.github.com/jri/deepamehta) or [project page](http://www.deepamehta.de). The DM 4 Standard Distribution males it easy to deploy this application on your desktop or web server.
 
-The central concepts in this application are `Screen` and `Screen Report`.<br/>
-Additionally you write a `Screen Configuration` file in TAB seperated CSV to control the flow of Screens across all your participants.<br/>
+The central concepts in this application are `Screen` and `Screen Report`. _Participants_ are simply modelled as _Users_ identified via a HTTP Session. <br/>
+You can write a `Screen Configuration` file in TAB seperated CSV to control the flow of Screens across all your participants.<br/>
 This release comes with three standard templates implementing a "Welcome", "Start" and "Pause" Screen. These should get you going when implementing your own `Screens` for a user study.
+
+If you need a guide to get started with this environment please find the [Help](https://github.com/mukil/web-experiments/tree/master/docs) page which documents on how to setup a simple demo experiment.
+
+For adapting the plugin please find the details in the [Plugin Development Guide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide) of DeepaMehta 4.
 
 ## Usage of `screen.js`
 
@@ -52,6 +56,13 @@ Installation just works with `dm4.filerepo.per_workspace=false`.
 If you are not familiar with DeepaMehta 4 Plugin Development you can get kickstarted in this [PluginDevelopmentGuide](https://trac.deepamehta.de/wiki/PluginDevelopmentGuide).
 
 ### Release History
+
+#### 0.5 Release, 16 June 2016
+
+Download:
+
+New in this version:
+Compatible with DeepaMehta 4.8 and a new [Getting Started](https://github.com/mukil/web-experiments/tree/master/docs) page.
 
 #### 0.4 Release, Upcoming
 
