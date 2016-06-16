@@ -2,7 +2,6 @@ package de.akmiraketen.plugins.experiments.model;
 
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.DeepaMehtaService;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 

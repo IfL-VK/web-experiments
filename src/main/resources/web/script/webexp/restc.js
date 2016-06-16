@@ -101,6 +101,9 @@ define(['d3'], function (d3, require) {
         fetchUsername: function (handle, debug) {
             fetch('/accesscontrol/user', handle, undefined, false, false)
         },
+        fetchWorkspace: function (handle, debug) {
+            fetch('/experiment/workspace', handle, undefined, false, false)
+        },
         fetchParticipant: function (handle, failure, debug) {
             if (debug) console.log(" restc: requesting participant ... ")
             fetch('/experiment/participant', handle, failure, true, debug)

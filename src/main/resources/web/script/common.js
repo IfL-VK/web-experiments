@@ -17,6 +17,7 @@ require.config({
 define(function () {
     
     return {
+        workspaceCookieName: "dm4_workspace_id",
         debug: false,
         verbose: true,
         parse_trial_id_from_resource_location: function () {

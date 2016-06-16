@@ -65,13 +65,12 @@
 
     this.startReport = function(event) {
         $.get('/experiment/report/start/' + screen.id, function(e, status) {
-            // console.log("  initReport HTTP Status", status, "Response", e)
-            if (e != -1) {
+            if (e !== -1) {
                 console.log("  Screen Initiated Reporting for Screen Config=" + screen.id + " and Participant=",
                     screen.participant)
-            } else {
-                console.warn("Could NOT INIT Reporting for Screen configuration " + screen.id +  " and Participant=",
-                    screen.participant)
+            } else { // Skipped creation of a new report 
+                console.log("   Skipped starting Screen report for Screen Configuration=" + screen.id +  " and Participant=",
+                    screen.participant, " - A topic for reporting may already be created before via screen.startReporting()")
             }
         })
     }
@@ -103,7 +102,6 @@
     }
 
     this.setScreenAsSeen = function() {
-        console.log("Marking Screen as Seen")
         $.get('/experiment/screen/' + screen.id + '/seen', function(e) {
             if (e !== -1) {
                 console.log("  Screen configuration SET " + screen.id + " as SEEN by Participant ", screen.participant)

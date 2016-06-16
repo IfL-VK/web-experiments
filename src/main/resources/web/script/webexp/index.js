@@ -22,6 +22,8 @@ define(function(require) {
 
         // --- Render welcome or finish screen (including login, logout and restart)
 
+        init_workspace_cookie()
+
         newCtrl.fetchParticipant(function (data) {
 
             // Remove Loader
@@ -52,6 +54,14 @@ define(function(require) {
             throw Error("No session to start the experiment - Please log in as \"VP <Nr>\"")
         }, false)
 
+    }
+
+    function init_workspace_cookie() {
+        newCtrl.fetchWorkspace(function(response) {
+            var workspace = JSON.parse(response)
+            document.cookie = common.workspaceCookieName + "=" + workspace.id + "; "
+            console.log("Set \"Web Experiments\" Workspace Cookie, Workspace ID", workspace.id)
+        })
     }
 
     function load_init_screen() {
