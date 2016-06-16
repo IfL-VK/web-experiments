@@ -59,7 +59,7 @@ If you are not familiar with DeepaMehta 4 Plugin Development you can get kicksta
 
 #### 0.5 Release, 16 June 2016
 
-Download:
+Download: http://download.deepamehta.de/nightly/dm48-web-experiments-0.5.jar
 
 New in this version:
 Compatible with DeepaMehta 4.8 and a new [Getting Started](https://github.com/mukil/web-experiments/tree/master/docs) page.
