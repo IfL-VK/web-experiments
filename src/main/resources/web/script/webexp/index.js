@@ -59,9 +59,23 @@ define(function(require) {
     function init_workspace_cookie() {
         newCtrl.fetchWorkspace(function(response) {
             var workspace = JSON.parse(response)
-            document.cookie = common.workspaceCookieName + "=" + workspace.id + "; "
+            remove_ws_cookie()
+            set_ws_cookie(workspace.id)
             console.log("Set \"Web Experiments\" Workspace Cookie, Workspace ID", workspace.id)
         })
+
+        function remove_ws_cookie() {
+            // Note: setting the expire date to yesterday removes the cookie
+            var days = -1
+            var expires = new Date()
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+            document.cookie = common.workspaceCookieName + "=;path=/;expires=" + expires.toGMTString()
+        }
+
+        function set_ws_cookie(value) {
+            document.cookie = common.workspaceCookieName + "=" + value + ";path=/"
+        }
+
     }
 
     function load_init_screen() {
